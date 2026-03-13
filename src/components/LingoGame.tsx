@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
+import WordSuggestionDialog from "./WordSuggestionDialog";
 import { TileStatus } from "./LingoTile";
-import { getRandomWord, isValidWord, Language, WordLength } from "@/data/words";
+import { getRandomWordAsync, isValidWordAsync, suggestWord, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { usePlayer } from "@/hooks/usePlayer";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -58,7 +60,15 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
   const [revealedRow, setRevealedRow] = useState<number | null>(null);
   const [letterStatuses, setLetterStatuses] = useState<Record<string, TileStatus>>({});
   const [timeLeft, setTimeLeft] = useState(timerSeconds);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Word suggestion dialog state
+  const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
+  const [pendingWord, setPendingWord] = useState("");
+
+  const { player } = usePlayer();
 
   // Two-player state
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -87,8 +97,9 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }, 1000);
   }, [timerSeconds, stopTimer]);
 
-  const startNewRound = useCallback(() => {
-    const word = getRandomWord(language, wordLength);
+  const startNewRound = useCallback(async () => {
+    setIsLoading(true);
+    const word = await getRandomWordAsync(language, wordLength);
     setTargetWord(word);
     setCurrentGuess(word[0]);
     setGuesses([]);
@@ -99,15 +110,16 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     setRevealedRow(null);
     setLetterStatuses({});
     setRoundMessage(null);
+    setIsLoading(false);
     startTimer();
   }, [language, wordLength, startTimer]);
 
-  const startNewMatch = useCallback(() => {
+  const startNewMatch = useCallback(async () => {
     setScores([0, 0]);
     setCurrentPlayer(1);
     setMatchOver(false);
     setMatchWinner(null);
-    startNewRound();
+    await startNewRound();
   }, [startNewRound]);
 
   useEffect(() => {
@@ -115,7 +127,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     return () => stopTimer();
   }, [startNewMatch, stopTimer]);
 
-  // Handle timer reaching zero — same as a failed guess
+  // Handle timer reaching zero
   useEffect(() => {
     if (timeLeft === 0 && !gameOver) {
       stopTimer();
@@ -168,7 +180,6 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
       if (gameMode === "single") {
         onStreakUpdate(0, bestStreak);
       }
-      // Lost — in two-player, switch to other player
       if (gameMode === "two-player") {
         const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
@@ -180,36 +191,57 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }
   }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti, currentStreak, bestStreak, onStreakUpdate]);
 
-  const submitGuess = useCallback(() => {
-    if (currentGuess.length !== wordLength) {
-      setShaking(true);
-      setTimeout(() => setShaking(false), 400);
-      return;
+  const handleInvalidGuess = useCallback((guess: string) => {
+    const emptyStatuses: TileStatus[] = Array(wordLength).fill("absent");
+    const newGuesses = [...guesses, guess.toLowerCase()];
+    const newStatuses = [...statuses, emptyStatuses];
+
+    setGuesses(newGuesses);
+    setStatuses(newStatuses);
+    setRevealedRow(guesses.length);
+    setTimeout(() => setRevealedRow(null), 600);
+
+    if (newGuesses.length >= MAX_GUESSES) {
+      handleRoundEnd(false);
+    } else {
+      setCurrentGuess(targetWord[0]);
     }
+  }, [wordLength, guesses, statuses, targetWord, handleRoundEnd]);
 
-    // Invalid word: skip turn (move to next line, no feedback)
-    if (!isValidWord(currentGuess, language, wordLength)) {
-      setShaking(true);
-      setTimeout(() => setShaking(false), 400);
-      toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
-
-      const emptyStatuses: TileStatus[] = Array(wordLength).fill("absent");
-      const newGuesses = [...guesses, currentGuess.toLowerCase()];
-      const newStatuses = [...statuses, emptyStatuses];
-
-      setGuesses(newGuesses);
-      setStatuses(newStatuses);
-      setRevealedRow(guesses.length);
-      setTimeout(() => setRevealedRow(null), 600);
-
-      if (newGuesses.length >= MAX_GUESSES) {
-        handleRoundEnd(false);
-      } else {
-        setCurrentGuess(targetWord[0]);
+  const submitGuess = useCallback(async () => {
+    if (currentGuess.length !== wordLength || isSubmitting) {
+      if (currentGuess.length !== wordLength) {
+        setShaking(true);
+        setTimeout(() => setShaking(false), 400);
       }
       return;
     }
 
+    // For Dutch, validate against DB
+    if (language === "nl") {
+      setIsSubmitting(true);
+      const valid = await isValidWordAsync(currentGuess, language, wordLength);
+      setIsSubmitting(false);
+
+      if (!valid) {
+        // Pause timer while dialog is open
+        stopTimer();
+        setPendingWord(currentGuess.toLowerCase());
+        setSuggestionDialogOpen(true);
+        return;
+      }
+    } else {
+      // English: basic validation
+      if (!/^[a-z]+$/i.test(currentGuess)) {
+        setShaking(true);
+        setTimeout(() => setShaking(false), 400);
+        toast.error("Invalid word — turn lost!");
+        handleInvalidGuess(currentGuess);
+        return;
+      }
+    }
+
+    // Valid word — evaluate
     const guess = currentGuess.toLowerCase();
     const evaluation = evaluateGuess(guess, targetWord);
 
@@ -221,7 +253,6 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     setStatuses(newStatuses);
     setRevealedRow(rowIndex);
 
-    // Update keyboard letter statuses
     const newLetterStatuses = { ...letterStatuses };
     for (let i = 0; i < guess.length; i++) {
       const letter = guess[i];
@@ -246,11 +277,31 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     } else {
       setCurrentGuess(targetWord[0]);
     }
-  }, [currentGuess, wordLength, language, targetWord, guesses, statuses, letterStatuses, handleRoundEnd]);
+  }, [currentGuess, wordLength, language, targetWord, guesses, statuses, letterStatuses, handleRoundEnd, handleInvalidGuess, isSubmitting, stopTimer]);
+
+  const handleSuggestionConfirm = useCallback(async () => {
+    setSuggestionDialogOpen(false);
+    const word = pendingWord;
+    const success = await suggestWord(word, wordLength, player?.id);
+    if (success) {
+      toast.success(language === "nl" ? `"${word.toUpperCase()}" is toegevoegd!` : `"${word.toUpperCase()}" has been added!`);
+    }
+    // Still count as invalid turn (word wasn't in list when guessed)
+    toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
+    handleInvalidGuess(word);
+    startTimer();
+  }, [pendingWord, wordLength, player, language, handleInvalidGuess, startTimer]);
+
+  const handleSuggestionCancel = useCallback(() => {
+    setSuggestionDialogOpen(false);
+    toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
+    handleInvalidGuess(pendingWord);
+    startTimer();
+  }, [language, pendingWord, handleInvalidGuess, startTimer]);
 
   const handleKey = useCallback(
     (key: string) => {
-      if (gameOver) return;
+      if (gameOver || suggestionDialogOpen) return;
 
       if (key === "Enter") {
         submitGuess();
@@ -268,7 +319,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         setCurrentGuess((prev) => prev + key.toLowerCase());
       }
     },
-    [gameOver, currentGuess, wordLength, submitGuess]
+    [gameOver, currentGuess, wordLength, submitGuess, suggestionDialogOpen]
   );
 
   useEffect(() => {
@@ -293,10 +344,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }
     if (gameMode === "two-player") {
       if (won) {
-        // Same player continues
         startNewRound();
       } else {
-        // Switch to other player
         setCurrentPlayer((p) => (p === 1 ? 2 : 1));
         startNewRound();
       }
@@ -305,8 +354,27 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-lg font-bold text-muted-foreground animate-pulse">
+          {language === "nl" ? "Laden..." : "Loading..."}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      {/* Word Suggestion Dialog */}
+      <WordSuggestionDialog
+        open={suggestionDialogOpen}
+        word={pendingWord}
+        language={language}
+        onConfirm={handleSuggestionConfirm}
+        onCancel={handleSuggestionCancel}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <button

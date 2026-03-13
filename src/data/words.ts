@@ -1,4 +1,6 @@
-// Dutch word lists
+import { supabase } from "@/integrations/supabase/client";
+
+// Dutch word lists (fallback)
 const dutch4 = [
   "bank", "boot", "boek", "bord", "brug", "deur", "dier", "doel", "geld", "glas",
   "hond", "huis", "kaas", "kind", "klok", "koud", "lamp", "land", "lijn", "maan",
@@ -15,14 +17,14 @@ const dutch4 = [
 
 const dutch5 = [
   "appel", "avond", "baker", "beker", "broek", "brood", "chili", "draak", "dwerg", "engel",
-  "fiets", "flask", "groen", "groep", "hamer", "hemel", "herfst", "hoorn", "idool", "inham",
+  "fiets", "flask", "groen", "groep", "hamer", "hemel", "hoorn", "idool", "inham",
   "jurij", "kaart", "kabel", "kleur", "knoop", "konig", "kroeg", "kunst", "laken", "laser",
   "lever", "loper", "macht", "mango", "media", "meldt", "nacht", "nieuw", "oever", "paard",
   "piano", "plant", "plein", "prijs", "proef", "radio", "regen", "ruzie", "salon", "schip",
-  "slaap", "slang", "sneeuw", "staal", "stank", "stoel", "storm", "straat", "tafel", "tegel",
+  "slaap", "slang", "staal", "stank", "stoel", "storm", "tafel", "tegel",
   "toren", "trein", "tulip", "vacht", "vlieg", "vloed", "water", "wegen", "werld", "worst",
-  "wraak", "zadel", "zilver", "zwaan", "zwart", "amber", "bloem", "brein", "cirkel", "draad",
-  "ebben", "fabel", "geest", "haven", "inzet", "jeugd", "kwast", "loods", "middel", "nagel",
+  "wraak", "zadel", "zwaan", "zwart", "amber", "bloem", "brein",
+  "draad", "ebben", "fabel", "geest", "haven", "inzet", "jeugd", "kwast", "loods", "nagel",
   "olive", "pijlt", "ronde", "steel", "taart", "uitje", "vloot", "waard", "zetel", "zomer",
 ];
 
@@ -33,10 +35,10 @@ const dutch6 = [
   "tropen", "tunnel", "uitzet", "vlakte", "vriend", "wandel", "winter", "wonder", "zolder",
   "achter", "balkon", "bewijs", "blanko", "camera", "detail", "eiland", "folder", "gevoel",
   "hoogte", "ijsjes", "jurken", "kennis", "letter", "marmer", "naaien", "orkest", "pakket",
-  "rivier", "scherp", "sigaar", "spiegel", "sterke", "strand", "tennis", "uitleg", "veilig",
+  "rivier", "scherp", "sigaar", "sterke", "strand", "tennis", "uitleg", "veilig",
   "vulpen", "werken", "zanger", "zilver", "cirkel", "danser", "erwten", "feiten", "geheim",
-  "haring", "ingang", "jungle", "kiezen", "ladder", "moeite", "nuchter", "oceaan", "piloot",
-  "recept", "schaap", "tassen", "vragen", "wassen", "zenden", "anders", "beiden", "tussen",
+  "haring", "ingang", "kiezen", "ladder", "moeite", "oceaan", "piloot",
+  "schaap", "tassen", "vragen", "wassen", "zenden", "anders", "beiden", "tussen",
 ];
 
 // English word lists
@@ -68,7 +70,7 @@ const english5 = [
 
 const english6 = [
   "absurd", "advent", "agency", "alpine", "anchor", "animal", "answer", "arcane", "arctic",
-  "autumn", "basket", "battle", "beacon", "beauty", "bishop", "blanch", "bonfire", "bounce",
+  "autumn", "basket", "battle", "beacon", "beauty", "bishop", "blanch", "bounce",
   "branch", "breach", "breath", "bridge", "bright", "broken", "bronze", "brutal", "bubble",
   "burden", "cactus", "camera", "candle", "canvas", "castle", "center", "chance", "change",
   "cheese", "chosen", "church", "circle", "clever", "client", "cobalt", "coffee", "column",
@@ -87,14 +89,85 @@ const wordLists: Record<Language, Record<WordLength, string[]>> = {
   en: { 4: english4, 5: english5, 6: english6 },
 };
 
+// Cache for DB words
+let dbWordsCache: Record<number, string[]> = {};
+let dbWordsCacheTime = 0;
+const CACHE_TTL = 60000; // 1 minute
+
+export async function loadDutchWordsFromDB(length: WordLength): Promise<string[]> {
+  const now = Date.now();
+  if (dbWordsCache[length] && now - dbWordsCacheTime < CACHE_TTL) {
+    return dbWordsCache[length];
+  }
+
+  const { data, error } = await supabase
+    .from("dutch_words")
+    .select("word")
+    .eq("length", length)
+    .eq("approved", true);
+
+  if (error || !data || data.length === 0) {
+    // Fallback to local list
+    return wordLists.nl[length].filter(w => w.length === length);
+  }
+
+  const words = data.map(r => r.word.toLowerCase());
+  dbWordsCache[length] = words;
+  dbWordsCacheTime = now;
+  return words;
+}
+
+export async function getRandomWordAsync(language: Language, length: WordLength): Promise<string> {
+  if (language === "nl") {
+    const words = await loadDutchWordsFromDB(length);
+    return words[Math.floor(Math.random() * words.length)];
+  }
+  const list = wordLists[language][length].filter(w => w.length === length);
+  return list[Math.floor(Math.random() * list.length)].toLowerCase();
+}
+
+export async function isValidWordAsync(word: string, language: Language, length: WordLength): Promise<boolean> {
+  if (word.length !== length || !/^[a-z]+$/i.test(word)) return false;
+
+  if (language === "nl") {
+    const { data } = await supabase
+      .from("dutch_words")
+      .select("id")
+      .eq("word", word.toLowerCase())
+      .eq("length", length)
+      .eq("approved", true)
+      .limit(1);
+    return !!(data && data.length > 0);
+  }
+
+  // English: accept any alphabetic word of correct length
+  return true;
+}
+
+export async function suggestWord(word: string, length: WordLength, playerId?: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("dutch_words")
+    .insert({
+      word: word.toLowerCase(),
+      length,
+      approved: true, // auto-approve for now
+      suggested_by: playerId || null,
+    });
+
+  if (!error) {
+    // Invalidate cache
+    delete dbWordsCache[length];
+  }
+  return !error;
+}
+
+// Keep synchronous versions as fallback
 export function getRandomWord(language: Language, length: WordLength): string {
   const list = wordLists[language][length];
-  // Filter to exact length
   const filtered = list.filter(w => w.length === length);
   return filtered[Math.floor(Math.random() * filtered.length)].toLowerCase();
 }
 
 export function isValidWord(word: string, language: Language, length: WordLength): boolean {
-  // For simplicity, accept any alphabetic word of correct length
   return word.length === length && /^[a-z]+$/i.test(word);
 }
