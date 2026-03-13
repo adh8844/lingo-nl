@@ -339,12 +339,24 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
       {/* Game Over */}
       {gameOver && (
         <div className="flex flex-col items-center gap-3 animate-bounce-in">
-          {won ? (
+          {matchOver && matchWinner ? (
+            <div className="text-center">
+              <p className="text-3xl font-extrabold text-tile-correct">
+                🏆🎉{" "}
+                {language === "nl"
+                  ? `Speler ${matchWinner} wint de match!`
+                  : `Player ${matchWinner} wins the match!`}
+              </p>
+              <p className="text-muted-foreground mt-2 text-lg font-bold">
+                {scores[0]} - {scores[1]}
+              </p>
+            </div>
+          ) : won ? (
             <p className="text-2xl font-extrabold text-tile-correct">
               {gameMode === "two-player"
                 ? language === "nl"
-                  ? `🎉 Speler ${currentPlayer} wint!`
-                  : `🎉 Player ${currentPlayer} wins!`
+                  ? `🎉 Speler ${currentPlayer} raadt het!`
+                  : `🎉 Player ${currentPlayer} got it!`
                 : language === "nl"
                 ? "🎉 Gewonnen!"
                 : "🎉 You won!"}
@@ -368,13 +380,17 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
             onClick={handleNextAction}
             className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95"
           >
-            {gameMode === "two-player" && !won && currentPlayer === 1
+            {matchOver
               ? language === "nl"
-                ? "Speler 2 →"
-                : "Player 2 →"
+                ? "Nieuwe match"
+                : "New match"
+              : gameMode === "two-player" && !won
+              ? language === "nl"
+                ? `Speler ${currentPlayer === 1 ? 2 : 1} →`
+                : `Player ${currentPlayer === 1 ? 2 : 1} →`
               : language === "nl"
-              ? "Opnieuw spelen"
-              : "Play again"}
+              ? "Volgende ronde"
+              : "Next round"}
           </button>
         </div>
       )}
