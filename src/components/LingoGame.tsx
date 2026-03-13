@@ -273,11 +273,21 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
   };
 
   const handleNextAction = () => {
-    if (gameMode === "two-player" && !won && currentPlayer === 1) {
-      // Player 2's turn
-      startNewRound(2);
+    if (matchOver) {
+      startNewMatch();
+      return;
+    }
+    if (gameMode === "two-player") {
+      if (won) {
+        // Same player continues
+        startNewRound();
+      } else {
+        // Switch to other player
+        setCurrentPlayer((p) => (p === 1 ? 2 : 1));
+        startNewRound();
+      }
     } else {
-      startNewGame();
+      startNewRound();
     }
   };
 
