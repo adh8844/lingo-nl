@@ -4,8 +4,10 @@ import Keyboard from "./Keyboard";
 import { TileStatus } from "./LingoTile";
 import { getRandomWord, isValidWord, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 const MAX_GUESSES = 5;
+const WINS_TO_WIN = 5;
 
 type GameMode = "single" | "two-player";
 
