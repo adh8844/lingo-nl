@@ -209,16 +209,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Best Streak */}
-            {bestStreak > 0 && (
-              <div className="flex flex-col items-center gap-1">
-                <p className="text-sm text-muted-foreground font-medium">
-                  {language === "nl" ? "Beste reeks" : "Best streak"}
-                </p>
-                <p className="text-3xl font-extrabold text-primary">🔥 {bestStreak}</p>
-              </div>
-            )}
-
             {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-3 w-full">
               <button
