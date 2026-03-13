@@ -279,6 +279,42 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }
   }, [currentGuess, wordLength, language, targetWord, guesses, statuses, letterStatuses, handleRoundEnd, handleInvalidGuess, isSubmitting, stopTimer]);
 
+  const processGuessAsValid = useCallback((guess: string) => {
+    const evaluation = evaluateGuess(guess, targetWord);
+    const newGuesses = [...guesses, guess];
+    const newStatuses = [...statuses, evaluation];
+    const rowIndex = guesses.length;
+
+    setGuesses(newGuesses);
+    setStatuses(newStatuses);
+    setRevealedRow(rowIndex);
+
+    const newLetterStatuses = { ...letterStatuses };
+    for (let i = 0; i < guess.length; i++) {
+      const letter = guess[i];
+      const current = newLetterStatuses[letter];
+      const newStatus = evaluation[i];
+      if (newStatus === "correct") {
+        newLetterStatuses[letter] = "correct";
+      } else if (newStatus === "present" && current !== "correct") {
+        newLetterStatuses[letter] = "present";
+      } else if (!current) {
+        newLetterStatuses[letter] = "absent";
+      }
+    }
+    setLetterStatuses(newLetterStatuses);
+
+    setTimeout(() => setRevealedRow(null), 600);
+
+    if (guess === targetWord) {
+      handleRoundEnd(true);
+    } else if (newGuesses.length >= MAX_GUESSES) {
+      handleRoundEnd(false);
+    } else {
+      setCurrentGuess(targetWord[0]);
+    }
+  }, [targetWord, guesses, statuses, letterStatuses, handleRoundEnd]);
+
   const handleSuggestionConfirm = useCallback(async () => {
     setSuggestionDialogOpen(false);
     const word = pendingWord;
@@ -286,11 +322,10 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     if (success) {
       toast.success(language === "nl" ? `"${word.toUpperCase()}" is toegevoegd!` : `"${word.toUpperCase()}" has been added!`);
     }
-    // Still count as invalid turn (word wasn't in list when guessed)
-    toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
-    handleInvalidGuess(word);
+    // Treat as a valid guess — check letters against target
+    processGuessAsValid(word);
     startTimer();
-  }, [pendingWord, wordLength, player, language, handleInvalidGuess, startTimer]);
+  }, [pendingWord, wordLength, player, language, processGuessAsValid, startTimer]);
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
