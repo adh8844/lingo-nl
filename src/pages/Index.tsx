@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LingoGame from "@/components/LingoGame";
 import { Language, WordLength } from "@/data/words";
 
@@ -12,6 +12,22 @@ const Index = () => {
   const [wordLength, setWordLength] = useState<WordLength>(5);
   const [timerSeconds, setTimerSeconds] = useState<number>(60);
   const [gameMode, setGameMode] = useState<GameMode>("single");
+  const [bestStreak, setBestStreak] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("lingo-best-streak");
+    if (saved) setBestStreak(parseInt(saved, 10));
+    const savedCurrent = localStorage.getItem("lingo-current-streak");
+    if (savedCurrent) setCurrentStreak(parseInt(savedCurrent, 10));
+  }, []);
+
+  const handleStreakUpdate = (newCurrent: number, newBest: number) => {
+    setCurrentStreak(newCurrent);
+    setBestStreak(newBest);
+    localStorage.setItem("lingo-current-streak", String(newCurrent));
+    localStorage.setItem("lingo-best-streak", String(newBest));
+  };
 
   if (gameStarted) {
     return (
@@ -25,6 +41,9 @@ const Index = () => {
           timerSeconds={timerSeconds}
           gameMode={gameMode}
           onBack={() => setGameStarted(false)}
+          currentStreak={currentStreak}
+          bestStreak={bestStreak}
+          onStreakUpdate={handleStreakUpdate}
         />
       </div>
     );
@@ -139,6 +158,16 @@ const Index = () => {
             </button>
           </div>
         </div>
+
+        {/* Best Streak */}
+        {bestStreak > 0 && (
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm text-muted-foreground font-medium">
+              {language === "nl" ? "Beste reeks" : "Best streak"}
+            </p>
+            <p className="text-3xl font-extrabold text-primary">🔥 {bestStreak}</p>
+          </div>
+        )}
 
         {/* Start button */}
         <button

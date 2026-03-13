@@ -17,6 +17,9 @@ interface LingoGameProps {
   timerSeconds: number;
   gameMode: GameMode;
   onBack: () => void;
+  currentStreak: number;
+  bestStreak: number;
+  onStreakUpdate: (newCurrent: number, newBest: number) => void;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
@@ -44,7 +47,7 @@ function evaluateGuess(guess: string, target: string): TileStatus[] {
   return result;
 }
 
-const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: LingoGameProps) => {
+const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, currentStreak, bestStreak, onStreakUpdate }: LingoGameProps) => {
   const [targetWord, setTargetWord] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<TileStatus[][]>([]);
@@ -119,6 +122,10 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
       setGameOver(true);
       setCurrentGuess("");
 
+      if (gameMode === "single") {
+        onStreakUpdate(0, bestStreak);
+      }
+
       if (gameMode === "two-player") {
         const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
@@ -128,7 +135,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
         );
       }
     }
-  }, [timeLeft, gameOver, gameMode, currentPlayer, language, targetWord, stopTimer]);
+  }, [timeLeft, gameOver, gameMode, currentPlayer, language, targetWord, stopTimer, onStreakUpdate, bestStreak]);
 
   const fireConfetti = useCallback(() => {
     confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
@@ -142,7 +149,11 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
 
     if (playerWon) {
       setWon(true);
-      if (gameMode === "two-player") {
+      if (gameMode === "single") {
+        const newCurrent = currentStreak + 1;
+        const newBest = Math.max(bestStreak, newCurrent);
+        onStreakUpdate(newCurrent, newBest);
+      } else if (gameMode === "two-player") {
         const newScores = [...scores];
         newScores[currentPlayer - 1]++;
         setScores(newScores);
@@ -154,6 +165,9 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
         }
       }
     } else {
+      if (gameMode === "single") {
+        onStreakUpdate(0, bestStreak);
+      }
       // Lost — in two-player, switch to other player
       if (gameMode === "two-player") {
         const otherPlayer = currentPlayer === 1 ? 2 : 1;
@@ -164,7 +178,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
         );
       }
     }
-  }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti]);
+  }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti, currentStreak, bestStreak, onStreakUpdate]);
 
   const submitGuess = useCallback(() => {
     if (currentGuess.length !== wordLength) {
@@ -302,6 +316,11 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
           ← {language === "nl" ? "Terug" : "Back"}
         </button>
         <div className="flex items-center gap-4">
+          {gameMode === "single" && (
+            <div className="text-sm font-bold text-muted-foreground">
+              🔥 {currentStreak}{bestStreak > 0 && <span className="ml-1 text-xs font-medium">(best: {bestStreak})</span>}
+            </div>
+          )}
           {gameMode === "two-player" && (
             <div className="text-sm font-bold text-primary">
               {language === "nl" ? `Speler ${currentPlayer}` : `Player ${currentPlayer}`}
