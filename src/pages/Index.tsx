@@ -75,8 +75,8 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="flex flex-col items-center gap-8 animate-bounce-in">
+    <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
+      <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tighter text-primary">
