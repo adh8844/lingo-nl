@@ -10,6 +10,7 @@ type GameMode = "single" | "two-player";
 const TIMER_OPTIONS = [30, 60, 90, 120] as const;
 
 const Index = () => {
+  const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [language, setLanguage] = useState<Language>("nl");
   const [wordLength, setWordLength] = useState<WordLength>(5);
