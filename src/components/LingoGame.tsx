@@ -145,7 +145,11 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
 
     if (playerWon) {
       setWon(true);
-      if (gameMode === "two-player") {
+      if (gameMode === "single") {
+        const newCurrent = currentStreak + 1;
+        const newBest = Math.max(bestStreak, newCurrent);
+        onStreakUpdate(newCurrent, newBest);
+      } else if (gameMode === "two-player") {
         const newScores = [...scores];
         newScores[currentPlayer - 1]++;
         setScores(newScores);
@@ -157,6 +161,9 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         }
       }
     } else {
+      if (gameMode === "single") {
+        onStreakUpdate(0, bestStreak);
+      }
       // Lost — in two-player, switch to other player
       if (gameMode === "two-player") {
         const otherPlayer = currentPlayer === 1 ? 2 : 1;
@@ -167,7 +174,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         );
       }
     }
-  }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti]);
+  }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti, currentStreak, bestStreak, onStreakUpdate]);
 
   const submitGuess = useCallback(() => {
     if (currentGuess.length !== wordLength) {
