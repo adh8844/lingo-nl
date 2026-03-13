@@ -316,6 +316,11 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
           ← {language === "nl" ? "Terug" : "Back"}
         </button>
         <div className="flex items-center gap-4">
+          {gameMode === "single" && (
+            <div className="text-sm font-bold text-muted-foreground">
+              🔥 {currentStreak}{bestStreak > 0 && <span className="ml-1 text-xs font-medium">(best: {bestStreak})</span>}
+            </div>
+          )}
           {gameMode === "two-player" && (
             <div className="text-sm font-bold text-primary">
               {language === "nl" ? `Speler ${currentPlayer}` : `Player ${currentPlayer}`}
