@@ -12,6 +12,22 @@ const Index = () => {
   const [wordLength, setWordLength] = useState<WordLength>(5);
   const [timerSeconds, setTimerSeconds] = useState<number>(60);
   const [gameMode, setGameMode] = useState<GameMode>("single");
+  const [bestStreak, setBestStreak] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("lingo-best-streak");
+    if (saved) setBestStreak(parseInt(saved, 10));
+    const savedCurrent = localStorage.getItem("lingo-current-streak");
+    if (savedCurrent) setCurrentStreak(parseInt(savedCurrent, 10));
+  }, []);
+
+  const handleStreakUpdate = (newCurrent: number, newBest: number) => {
+    setCurrentStreak(newCurrent);
+    setBestStreak(newBest);
+    localStorage.setItem("lingo-current-streak", String(newCurrent));
+    localStorage.setItem("lingo-best-streak", String(newBest));
+  };
 
   if (gameStarted) {
     return (
