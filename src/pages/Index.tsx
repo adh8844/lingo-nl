@@ -207,16 +207,21 @@ const Index = () => {
               </div>
             )}
 
-            {/* Leaderboard */}
-            <Leaderboard player={player} language={language} />
-
-            {/* Start button */}
-            <button
-              onClick={() => setGameStarted(true)}
-              className="px-10 py-3.5 bg-accent text-accent-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-accent/30"
-            >
-              {language === "nl" ? "Start!" : "Play!"}
-            </button>
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <button
+                onClick={() => setGameStarted(true)}
+                className="flex-1 px-6 py-3.5 bg-accent text-accent-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-accent/30"
+              >
+                {language === "nl" ? "▶ Start!" : "▶ Play!"}
+              </button>
+              <button
+                onClick={() => navigate("/rankings")}
+                className="flex-1 px-6 py-3.5 bg-secondary text-secondary-foreground font-extrabold text-base rounded-xl hover:brightness-110 transition-all active:scale-95"
+              >
+                🏆 {language === "nl" ? "Rankings" : "Rankings"}
+              </button>
+            </div>
           </>
         )}
       </div>
