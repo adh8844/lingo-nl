@@ -122,6 +122,10 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
       setGameOver(true);
       setCurrentGuess("");
 
+      if (gameMode === "single") {
+        onStreakUpdate(0, bestStreak);
+      }
+
       if (gameMode === "two-player") {
         const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
@@ -131,7 +135,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         );
       }
     }
-  }, [timeLeft, gameOver, gameMode, currentPlayer, language, targetWord, stopTimer]);
+  }, [timeLeft, gameOver, gameMode, currentPlayer, language, targetWord, stopTimer, onStreakUpdate, bestStreak]);
 
   const fireConfetti = useCallback(() => {
     confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
