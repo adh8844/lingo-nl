@@ -79,7 +79,7 @@ const Index = () => {
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tighter text-primary">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-primary">
             LINGO
           </h1>
           <p className="text-muted-foreground text-lg">
