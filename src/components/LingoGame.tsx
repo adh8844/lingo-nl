@@ -61,6 +61,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [scores, setScores] = useState([0, 0]);
   const [roundMessage, setRoundMessage] = useState<string | null>(null);
+  const [matchOver, setMatchOver] = useState(false);
+  const [matchWinner, setMatchWinner] = useState<number | null>(null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
