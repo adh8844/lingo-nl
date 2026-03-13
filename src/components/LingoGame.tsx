@@ -4,8 +4,10 @@ import Keyboard from "./Keyboard";
 import { TileStatus } from "./LingoTile";
 import { getRandomWord, isValidWord, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 const MAX_GUESSES = 5;
+const WINS_TO_WIN = 5;
 
 type GameMode = "single" | "two-player";
 
@@ -59,6 +61,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
   const [currentPlayer, setCurrentPlayer] = useState(1);
   const [scores, setScores] = useState([0, 0]);
   const [roundMessage, setRoundMessage] = useState<string | null>(null);
+  const [matchOver, setMatchOver] = useState(false);
+  const [matchWinner, setMatchWinner] = useState<number | null>(null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -80,7 +84,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     }, 1000);
   }, [timerSeconds, stopTimer]);
 
-  const startNewRound = useCallback((player?: number) => {
+  const startNewRound = useCallback(() => {
     const word = getRandomWord(language, wordLength);
     setTargetWord(word);
     setCurrentGuess(word[0]);
@@ -92,43 +96,44 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     setRevealedRow(null);
     setLetterStatuses({});
     setRoundMessage(null);
-    if (player !== undefined) setCurrentPlayer(player);
     startTimer();
   }, [language, wordLength, startTimer]);
 
-  const startNewGame = useCallback(() => {
+  const startNewMatch = useCallback(() => {
     setScores([0, 0]);
     setCurrentPlayer(1);
-    startNewRound(1);
+    setMatchOver(false);
+    setMatchWinner(null);
+    startNewRound();
   }, [startNewRound]);
 
   useEffect(() => {
-    startNewGame();
+    startNewMatch();
     return () => stopTimer();
-  }, [startNewGame, stopTimer]);
+  }, [startNewMatch, stopTimer]);
 
-  // Handle timer reaching zero
+  // Handle timer reaching zero — same as a failed guess
   useEffect(() => {
     if (timeLeft === 0 && !gameOver) {
       stopTimer();
       setGameOver(true);
       setCurrentGuess("");
 
-      if (gameMode === "two-player" && currentPlayer === 1) {
+      if (gameMode === "two-player") {
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
           language === "nl"
-            ? `Tijd is op! Het woord was: ${targetWord.toUpperCase()}. Speler 2 is aan de beurt.`
-            : `Time's up! The word was: ${targetWord.toUpperCase()}. Player 2's turn.`
-        );
-      } else if (gameMode === "two-player" && currentPlayer === 2) {
-        setRoundMessage(
-          language === "nl"
-            ? `Tijd is op! Het woord was: ${targetWord.toUpperCase()}.`
-            : `Time's up! The word was: ${targetWord.toUpperCase()}.`
+            ? `Tijd is op! Het woord was: ${targetWord.toUpperCase()}. Speler ${otherPlayer} is aan de beurt.`
+            : `Time's up! The word was: ${targetWord.toUpperCase()}. Player ${otherPlayer}'s turn.`
         );
       }
     }
   }, [timeLeft, gameOver, gameMode, currentPlayer, language, targetWord, stopTimer]);
+
+  const fireConfetti = useCallback(() => {
+    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    setTimeout(() => confetti({ particleCount: 100, spread: 100, origin: { y: 0.5 } }), 300);
+  }, []);
 
   const handleRoundEnd = useCallback((playerWon: boolean) => {
     stopTimer();
@@ -138,23 +143,28 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     if (playerWon) {
       setWon(true);
       if (gameMode === "two-player") {
-        setScores((prev) => {
-          const next = [...prev];
-          next[currentPlayer - 1]++;
-          return next;
-        });
+        const newScores = [...scores];
+        newScores[currentPlayer - 1]++;
+        setScores(newScores);
+
+        if (newScores[currentPlayer - 1] >= WINS_TO_WIN) {
+          setMatchOver(true);
+          setMatchWinner(currentPlayer);
+          fireConfetti();
+        }
       }
     } else {
-      // Lost
-      if (gameMode === "two-player" && currentPlayer === 1) {
+      // Lost — in two-player, switch to other player
+      if (gameMode === "two-player") {
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
           language === "nl"
-            ? `Het woord was: ${targetWord.toUpperCase()}. Speler 2 is aan de beurt!`
-            : `The word was: ${targetWord.toUpperCase()}. Player 2's turn!`
+            ? `Het woord was: ${targetWord.toUpperCase()}. Speler ${otherPlayer} is aan de beurt!`
+            : `The word was: ${targetWord.toUpperCase()}. Player ${otherPlayer}'s turn!`
         );
       }
     }
-  }, [stopTimer, gameMode, currentPlayer, language, targetWord]);
+  }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti]);
 
   const submitGuess = useCallback(() => {
     if (currentGuess.length !== wordLength) {
@@ -263,11 +273,21 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
   };
 
   const handleNextAction = () => {
-    if (gameMode === "two-player" && !won && currentPlayer === 1) {
-      // Player 2's turn
-      startNewRound(2);
+    if (matchOver) {
+      startNewMatch();
+      return;
+    }
+    if (gameMode === "two-player") {
+      if (won) {
+        // Same player continues
+        startNewRound();
+      } else {
+        // Switch to other player
+        setCurrentPlayer((p) => (p === 1 ? 2 : 1));
+        startNewRound();
+      }
     } else {
-      startNewGame();
+      startNewRound();
     }
   };
 
@@ -319,12 +339,24 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
       {/* Game Over */}
       {gameOver && (
         <div className="flex flex-col items-center gap-3 animate-bounce-in">
-          {won ? (
+          {matchOver && matchWinner ? (
+            <div className="text-center">
+              <p className="text-3xl font-extrabold text-tile-correct">
+                🏆🎉{" "}
+                {language === "nl"
+                  ? `Speler ${matchWinner} wint de match!`
+                  : `Player ${matchWinner} wins the match!`}
+              </p>
+              <p className="text-muted-foreground mt-2 text-lg font-bold">
+                {scores[0]} - {scores[1]}
+              </p>
+            </div>
+          ) : won ? (
             <p className="text-2xl font-extrabold text-tile-correct">
               {gameMode === "two-player"
                 ? language === "nl"
-                  ? `🎉 Speler ${currentPlayer} wint!`
-                  : `🎉 Player ${currentPlayer} wins!`
+                  ? `🎉 Speler ${currentPlayer} raadt het!`
+                  : `🎉 Player ${currentPlayer} got it!`
                 : language === "nl"
                 ? "🎉 Gewonnen!"
                 : "🎉 You won!"}
@@ -348,13 +380,17 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
             onClick={handleNextAction}
             className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95"
           >
-            {gameMode === "two-player" && !won && currentPlayer === 1
+            {matchOver
               ? language === "nl"
-                ? "Speler 2 →"
-                : "Player 2 →"
+                ? "Nieuwe match"
+                : "New match"
+              : gameMode === "two-player" && !won
+              ? language === "nl"
+                ? `Speler ${currentPlayer === 1 ? 2 : 1} →`
+                : `Player ${currentPlayer === 1 ? 2 : 1} →`
               : language === "nl"
-              ? "Opnieuw spelen"
-              : "Play again"}
+              ? "Volgende ronde"
+              : "Next round"}
           </button>
         </div>
       )}
