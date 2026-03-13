@@ -28,7 +28,7 @@ const Keyboard = ({ onKey, letterStatuses }: KeyboardProps) => {
                 onClick={() => onKey(key === "⌫" ? "Backspace" : key)}
                 className={cn(
                   "flex items-center justify-center rounded-md font-bold uppercase transition-all duration-150 active:scale-95",
-                  isSpecial ? "px-3 sm:px-4 h-12 text-xs sm:text-sm" : "w-8 sm:w-10 h-12 text-sm sm:text-base",
+                  isSpecial ? "px-2.5 sm:px-3 md:px-4 h-10 sm:h-12 text-[10px] sm:text-xs md:text-sm" : "w-7 sm:w-8 md:w-10 h-10 sm:h-12 text-xs sm:text-sm md:text-base",
                   !status && "bg-secondary text-secondary-foreground hover:brightness-110",
                   status === "correct" && "bg-tile-correct text-primary-foreground",
                   status === "present" && "bg-tile-present text-primary-foreground",
