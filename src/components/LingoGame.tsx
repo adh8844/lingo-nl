@@ -112,28 +112,28 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     return () => stopTimer();
   }, [startNewMatch, stopTimer]);
 
-  // Handle timer reaching zero
+  // Handle timer reaching zero — same as a failed guess
   useEffect(() => {
     if (timeLeft === 0 && !gameOver) {
       stopTimer();
       setGameOver(true);
       setCurrentGuess("");
 
-      if (gameMode === "two-player" && currentPlayer === 1) {
+      if (gameMode === "two-player") {
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
           language === "nl"
-            ? `Tijd is op! Het woord was: ${targetWord.toUpperCase()}. Speler 2 is aan de beurt.`
-            : `Time's up! The word was: ${targetWord.toUpperCase()}. Player 2's turn.`
-        );
-      } else if (gameMode === "two-player" && currentPlayer === 2) {
-        setRoundMessage(
-          language === "nl"
-            ? `Tijd is op! Het woord was: ${targetWord.toUpperCase()}.`
-            : `Time's up! The word was: ${targetWord.toUpperCase()}.`
+            ? `Tijd is op! Het woord was: ${targetWord.toUpperCase()}. Speler ${otherPlayer} is aan de beurt.`
+            : `Time's up! The word was: ${targetWord.toUpperCase()}. Player ${otherPlayer}'s turn.`
         );
       }
     }
   }, [timeLeft, gameOver, gameMode, currentPlayer, language, targetWord, stopTimer]);
+
+  const fireConfetti = useCallback(() => {
+    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    setTimeout(() => confetti({ particleCount: 100, spread: 100, origin: { y: 0.5 } }), 300);
+  }, []);
 
   const handleRoundEnd = useCallback((playerWon: boolean) => {
     stopTimer();
@@ -143,23 +143,28 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     if (playerWon) {
       setWon(true);
       if (gameMode === "two-player") {
-        setScores((prev) => {
-          const next = [...prev];
-          next[currentPlayer - 1]++;
-          return next;
-        });
+        const newScores = [...scores];
+        newScores[currentPlayer - 1]++;
+        setScores(newScores);
+
+        if (newScores[currentPlayer - 1] >= WINS_TO_WIN) {
+          setMatchOver(true);
+          setMatchWinner(currentPlayer);
+          fireConfetti();
+        }
       }
     } else {
-      // Lost
-      if (gameMode === "two-player" && currentPlayer === 1) {
+      // Lost — in two-player, switch to other player
+      if (gameMode === "two-player") {
+        const otherPlayer = currentPlayer === 1 ? 2 : 1;
         setRoundMessage(
           language === "nl"
-            ? `Het woord was: ${targetWord.toUpperCase()}. Speler 2 is aan de beurt!`
-            : `The word was: ${targetWord.toUpperCase()}. Player 2's turn!`
+            ? `Het woord was: ${targetWord.toUpperCase()}. Speler ${otherPlayer} is aan de beurt!`
+            : `The word was: ${targetWord.toUpperCase()}. Player ${otherPlayer}'s turn!`
         );
       }
     }
-  }, [stopTimer, gameMode, currentPlayer, language, targetWord]);
+  }, [stopTimer, gameMode, currentPlayer, language, targetWord, scores, fireConfetti]);
 
   const submitGuess = useCallback(() => {
     if (currentGuess.length !== wordLength) {
