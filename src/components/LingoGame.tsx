@@ -17,6 +17,9 @@ interface LingoGameProps {
   timerSeconds: number;
   gameMode: GameMode;
   onBack: () => void;
+  currentStreak: number;
+  bestStreak: number;
+  onStreakUpdate: (newCurrent: number, newBest: number) => void;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
