@@ -155,7 +155,7 @@ const Index = () => {
                   <button
                     key={sec}
                     onClick={() => setTimerSeconds(sec)}
-                    className={`w-14 h-14 rounded-lg font-extrabold text-lg transition-all active:scale-95 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-extrabold text-base sm:text-lg transition-all active:scale-95 ${
                       timerSeconds === sec
                         ? "bg-accent text-accent-foreground shadow-lg shadow-accent/30"
                         : "bg-secondary text-secondary-foreground hover:brightness-110"
