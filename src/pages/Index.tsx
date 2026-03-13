@@ -133,7 +133,7 @@ const Index = () => {
                   <button
                     key={len}
                     onClick={() => setWordLength(len)}
-                    className={`w-14 h-14 rounded-lg font-extrabold text-xl transition-all active:scale-95 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-extrabold text-lg sm:text-xl transition-all active:scale-95 ${
                       wordLength === len
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "bg-secondary text-secondary-foreground hover:brightness-110"
