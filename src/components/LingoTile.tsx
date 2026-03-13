@@ -12,8 +12,8 @@ interface LingoTileProps {
 
 const LingoTile = ({ letter, status, delay = 0, revealed = false, size = "md" }: LingoTileProps) => {
   const sizeClasses = size === "sm" 
-    ? "w-10 h-10 text-lg" 
-    : "w-12 h-12 sm:w-14 sm:h-14 text-xl sm:text-2xl";
+    ? "w-8 h-8 text-base sm:w-10 sm:h-10 sm:text-lg" 
+    : "w-10 h-10 text-lg sm:w-12 sm:h-12 sm:text-xl md:w-14 md:h-14 md:text-2xl";
 
   return (
     <div

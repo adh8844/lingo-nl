@@ -51,14 +51,14 @@ const LingoBoard = ({
     rows.push(
       <div
         key={i}
-        className={`flex gap-1.5 ${i === currentRow && shaking ? "animate-shake" : ""}`}
+        className={`flex gap-1 sm:gap-1.5 ${i === currentRow && shaking ? "animate-shake" : ""}`}
       >
         {cells}
       </div>
     );
   }
 
-  return <div className="flex flex-col gap-1.5">{rows}</div>;
+  return <div className="flex flex-col gap-1 sm:gap-1.5">{rows}</div>;
 };
 
 export default LingoBoard;

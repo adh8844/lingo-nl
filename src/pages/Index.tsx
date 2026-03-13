@@ -56,8 +56,8 @@ const Index = () => {
 
   if (gameStarted) {
     return (
-      <div className="min-h-screen flex flex-col items-center py-8">
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary mb-6">
+      <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
           LINGO
         </h1>
         <LingoGame
@@ -75,11 +75,11 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="flex flex-col items-center gap-8 animate-bounce-in">
+    <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
+      <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-6xl sm:text-7xl font-extrabold tracking-tighter text-primary">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-primary">
             LINGO
           </h1>
           <p className="text-muted-foreground text-lg">
@@ -133,7 +133,7 @@ const Index = () => {
                   <button
                     key={len}
                     onClick={() => setWordLength(len)}
-                    className={`w-14 h-14 rounded-lg font-extrabold text-xl transition-all active:scale-95 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-extrabold text-lg sm:text-xl transition-all active:scale-95 ${
                       wordLength === len
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         : "bg-secondary text-secondary-foreground hover:brightness-110"
@@ -155,7 +155,7 @@ const Index = () => {
                   <button
                     key={sec}
                     onClick={() => setTimerSeconds(sec)}
-                    className={`w-14 h-14 rounded-lg font-extrabold text-lg transition-all active:scale-95 ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-extrabold text-base sm:text-lg transition-all active:scale-95 ${
                       timerSeconds === sec
                         ? "bg-accent text-accent-foreground shadow-lg shadow-accent/30"
                         : "bg-secondary text-secondary-foreground hover:brightness-110"
