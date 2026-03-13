@@ -84,7 +84,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     }, 1000);
   }, [timerSeconds, stopTimer]);
 
-  const startNewRound = useCallback((player?: number) => {
+  const startNewRound = useCallback(() => {
     const word = getRandomWord(language, wordLength);
     setTargetWord(word);
     setCurrentGuess(word[0]);
@@ -96,20 +96,21 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack }: Lin
     setRevealedRow(null);
     setLetterStatuses({});
     setRoundMessage(null);
-    if (player !== undefined) setCurrentPlayer(player);
     startTimer();
   }, [language, wordLength, startTimer]);
 
-  const startNewGame = useCallback(() => {
+  const startNewMatch = useCallback(() => {
     setScores([0, 0]);
     setCurrentPlayer(1);
-    startNewRound(1);
+    setMatchOver(false);
+    setMatchWinner(null);
+    startNewRound();
   }, [startNewRound]);
 
   useEffect(() => {
-    startNewGame();
+    startNewMatch();
     return () => stopTimer();
-  }, [startNewGame, stopTimer]);
+  }, [startNewMatch, stopTimer]);
 
   // Handle timer reaching zero
   useEffect(() => {
