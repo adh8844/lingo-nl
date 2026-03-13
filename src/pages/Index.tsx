@@ -41,6 +41,9 @@ const Index = () => {
           timerSeconds={timerSeconds}
           gameMode={gameMode}
           onBack={() => setGameStarted(false)}
+          currentStreak={currentStreak}
+          bestStreak={bestStreak}
+          onStreakUpdate={handleStreakUpdate}
         />
       </div>
     );
