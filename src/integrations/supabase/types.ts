@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      dutch_words: {
+        Row: {
+          approved: boolean
+          created_at: string
+          id: string
+          length: number
+          suggested_by: string | null
+          word: string
+        }
+        Insert: {
+          approved?: boolean
+          created_at?: string
+          id?: string
+          length: number
+          suggested_by?: string | null
+          word: string
+        }
+        Update: {
+          approved?: boolean
+          created_at?: string
+          id?: string
+          length?: number
+          suggested_by?: string | null
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dutch_words_suggested_by_fkey"
+            columns: ["suggested_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friends: {
         Row: {
           created_at: string
