@@ -93,11 +93,23 @@ const Index = () => {
           <PlayerSetup language={language} onCreatePlayer={async (name) => { await createPlayer(name); }} />
         ) : (
           <>
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                {language === "nl" ? "Welkom terug," : "Welcome back,"}
-              </p>
-              <p className="text-xl font-extrabold text-foreground">{player.display_name}</p>
+<div className="flex flex-col items-center gap-1">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  {language === "nl" ? "Welkom terug," : "Welcome back,"}
+                </p>
+                <p className="text-xl font-extrabold text-foreground">{player.display_name}</p>
+              </div>
+              
+              {/* Best Streak */}
+              {bestStreak > 0 && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-sm text-muted-foreground font-medium">
+                    {language === "nl" ? "Beste reeks" : "Best streak"}:
+                  </span>
+                  <span className="text-xl font-extrabold text-primary">🔥 {bestStreak}</span>
+                </div>
+              )}
             </div>
 
             {/* Language selector */}
