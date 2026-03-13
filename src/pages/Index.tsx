@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import LingoGame from "@/components/LingoGame";
 import PlayerSetup from "@/components/PlayerSetup";
-import Leaderboard from "@/components/Leaderboard";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Language, WordLength } from "@/data/words";
 
