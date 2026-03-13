@@ -15,9 +15,9 @@ const ROWS = [
 
 const Keyboard = ({ onKey, letterStatuses }: KeyboardProps) => {
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-1 sm:gap-1.5 w-full max-w-md">
       {ROWS.map((row, i) => (
-        <div key={i} className="flex gap-1">
+        <div key={i} className="flex gap-0.5 sm:gap-1">
           {row.map((key) => {
             const status = letterStatuses[key];
             const isSpecial = key === "Enter" || key === "⌫";

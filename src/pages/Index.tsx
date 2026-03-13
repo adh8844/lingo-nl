@@ -56,8 +56,8 @@ const Index = () => {
 
   if (gameStarted) {
     return (
-      <div className="min-h-screen flex flex-col items-center py-8">
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary mb-6">
+      <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
           LINGO
         </h1>
         <LingoGame
