@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LingoGame from "@/components/LingoGame";
 import { Language, WordLength } from "@/data/words";
 
