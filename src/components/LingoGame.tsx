@@ -97,6 +97,18 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }, 1000);
   }, [timerSeconds, stopTimer]);
 
+  const resumeTimer = useCallback(() => {
+    if (timerRef.current) return; // Already running
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
   const startNewRound = useCallback(async () => {
     setIsLoading(true);
     const word = await getRandomWordAsync(language, wordLength);
