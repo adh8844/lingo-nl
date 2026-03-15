@@ -151,10 +151,10 @@ export async function loadDutchWordsFromDB(length: WordLength): Promise<string[]
 export async function getRandomWordAsync(language: Language, length: WordLength): Promise<string> {
   if (language === "nl") {
     const words = await loadDutchWordsFromDB(length);
-    return words[Math.floor(Math.random() * words.length)];
+    return pickNonRecentWord(words, length);
   }
   const list = wordLists[language][length].filter(w => w.length === length);
-  return list[Math.floor(Math.random() * list.length)].toLowerCase();
+  return pickNonRecentWord(list, length);
 }
 
 export async function isValidWordAsync(word: string, language: Language, length: WordLength): Promise<boolean> {
