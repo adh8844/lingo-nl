@@ -94,6 +94,37 @@ let dbWordsCache: Record<number, string[]> = {};
 let dbWordsCacheTime = 0;
 const CACHE_TTL = 60000; // 1 minute
 
+// Track recently used words to avoid repetition
+const RECENT_WORDS_KEY = "lingo_recent_words";
+const MAX_RECENT_RATIO = 0.5; // Keep up to 50% of word list in recent history
+
+function getRecentWords(length: WordLength): string[] {
+  try {
+    const stored = localStorage.getItem(`${RECENT_WORDS_KEY}_${length}`);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function addRecentWord(word: string, length: WordLength, totalWords: number) {
+  const recent = getRecentWords(length);
+  const maxRecent = Math.max(1, Math.floor(totalWords * MAX_RECENT_RATIO));
+  const updated = [word, ...recent.filter(w => w !== word)].slice(0, maxRecent);
+  try {
+    localStorage.setItem(`${RECENT_WORDS_KEY}_${length}`, JSON.stringify(updated));
+  } catch { /* ignore */ }
+}
+
+function pickNonRecentWord(words: string[], length: WordLength): string {
+  const recent = new Set(getRecentWords(length));
+  const available = words.filter(w => !recent.has(w));
+  const pool = available.length > 0 ? available : words;
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+  addRecentWord(chosen, length, words.length);
+  return chosen;
+}
+
 export async function loadDutchWordsFromDB(length: WordLength): Promise<string[]> {
   const now = Date.now();
   if (dbWordsCache[length] && now - dbWordsCacheTime < CACHE_TTL) {
@@ -120,10 +151,10 @@ export async function loadDutchWordsFromDB(length: WordLength): Promise<string[]
 export async function getRandomWordAsync(language: Language, length: WordLength): Promise<string> {
   if (language === "nl") {
     const words = await loadDutchWordsFromDB(length);
-    return words[Math.floor(Math.random() * words.length)];
+    return pickNonRecentWord(words, length);
   }
   const list = wordLists[language][length].filter(w => w.length === length);
-  return list[Math.floor(Math.random() * list.length)].toLowerCase();
+  return pickNonRecentWord(list, length);
 }
 
 export async function isValidWordAsync(word: string, language: Language, length: WordLength): Promise<boolean> {
