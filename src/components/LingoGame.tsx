@@ -336,8 +336,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }
     // Treat as a valid guess — check letters against target
     processGuessAsValid(word);
-    startTimer();
-  }, [pendingWord, wordLength, player, language, processGuessAsValid, startTimer]);
+    resumeTimer();
+  }, [pendingWord, wordLength, player, language, processGuessAsValid, resumeTimer]);
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
