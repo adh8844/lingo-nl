@@ -97,6 +97,18 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }, 1000);
   }, [timerSeconds, stopTimer]);
 
+  const resumeTimer = useCallback(() => {
+    if (timerRef.current) return; // Already running
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
   const startNewRound = useCallback(async () => {
     setIsLoading(true);
     const word = await getRandomWordAsync(language, wordLength);
@@ -324,15 +336,15 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     }
     // Treat as a valid guess — check letters against target
     processGuessAsValid(word);
-    startTimer();
-  }, [pendingWord, wordLength, player, language, processGuessAsValid, startTimer]);
+    resumeTimer();
+  }, [pendingWord, wordLength, player, language, processGuessAsValid, resumeTimer]);
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
     toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
     handleInvalidGuess(pendingWord);
-    startTimer();
-  }, [language, pendingWord, handleInvalidGuess, startTimer]);
+    resumeTimer();
+  }, [language, pendingWord, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback(
     (key: string) => {
