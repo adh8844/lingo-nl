@@ -343,8 +343,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
     setSuggestionDialogOpen(false);
     toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
     handleInvalidGuess(pendingWord);
-    startTimer();
-  }, [language, pendingWord, handleInvalidGuess, startTimer]);
+    resumeTimer();
+  }, [language, pendingWord, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback(
     (key: string) => {
