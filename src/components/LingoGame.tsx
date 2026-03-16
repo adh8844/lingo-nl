@@ -493,15 +493,22 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
               <p className="text-sm text-accent font-bold mt-1">+10 ⭐</p>
             </div>
           ) : won ? (
-            <p className="text-2xl font-extrabold text-tile-correct">
-              {gameMode === "two-player"
-                ? language === "nl"
-                  ? `🎉 Speler ${currentPlayer} raadt het!`
-                  : `🎉 Player ${currentPlayer} got it!`
-                : language === "nl"
-                ? "🎉 Gewonnen!"
-                : "🎉 You won!"}
-            </p>
+            <div className="text-center">
+              <p className="text-2xl font-extrabold text-tile-correct">
+                {gameMode === "two-player"
+                  ? language === "nl"
+                    ? `🎉 Speler ${currentPlayer} raadt het!`
+                    : `🎉 Player ${currentPlayer} got it!`
+                  : language === "nl"
+                  ? "🎉 Gewonnen!"
+                  : "🎉 You won!"}
+              </p>
+              {gameMode === "single" && (
+                <p className="text-sm text-accent font-bold mt-1">
+                  +{1 + getTimerBonus(timerSeconds)} ⭐
+                </p>
+              )}
+            </div>
           ) : (
             <div className="text-center">
               <p className="text-xl font-bold text-accent">
