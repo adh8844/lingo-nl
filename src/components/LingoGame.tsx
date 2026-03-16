@@ -179,6 +179,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         const newCurrent = currentStreak + 1;
         const newBest = Math.max(bestStreak, newCurrent);
         onStreakUpdate(newCurrent, newBest);
+        // Award points: 1 base + timer bonus
+        awardSinglePlayerWin(timerSeconds);
       } else if (gameMode === "two-player") {
         const newScores = [...scores];
         newScores[currentPlayer - 1]++;
@@ -188,6 +190,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
           setMatchOver(true);
           setMatchWinner(currentPlayer);
           fireConfetti();
+          // Award 10 points for match win
+          awardMatchWin();
         }
       }
     } else {

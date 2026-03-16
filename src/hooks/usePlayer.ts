@@ -7,6 +7,7 @@ export interface Player {
   display_name: string;
   current_streak: number;
   best_streak: number;
+  points: number;
 }
 
 function generateCode(): string {
