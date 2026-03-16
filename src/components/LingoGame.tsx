@@ -7,6 +7,7 @@ import { getRandomWordAsync, isValidWordAsync, suggestWord, Language, WordLength
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { usePlayer } from "@/hooks/usePlayer";
+import { usePoints, getTimerBonus } from "@/hooks/usePoints";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
