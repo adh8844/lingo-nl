@@ -7,6 +7,7 @@ import { getRandomWordAsync, isValidWordAsync, suggestWord, Language, WordLength
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { usePlayer } from "@/hooks/usePlayer";
+import { usePoints, getTimerBonus } from "@/hooks/usePoints";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -69,6 +70,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
   const [pendingWord, setPendingWord] = useState("");
 
   const { player } = usePlayer();
+  const { awardSinglePlayerWin, awardMatchWin } = usePoints(player?.id);
 
   // Two-player state
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -177,6 +179,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         const newCurrent = currentStreak + 1;
         const newBest = Math.max(bestStreak, newCurrent);
         onStreakUpdate(newCurrent, newBest);
+        // Award points: 1 base + timer bonus
+        awardSinglePlayerWin(timerSeconds);
       } else if (gameMode === "two-player") {
         const newScores = [...scores];
         newScores[currentPlayer - 1]++;
@@ -186,6 +190,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
           setMatchOver(true);
           setMatchWinner(currentPlayer);
           fireConfetti();
+          // Award 10 points for match win
+          awardMatchWin();
         }
       }
     } else {
@@ -484,17 +490,25 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
               <p className="text-muted-foreground mt-2 text-lg font-bold">
                 {scores[0]} - {scores[1]}
               </p>
+              <p className="text-sm text-accent font-bold mt-1">+10 ⭐</p>
             </div>
           ) : won ? (
-            <p className="text-2xl font-extrabold text-tile-correct">
-              {gameMode === "two-player"
-                ? language === "nl"
-                  ? `🎉 Speler ${currentPlayer} raadt het!`
-                  : `🎉 Player ${currentPlayer} got it!`
-                : language === "nl"
-                ? "🎉 Gewonnen!"
-                : "🎉 You won!"}
-            </p>
+            <div className="text-center">
+              <p className="text-2xl font-extrabold text-tile-correct">
+                {gameMode === "two-player"
+                  ? language === "nl"
+                    ? `🎉 Speler ${currentPlayer} raadt het!`
+                    : `🎉 Player ${currentPlayer} got it!`
+                  : language === "nl"
+                  ? "🎉 Gewonnen!"
+                  : "🎉 You won!"}
+              </p>
+              {gameMode === "single" && (
+                <p className="text-sm text-accent font-bold mt-1">
+                  +{1 + getTimerBonus(timerSeconds)} ⭐
+                </p>
+              )}
+            </div>
           ) : (
             <div className="text-center">
               <p className="text-xl font-bold text-accent">

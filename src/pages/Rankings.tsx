@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer, Player } from "@/hooks/usePlayer";
+import { usePresence } from "@/hooks/usePresence";
+import { useOnlineMatch } from "@/hooks/useOnlineMatch";
+import OnlineLobby from "@/components/OnlineLobby";
 import { toast } from "sonner";
 
-type Tab = "all" | "friends" | "groups";
+type Tab = "all" | "points" | "friends" | "groups" | "online";
 
 interface RankedPlayer {
   id: string;
@@ -12,6 +15,7 @@ interface RankedPlayer {
   player_code: string;
   current_streak: number;
   best_streak: number;
+  points: number;
 }
 
 interface Group {
@@ -34,14 +38,41 @@ const Rankings = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
 
-  // Load all players
+  // Online lobby hooks
+  const { onlinePlayers } = usePresence(player?.id);
+  const {
+    pendingChallenges,
+    activeMatch,
+    sendChallenge,
+    acceptChallenge,
+    declineChallenge,
+  } = useOnlineMatch(player?.id);
+
+  // Navigate to online match when one becomes active
+  useEffect(() => {
+    if (activeMatch) {
+      navigate("/online-match");
+    }
+  }, [activeMatch, navigate]);
+
+  // Load all players (by streak)
   const loadAllPlayers = useCallback(async () => {
     const { data } = await supabase
       .from("players")
       .select("*")
       .order("best_streak", { ascending: false })
       .limit(100);
-    if (data) setAllPlayers(data);
+    if (data) setAllPlayers(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
+  }, []);
+
+  // Load all players (by points)
+  const loadPointsRanking = useCallback(async () => {
+    const { data } = await supabase
+      .from("players")
+      .select("*")
+      .order("points", { ascending: false })
+      .limit(100);
+    if (data) setAllPlayers(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
   }, []);
 
   // Load friends
@@ -63,10 +94,10 @@ const Rankings = () => {
       .select("*")
       .in("id", friendIds)
       .order("best_streak", { ascending: false });
-    if (data) setFriends(data);
+    if (data) setFriends(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
   }, [player]);
 
-  // Load groups the player is in
+  // Load groups
   const loadGroups = useCallback(async () => {
     if (!player) return;
     const { data: memberships } = await supabase
@@ -105,14 +136,15 @@ const Rankings = () => {
       .select("*")
       .in("id", playerIds)
       .order("best_streak", { ascending: false });
-    if (data) setGroupMembers(data);
+    if (data) setGroupMembers(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
   }, []);
 
   useEffect(() => {
     if (tab === "all") loadAllPlayers();
+    if (tab === "points") loadPointsRanking();
     if (tab === "friends" && player) loadFriends();
     if (tab === "groups" && player) loadGroups();
-  }, [tab, player, loadAllPlayers, loadFriends, loadGroups]);
+  }, [tab, player, loadAllPlayers, loadPointsRanking, loadFriends, loadGroups]);
 
   useEffect(() => {
     if (selectedGroup) loadGroupMembers(selectedGroup);
@@ -135,7 +167,6 @@ const Rankings = () => {
       return;
     }
 
-    // Auto-join the group
     await supabase.from("group_members").insert({ group_id: data.id, player_id: player.id });
     toast.success(`Group "${data.name}" created! Code: ${code}`);
     setNewGroupName("");
@@ -187,6 +218,10 @@ const Rankings = () => {
     toast.success("Left group");
   };
 
+  const handleAcceptChallenge = async (challenge: any) => {
+    await acceptChallenge(challenge);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -195,7 +230,7 @@ const Rankings = () => {
     );
   }
 
-  const renderRankRow = (entry: RankedPlayer, i: number) => {
+  const renderRankRow = (entry: RankedPlayer, i: number, showPoints = false) => {
     const isMe = player?.id === entry.id;
     return (
       <div
@@ -214,16 +249,30 @@ const Rankings = () => {
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            now: {entry.current_streak}
-          </span>
-          <span className="font-extrabold">🔥 {entry.best_streak}</span>
+          {showPoints ? (
+            <span className="font-extrabold">⭐ {entry.points}</span>
+          ) : (
+            <>
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                now: {entry.current_streak}
+              </span>
+              <span className="font-extrabold">🔥 {entry.best_streak}</span>
+            </>
+          )}
         </div>
       </div>
     );
   };
 
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "all", label: "🔥 Streaks" },
+    { key: "points", label: "⭐ Points" },
+    { key: "online", label: `🟢 Online (${onlinePlayers.length})` },
+    { key: "friends", label: "👥 Friends" },
+    { key: "groups", label: "🏠 Groups" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
@@ -242,30 +291,60 @@ const Rankings = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 w-full max-w-lg">
-        {(["all", "friends", "groups"] as Tab[]).map((t) => (
+      <div className="flex gap-1 mb-4 sm:mb-6 w-full max-w-lg overflow-x-auto">
+        {tabs.map((t) => (
           <button
-            key={t}
-            onClick={() => { setTab(t); setSelectedGroup(null); }}
-            className={`flex-1 px-3 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition-all ${
-              tab === t
+            key={t.key}
+            onClick={() => { setTab(t.key); setSelectedGroup(null); }}
+            className={`flex-shrink-0 px-2.5 py-2 rounded-lg font-bold text-xs transition-all ${
+              tab === t.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:brightness-110"
             }`}
           >
-            {t === "all" ? "🌍 All Players" : t === "friends" ? "👥 Friends" : "🏠 Groups"}
+            {t.label}
           </button>
         ))}
       </div>
 
       <div className="w-full max-w-lg flex flex-col gap-2">
-        {/* ALL PLAYERS TAB */}
+        {/* STREAKS TAB */}
         {tab === "all" && (
           <>
             {allPlayers.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No players yet</p>
             ) : (
-              allPlayers.map((p, i) => renderRankRow(p, i))
+              allPlayers.map((p, i) => renderRankRow(p, i, false))
+            )}
+          </>
+        )}
+
+        {/* POINTS TAB */}
+        {tab === "points" && (
+          <>
+            {allPlayers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No players yet</p>
+            ) : (
+              allPlayers.map((p, i) => renderRankRow(p, i, true))
+            )}
+          </>
+        )}
+
+        {/* ONLINE TAB */}
+        {tab === "online" && (
+          <>
+            {!player ? (
+              <p className="text-center text-muted-foreground py-8">Create a player first</p>
+            ) : (
+              <OnlineLobby
+                playerId={player.id}
+                onlinePlayers={onlinePlayers}
+                pendingChallenges={pendingChallenges}
+                onChallenge={sendChallenge}
+                onAccept={handleAcceptChallenge}
+                onDecline={declineChallenge}
+                language="nl"
+              />
             )}
           </>
         )}
@@ -277,10 +356,9 @@ const Rankings = () => {
               <p className="text-center text-muted-foreground py-8">Create a player first</p>
             ) : (
               <>
-                {/* Leaderboard with self included */}
                 {(() => {
                   const combined = [
-                    player,
+                    { ...player, points: (player as any).points ?? 0 },
                     ...friends.filter((f) => f.id !== player.id),
                   ].sort((a, b) => b.best_streak - a.best_streak || b.current_streak - a.current_streak);
                   return combined.length === 1 && friends.length === 0 ? (
@@ -302,7 +380,6 @@ const Rankings = () => {
             {!player ? (
               <p className="text-center text-muted-foreground py-8">Create a player first</p>
             ) : selectedGroup && selectedGroupData ? (
-              /* Group detail view */
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <button
@@ -337,9 +414,7 @@ const Rankings = () => {
                 )}
               </div>
             ) : (
-              /* Groups list */
               <div className="flex flex-col gap-3">
-                {/* Join / Create actions */}
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -391,7 +466,6 @@ const Rankings = () => {
                   </button>
                 )}
 
-                {/* Group list */}
                 {groups.length === 0 ? (
                   <p className="text-center text-muted-foreground py-6">
                     Join or create a group to compete!

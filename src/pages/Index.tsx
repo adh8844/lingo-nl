@@ -101,13 +101,22 @@ const Index = () => {
                 <p className="text-xl font-extrabold text-foreground">{player.display_name}</p>
               </div>
               
-              {/* Best Streak */}
-              {bestStreak > 0 && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <span className="text-sm text-muted-foreground font-medium">
-                    {language === "nl" ? "Beste reeks" : "Best streak"}:
-                  </span>
-                  <span className="text-xl font-extrabold text-primary">🔥 {bestStreak}</span>
+              {/* Stats */}
+              {(bestStreak > 0 || (player.points ?? 0) > 0) && (
+                <div className="flex items-center gap-3 mt-1">
+                  {bestStreak > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm text-muted-foreground font-medium">
+                        {language === "nl" ? "Beste reeks" : "Best streak"}:
+                      </span>
+                      <span className="text-xl font-extrabold text-primary">🔥 {bestStreak}</span>
+                    </div>
+                  )}
+                  {(player.points ?? 0) > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xl font-extrabold text-accent">⭐ {player.points}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
