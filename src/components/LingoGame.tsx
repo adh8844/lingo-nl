@@ -490,6 +490,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
               <p className="text-muted-foreground mt-2 text-lg font-bold">
                 {scores[0]} - {scores[1]}
               </p>
+              <p className="text-sm text-accent font-bold mt-1">+10 ⭐</p>
             </div>
           ) : won ? (
             <p className="text-2xl font-extrabold text-tile-correct">
