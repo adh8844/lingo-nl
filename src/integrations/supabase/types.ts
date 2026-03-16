@@ -153,6 +153,204 @@ export type Database = {
           },
         ]
       }
+      match_rounds: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          player1_guess_time_ms: number | null
+          player2_guess_time_ms: number | null
+          round_number: number
+          status: string
+          winner_id: string | null
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          player1_guess_time_ms?: number | null
+          player2_guess_time_ms?: number | null
+          round_number: number
+          status?: string
+          winner_id?: string | null
+          word: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          player1_guess_time_ms?: number | null
+          player2_guess_time_ms?: number | null
+          round_number?: number
+          status?: string
+          winner_id?: string | null
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_rounds_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "online_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_rounds_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_challenges: {
+        Row: {
+          challenged_id: string
+          challenger_id: string
+          created_at: string
+          id: string
+          language: string
+          status: string
+          timer_seconds: number
+          word_length: number
+        }
+        Insert: {
+          challenged_id: string
+          challenger_id: string
+          created_at?: string
+          id?: string
+          language?: string
+          status?: string
+          timer_seconds?: number
+          word_length?: number
+        }
+        Update: {
+          challenged_id?: string
+          challenger_id?: string
+          created_at?: string
+          id?: string
+          language?: string
+          status?: string
+          timer_seconds?: number
+          word_length?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_challenges_challenged_id_fkey"
+            columns: ["challenged_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_challenges_challenger_id_fkey"
+            columns: ["challenger_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_matches: {
+        Row: {
+          created_at: string
+          current_round: number
+          current_word: string | null
+          id: string
+          language: string
+          player1_id: string
+          player1_wins: number
+          player2_id: string
+          player2_wins: number
+          status: string
+          timer_seconds: number
+          updated_at: string
+          winner_id: string | null
+          word_length: number
+        }
+        Insert: {
+          created_at?: string
+          current_round?: number
+          current_word?: string | null
+          id?: string
+          language?: string
+          player1_id: string
+          player1_wins?: number
+          player2_id: string
+          player2_wins?: number
+          status?: string
+          timer_seconds?: number
+          updated_at?: string
+          winner_id?: string | null
+          word_length?: number
+        }
+        Update: {
+          created_at?: string
+          current_round?: number
+          current_word?: string | null
+          id?: string
+          language?: string
+          player1_id?: string
+          player1_wins?: number
+          player2_id?: string
+          player2_wins?: number
+          status?: string
+          timer_seconds?: number
+          updated_at?: string
+          winner_id?: string | null
+          word_length?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_presence: {
+        Row: {
+          last_seen: string
+          player_id: string
+          status: string
+        }
+        Insert: {
+          last_seen?: string
+          player_id: string
+          status?: string
+        }
+        Update: {
+          last_seen?: string
+          player_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_presence_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           best_streak: number
@@ -161,6 +359,7 @@ export type Database = {
           display_name: string
           id: string
           player_code: string
+          points: number
           updated_at: string
         }
         Insert: {
@@ -170,6 +369,7 @@ export type Database = {
           display_name: string
           id?: string
           player_code: string
+          points?: number
           updated_at?: string
         }
         Update: {
@@ -179,6 +379,7 @@ export type Database = {
           display_name?: string
           id?: string
           player_code?: string
+          points?: number
           updated_at?: string
         }
         Relationships: []
