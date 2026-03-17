@@ -17,10 +17,13 @@ const OnlineMatchPage = () => {
     submitFailed,
     leaveMatch,
     loadActiveMatch,
+    requestRematch,
+    declineRematch,
   } = useOnlineMatch(player?.id);
   const { awardMatchWin } = usePoints(player?.id);
 
   const [opponentName, setOpponentName] = useState("Opponent");
+  const [pointsAwarded, setPointsAwarded] = useState<string | null>(null);
 
   // Load opponent name
   useEffect(() => {
@@ -28,6 +31,8 @@ const OnlineMatchPage = () => {
     const opponentId = activeMatch.player1_id === player.id
       ? activeMatch.player2_id
       : activeMatch.player1_id;
+
+    if (!opponentId) return;
 
     supabase
       .from("players")
@@ -37,16 +42,37 @@ const OnlineMatchPage = () => {
       .then(({ data }) => {
         if (data) setOpponentName(data.display_name);
       });
-  }, [activeMatch, player]);
+  }, [activeMatch?.id, activeMatch?.player1_id, activeMatch?.player2_id, player?.id]);
 
   // Award points when match finishes and player wins
   useEffect(() => {
-    if (activeMatch?.status === "finished" && activeMatch.winner_id === player?.id) {
+    if (activeMatch?.status === "finished" && activeMatch.winner_id === player?.id && pointsAwarded !== activeMatch.id) {
+      setPointsAwarded(activeMatch.id);
       awardMatchWin();
     }
-  }, [activeMatch?.status, activeMatch?.winner_id, player?.id, awardMatchWin]);
+  }, [activeMatch?.status, activeMatch?.winner_id, activeMatch?.id, player?.id, awardMatchWin, pointsAwarded]);
+
+  // Detect opponent declined rematch
+  useEffect(() => {
+    if (!activeMatch || activeMatch.status !== "finished" || !player) return;
+    const m = activeMatch as any;
+    const isPlayer1 = player.id === activeMatch.player1_id;
+    const opRematch = isPlayer1 ? m.rematch_player2 : m.rematch_player1;
+
+    if (opRematch === false) {
+      // Opponent declined - navigate after brief display
+      const timer = setTimeout(() => {
+        leaveMatch();
+        navigate("/rankings");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeMatch, player, navigate, leaveMatch]);
 
   const handleLeave = () => {
+    if (activeMatch?.status === "finished") {
+      declineRematch();
+    }
     leaveMatch();
     navigate("/rankings");
   };
@@ -94,6 +120,8 @@ const OnlineMatchPage = () => {
         onSubmitGuessTime={submitGuessTime}
         onSubmitFailed={submitFailed}
         onLeave={handleLeave}
+        onRequestRematch={requestRematch}
+        onDeclineRematch={declineRematch}
       />
     </div>
   );

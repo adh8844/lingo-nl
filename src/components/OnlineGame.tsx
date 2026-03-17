@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
+import WordSuggestionDialog from "./WordSuggestionDialog";
 import { TileStatus } from "./LingoTile";
-import { isValidWordAsync, Language, WordLength } from "@/data/words";
+import { isValidWordAsync, suggestWord, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { OnlineMatch, MatchRound } from "@/hooks/useOnlineMatch";
+import { playRoundWinSound, playRoundLoseSound } from "@/hooks/useSounds";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -19,6 +21,8 @@ interface OnlineGameProps {
   onSubmitGuessTime: (timeMs: number) => void;
   onSubmitFailed: () => void;
   onLeave: () => void;
+  onRequestRematch: () => void;
+  onDeclineRematch: () => void;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
@@ -55,6 +59,8 @@ const OnlineGame = ({
   onSubmitGuessTime,
   onSubmitFailed,
   onLeave,
+  onRequestRematch,
+  onDeclineRematch,
 }: OnlineGameProps) => {
   const language = match.language as Language;
   const wordLength = match.word_length as WordLength;
@@ -70,20 +76,55 @@ const OnlineGame = ({
   const [letterStatuses, setLetterStatuses] = useState<Record<string, TileStatus>>({});
   const [timeLeft, setTimeLeft] = useState(match.timer_seconds);
   const [submitted, setSubmitted] = useState(false);
-  const [waitingForOpponent, setWaitingForOpponent] = useState(false);
+  const [roundTransition, setRoundTransition] = useState<string | null>(null);
+  const [rematchRequested, setRematchRequested] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
+  const wasPlayingRef = useRef(false);
+
+  // Word suggestion dialog
+  const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
+  const [pendingWord, setPendingWord] = useState("");
 
   const isPlayer1 = playerId === match.player1_id;
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
+
+  const resumeTimer = useCallback(() => {
+    if (timerRef.current) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
+    }, 1000);
+  }, []);
 
   // Reset state when round changes
   useEffect(() => {
     if (!currentRound || currentRound.id === prevRoundRef.current) return;
+
+    const wasPlaying = prevRoundRef.current !== null && !gameOver && !submitted;
     prevRoundRef.current = currentRound.id;
 
+    if (wasPlaying) {
+      // Round changed while we were still playing - opponent was faster
+      stopTimer();
+      setRoundTransition(language === "nl" ? `${opponentName} was sneller!` : `${opponentName} was faster!`);
+      playRoundLoseSound();
+
+      setTimeout(() => {
+        setRoundTransition(null);
+        resetBoard(currentRound);
+      }, 1500);
+    } else {
+      resetBoard(currentRound);
+    }
+  }, [currentRound?.id]);
+
+  const resetBoard = useCallback((round: MatchRound) => {
     setGuesses([]);
     setStatuses([]);
-    setCurrentGuess(currentRound.word[0] || "");
+    setCurrentGuess(round.word[0] || "");
     setGameOver(false);
     setWon(false);
     setShaking(false);
@@ -91,71 +132,47 @@ const OnlineGame = ({
     setLetterStatuses({});
     setTimeLeft(match.timer_seconds);
     setSubmitted(false);
-    setWaitingForOpponent(false);
+    setSuggestionDialogOpen(false);
+    setPendingWord("");
 
-    // Start timer
-    if (timerRef.current) clearInterval(timerRef.current);
+    stopTimer();
     timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) return 0;
-        return prev - 1;
-      });
+      setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
     }, 1000);
-  }, [currentRound?.id, match.timer_seconds]);
+  }, [match.timer_seconds, stopTimer]);
 
   // Cleanup timer
   useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+    return () => stopTimer();
+  }, [stopTimer]);
 
   // Timer expiry
   useEffect(() => {
     if (timeLeft === 0 && !gameOver && !submitted) {
-      if (timerRef.current) clearInterval(timerRef.current);
+      stopTimer();
       setGameOver(true);
       setSubmitted(true);
       onSubmitFailed();
-      setWaitingForOpponent(true);
     }
-  }, [timeLeft, gameOver, submitted, onSubmitFailed]);
+  }, [timeLeft, gameOver, submitted, onSubmitFailed, stopTimer]);
 
-  // Check if round is finished (opponent also submitted)
+  // Track if we're actively playing (for round transition detection)
   useEffect(() => {
-    if (!currentRound) return;
-    const myTime = isPlayer1 ? currentRound.player1_guess_time_ms : currentRound.player2_guess_time_ms;
-    const opTime = isPlayer1 ? currentRound.player2_guess_time_ms : currentRound.player1_guess_time_ms;
-
-    if (myTime !== null && opTime !== null && currentRound.status === "finished") {
-      setWaitingForOpponent(false);
-    }
-  }, [currentRound, isPlayer1]);
+    wasPlayingRef.current = !gameOver && !submitted;
+  }, [gameOver, submitted]);
 
   // Check match finished
   useEffect(() => {
     if (match.status === "finished" && match.winner_id) {
+      stopTimer();
       if (match.winner_id === playerId) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }
     }
-  }, [match.status, match.winner_id, playerId]);
+  }, [match.status, match.winner_id, playerId, stopTimer]);
 
-  const submitGuess = useCallback(async () => {
-    if (currentGuess.length !== wordLength || submitted) return;
-
-    // Validate word
-    if (language === "nl") {
-      const valid = await isValidWordAsync(currentGuess, language, wordLength);
-      if (!valid) {
-        setShaking(true);
-        setTimeout(() => setShaking(false), 400);
-        toast.error(language === "nl" ? "Ongeldig woord!" : "Invalid word!");
-        return;
-      }
-    }
-
-    const guess = currentGuess.toLowerCase();
+  const processGuess = useCallback((guess: string) => {
     const evaluation = evaluateGuess(guess, word);
-
     const newGuesses = [...guesses, guess];
     const newStatuses = [...statuses, evaluation];
     setGuesses(newGuesses);
@@ -166,53 +183,95 @@ const OnlineGame = ({
     for (let i = 0; i < guess.length; i++) {
       const letter = guess[i];
       const current = newLetterStatuses[letter];
-      const newStatus = evaluation[i];
-      if (newStatus === "correct") newLetterStatuses[letter] = "correct";
-      else if (newStatus === "present" && current !== "correct") newLetterStatuses[letter] = "present";
+      const ns = evaluation[i];
+      if (ns === "correct") newLetterStatuses[letter] = "correct";
+      else if (ns === "present" && current !== "correct") newLetterStatuses[letter] = "present";
       else if (!current) newLetterStatuses[letter] = "absent";
     }
     setLetterStatuses(newLetterStatuses);
     setTimeout(() => setRevealedRow(null), 600);
 
     if (guess === word) {
-      // Won this round!
-      if (timerRef.current) clearInterval(timerRef.current);
+      stopTimer();
       setGameOver(true);
       setWon(true);
       setSubmitted(true);
-
+      playRoundWinSound();
       const guessTimeMs = roundStartTime ? Date.now() - roundStartTime : 0;
       onSubmitGuessTime(guessTimeMs);
-      setWaitingForOpponent(true);
     } else if (newGuesses.length >= MAX_GUESSES) {
-      // Used all guesses
-      if (timerRef.current) clearInterval(timerRef.current);
+      stopTimer();
       setGameOver(true);
       setSubmitted(true);
       onSubmitFailed();
-      setWaitingForOpponent(true);
     } else {
       setCurrentGuess(word[0]);
     }
-  }, [currentGuess, wordLength, language, word, guesses, statuses, letterStatuses, roundStartTime, onSubmitGuessTime, onSubmitFailed, submitted]);
+  }, [word, guesses, statuses, letterStatuses, roundStartTime, onSubmitGuessTime, onSubmitFailed, stopTimer]);
+
+  const handleInvalidGuess = useCallback((guess: string) => {
+    const emptyStatuses: TileStatus[] = Array(wordLength).fill("absent");
+    const newGuesses = [...guesses, guess.toLowerCase()];
+    const newStatuses = [...statuses, emptyStatuses];
+    setGuesses(newGuesses);
+    setStatuses(newStatuses);
+    setRevealedRow(guesses.length);
+    setTimeout(() => setRevealedRow(null), 600);
+
+    if (newGuesses.length >= MAX_GUESSES) {
+      stopTimer();
+      setGameOver(true);
+      setSubmitted(true);
+      onSubmitFailed();
+    } else {
+      setCurrentGuess(word[0]);
+    }
+  }, [wordLength, guesses, statuses, word, stopTimer, onSubmitFailed]);
+
+  const submitGuess = useCallback(async () => {
+    if (currentGuess.length !== wordLength || submitted) return;
+
+    if (language === "nl") {
+      const valid = await isValidWordAsync(currentGuess, language, wordLength);
+      if (!valid) {
+        stopTimer();
+        setPendingWord(currentGuess.toLowerCase());
+        setSuggestionDialogOpen(true);
+        return;
+      }
+    }
+
+    processGuess(currentGuess.toLowerCase());
+  }, [currentGuess, wordLength, language, submitted, processGuess, stopTimer]);
+
+  const handleSuggestionConfirm = useCallback(async () => {
+    setSuggestionDialogOpen(false);
+    const w = pendingWord;
+    await suggestWord(w, wordLength, playerId);
+    toast.success(language === "nl" ? `"${w.toUpperCase()}" is toegevoegd!` : `"${w.toUpperCase()}" has been added!`);
+    processGuess(w);
+    resumeTimer();
+  }, [pendingWord, wordLength, playerId, language, processGuess, resumeTimer]);
+
+  const handleSuggestionCancel = useCallback(() => {
+    setSuggestionDialogOpen(false);
+    toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
+    handleInvalidGuess(pendingWord);
+    resumeTimer();
+  }, [language, pendingWord, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback((key: string) => {
-    if (gameOver || submitted) return;
+    if (gameOver || submitted || suggestionDialogOpen || roundTransition) return;
 
-    if (key === "Enter") {
-      submitGuess();
-      return;
-    }
+    if (key === "Enter") { submitGuess(); return; }
     if (key === "Backspace") {
-      if (currentGuess.length > 1) {
-        setCurrentGuess(prev => prev.slice(0, -1));
-      }
+      if (currentGuess.length > 1) setCurrentGuess(prev => prev.slice(0, -1));
       return;
     }
     if (/^[a-zA-Z]$/.test(key) && currentGuess.length < wordLength) {
       setCurrentGuess(prev => prev + key.toLowerCase());
     }
-  }, [gameOver, submitted, currentGuess, wordLength, submitGuess]);
+  }, [gameOver, submitted, currentGuess, wordLength, submitGuess, suggestionDialogOpen, roundTransition]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -229,13 +288,61 @@ const OnlineGame = ({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Match finished - show result + rematch
   if (match.status === "finished") {
     const isWinner = match.winner_id === playerId;
+    const m = match as any;
+    const myRematch = isPlayer1 ? m.rematch_player1 : m.rematch_player2;
+    const opRematch = isPlayer1 ? m.rematch_player2 : m.rematch_player1;
+
+    // Opponent declined
+    if (opRematch === false) {
+      return (
+        <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
+          <p className="text-2xl font-extrabold text-foreground">
+            {isWinner ? "🏆🎉" : "😔"}
+          </p>
+          <p className="text-xl font-extrabold text-foreground">
+            {language === "nl" ? `${opponentName} wil niet opnieuw spelen` : `${opponentName} doesn't want a rematch`}
+          </p>
+          <button onClick={onLeave} className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all">
+            {language === "nl" ? "Terug naar Rankings" : "Back to Rankings"}
+          </button>
+        </div>
+      );
+    }
+
+    // Waiting for opponent's rematch decision
+    if (myRematch === true && opRematch !== true) {
+      return (
+        <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
+          <p className="text-2xl font-extrabold">{isWinner ? "🏆🎉" : "😔"}</p>
+          <p className="text-xl font-extrabold text-foreground">
+            {match.player1_wins} - {match.player2_wins}
+          </p>
+          <p className="text-sm text-accent font-bold">{isWinner ? "+10 ⭐" : ""}</p>
+          <div className="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent font-bold text-sm animate-pulse">
+            {language === "nl" ? "Wachten op tegenstander..." : "Waiting for opponent..."}
+          </div>
+        </div>
+      );
+    }
+
+    // Both agreed - creating new match
+    if (myRematch === true && opRematch === true) {
+      return (
+        <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
+          <div className="text-lg font-bold text-muted-foreground animate-pulse">
+            {language === "nl" ? "Nieuwe match starten..." : "Starting new match..."}
+          </div>
+        </div>
+      );
+    }
+
+    // Show result + rematch buttons
     return (
       <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
-        <p className="text-3xl font-extrabold">
-          {isWinner ? "🏆🎉" : "😔"}
-        </p>
+        <p className="text-3xl font-extrabold">{isWinner ? "🏆🎉" : "😔"}</p>
         <p className="text-2xl font-extrabold text-foreground">
           {isWinner
             ? language === "nl" ? "Je hebt gewonnen!" : "You won!"
@@ -244,15 +351,35 @@ const OnlineGame = ({
         <p className="text-lg font-bold text-muted-foreground">
           {match.player1_wins} - {match.player2_wins}
         </p>
-        <p className="text-sm text-accent font-bold">
-          {isWinner ? "+10 ⭐" : ""}
+        <p className="text-sm text-accent font-bold">{isWinner ? "+10 ⭐" : ""}</p>
+
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => { setRematchRequested(true); onRequestRematch(); }}
+            disabled={rematchRequested}
+            className="px-6 py-2.5 bg-accent text-accent-foreground font-bold rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
+          >
+            {language === "nl" ? "⚔️ Opnieuw spelen" : "⚔️ Play again"}
+          </button>
+          <button
+            onClick={() => { onDeclineRematch(); onLeave(); }}
+            className="px-6 py-2.5 bg-secondary text-secondary-foreground font-bold rounded-lg hover:brightness-110 transition-all"
+          >
+            {language === "nl" ? "Terug" : "Back"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Round transition overlay
+  if (roundTransition) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-20 animate-bounce-in">
+        <p className="text-xl font-extrabold text-accent">{roundTransition}</p>
+        <p className="text-sm text-muted-foreground font-medium animate-pulse">
+          {language === "nl" ? "Volgende ronde..." : "Next round..."}
         </p>
-        <button
-          onClick={onLeave}
-          className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all"
-        >
-          {language === "nl" ? "Terug" : "Back"}
-        </button>
       </div>
     );
   }
@@ -269,6 +396,14 @@ const OnlineGame = ({
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      <WordSuggestionDialog
+        open={suggestionDialogOpen}
+        word={pendingWord}
+        language={language}
+        onConfirm={handleSuggestionConfirm}
+        onCancel={handleSuggestionCancel}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <button
@@ -294,9 +429,12 @@ const OnlineGame = ({
         {language === "nl" ? `Ronde ${match.current_round}` : `Round ${match.current_round}`} · {wordLength} {language === "nl" ? "letters" : "letters"}
       </div>
 
-      {waitingForOpponent && (
-        <div className="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent font-bold text-sm animate-pulse">
-          {language === "nl" ? "Wachten op tegenstander..." : "Waiting for opponent..."}
+      {/* Won/lost feedback after correct guess */}
+      {gameOver && submitted && (
+        <div className="px-4 py-2 rounded-lg bg-tile-correct/10 border border-tile-correct/20 text-tile-correct font-bold text-sm">
+          {won
+            ? language === "nl" ? "✓ Geraden! Volgende ronde..." : "✓ Guessed! Next round..."
+            : language === "nl" ? `Het woord was: ${word.toUpperCase()}` : `The word was: ${word.toUpperCase()}`}
         </div>
       )}
 
@@ -311,21 +449,7 @@ const OnlineGame = ({
         revealedRow={revealedRow}
       />
 
-      {gameOver && !waitingForOpponent && (
-        <div className="flex flex-col items-center gap-2 animate-bounce-in">
-          {won ? (
-            <p className="text-xl font-extrabold text-tile-correct">
-              {language === "nl" ? "✓ Geraden!" : "✓ Guessed!"}
-            </p>
-          ) : (
-            <p className="text-xl font-bold text-accent">
-              {language === "nl" ? `Het woord was: ${word.toUpperCase()}` : `The word was: ${word.toUpperCase()}`}
-            </p>
-          )}
-        </div>
-      )}
-
-      {!gameOver && !submitted && <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />}
+      {!gameOver && !submitted && !suggestionDialogOpen && <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />}
     </div>
   );
 };

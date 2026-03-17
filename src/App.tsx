@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Rankings from "./pages/Rankings";
 import OnlineMatch from "./pages/OnlineMatch";
 import NotFound from "./pages/NotFound";
+import GlobalOnlineManager from "./components/GlobalOnlineManager";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <GlobalOnlineManager />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/rankings" element={<Rankings />} />
