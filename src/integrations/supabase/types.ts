@@ -263,6 +263,8 @@ export type Database = {
           player1_wins: number
           player2_id: string
           player2_wins: number
+          rematch_player1: boolean | null
+          rematch_player2: boolean | null
           status: string
           timer_seconds: number
           updated_at: string
@@ -279,6 +281,8 @@ export type Database = {
           player1_wins?: number
           player2_id: string
           player2_wins?: number
+          rematch_player1?: boolean | null
+          rematch_player2?: boolean | null
           status?: string
           timer_seconds?: number
           updated_at?: string
@@ -295,6 +299,8 @@ export type Database = {
           player1_wins?: number
           player2_id?: string
           player2_wins?: number
+          rematch_player1?: boolean | null
+          rematch_player2?: boolean | null
           status?: string
           timer_seconds?: number
           updated_at?: string

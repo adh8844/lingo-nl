@@ -1,0 +1,1 @@
+ALTER TABLE public.online_matches ADD COLUMN rematch_player1 boolean DEFAULT null, ADD COLUMN rematch_player2 boolean DEFAULT null;
