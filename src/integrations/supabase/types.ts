@@ -85,6 +85,35 @@ export type Database = {
           },
         ]
       }
+      game_completions: {
+        Row: {
+          completed_date: string
+          created_at: string
+          id: string
+          player_id: string
+        }
+        Insert: {
+          completed_date?: string
+          created_at?: string
+          id?: string
+          player_id: string
+        }
+        Update: {
+          completed_date?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_completions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string
@@ -257,6 +286,7 @@ export type Database = {
           created_at: string
           current_round: number
           current_word: string | null
+          forfeited_by: string | null
           id: string
           language: string
           player1_id: string
@@ -275,6 +305,7 @@ export type Database = {
           created_at?: string
           current_round?: number
           current_word?: string | null
+          forfeited_by?: string | null
           id?: string
           language?: string
           player1_id: string
@@ -293,6 +324,7 @@ export type Database = {
           created_at?: string
           current_round?: number
           current_word?: string | null
+          forfeited_by?: string | null
           id?: string
           language?: string
           player1_id?: string
@@ -308,6 +340,13 @@ export type Database = {
           word_length?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "online_matches_forfeited_by_fkey"
+            columns: ["forfeited_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "online_matches_player1_id_fkey"
             columns: ["player1_id"]

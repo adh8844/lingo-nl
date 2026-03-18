@@ -106,10 +106,7 @@ const Index = () => {
                 <div className="flex items-center gap-3 mt-1">
                   {bestStreak > 0 && (
                     <div className="flex items-center gap-1">
-                      <span className="text-sm text-muted-foreground font-medium">
-                        {language === "nl" ? "Beste reeks" : "Best streak"}:
-                      </span>
-                      <span className="text-xl font-extrabold text-primary">🔥 {bestStreak}</span>
+                      <span className="text-xl font-extrabold text-primary">🔥 {currentStreak}</span>
                     </div>
                   )}
                   {(player.points ?? 0) > 0 && (

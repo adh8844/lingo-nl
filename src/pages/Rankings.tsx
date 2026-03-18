@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { usePlayer, Player } from "@/hooks/usePlayer";
-import { usePresence } from "@/hooks/usePresence";
+import { usePlayer } from "@/hooks/usePlayer";
+import { usePresence, OnlinePlayer } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
-import OnlineLobby from "@/components/OnlineLobby";
+import { Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 
-type Tab = "all" | "points" | "friends" | "groups" | "online";
+type Tab = "points" | "friends" | "groups";
 
 interface RankedPlayer {
   id: string;
@@ -25,10 +25,12 @@ interface Group {
   created_by: string;
 }
 
+const TIMER_OPTIONS = [30, 60, 90, 120];
+
 const Rankings = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
-  const [tab, setTab] = useState<Tab>("all");
+  const [tab, setTab] = useState<Tab>("points");
   const [allPlayers, setAllPlayers] = useState<RankedPlayer[]>([]);
   const [friends, setFriends] = useState<RankedPlayer[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -38,44 +40,34 @@ const Rankings = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
 
-  // Online lobby hooks
-  const { onlinePlayers } = usePresence(player?.id);
-  const {
-    pendingChallenges,
-    activeMatch,
-    sendChallenge,
-    acceptChallenge,
-    declineChallenge,
-  } = useOnlineMatch(player?.id);
+  // Challenge UI state
+  const [challengingId, setChallengingId] = useState<string | null>(null);
+  const [challengeTimer, setChallengeTimer] = useState(60);
+  const [challengeWordLength, setChallengeWordLength] = useState<WordLength>(5);
+  const [challengeLang, setChallengeLang] = useState<Language>("nl");
+  const [sending, setSending] = useState(false);
 
-  // Navigate to online match when one becomes active
+  const { onlinePlayers } = usePresence(player?.id);
+  const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
+
+  // Create a set of online player IDs for quick lookup
+  const onlinePlayerIds = new Set(onlinePlayers.map(p => p.player_id));
+
   useEffect(() => {
     if (activeMatch) {
       navigate("/online-match");
     }
   }, [activeMatch, navigate]);
 
-  // Load all players (by streak)
-  const loadAllPlayers = useCallback(async () => {
-    const { data } = await supabase
-      .from("players")
-      .select("*")
-      .order("best_streak", { ascending: false })
-      .limit(100);
-    if (data) setAllPlayers(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
-  }, []);
-
-  // Load all players (by points)
   const loadPointsRanking = useCallback(async () => {
     const { data } = await supabase
       .from("players")
       .select("*")
       .order("points", { ascending: false })
       .limit(100);
-    if (data) setAllPlayers(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
+    if (data) setAllPlayers(data.map(p => ({ ...p, points: p.points ?? 0 })));
   }, []);
 
-  // Load friends
   const loadFriends = useCallback(async () => {
     if (!player) return;
     const { data: friendLinks } = await supabase
@@ -93,11 +85,10 @@ const Rankings = () => {
       .from("players")
       .select("*")
       .in("id", friendIds)
-      .order("best_streak", { ascending: false });
-    if (data) setFriends(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
+      .order("points", { ascending: false });
+    if (data) setFriends(data.map(p => ({ ...p, points: p.points ?? 0 })));
   }, [player]);
 
-  // Load groups
   const loadGroups = useCallback(async () => {
     if (!player) return;
     const { data: memberships } = await supabase
@@ -118,7 +109,6 @@ const Rankings = () => {
     if (data) setGroups(data);
   }, [player]);
 
-  // Load group members
   const loadGroupMembers = useCallback(async (groupId: string) => {
     const { data: members } = await supabase
       .from("group_members")
@@ -135,16 +125,15 @@ const Rankings = () => {
       .from("players")
       .select("*")
       .in("id", playerIds)
-      .order("best_streak", { ascending: false });
-    if (data) setGroupMembers(data.map(p => ({ ...p, points: (p as any).points ?? 0 })));
+      .order("points", { ascending: false });
+    if (data) setGroupMembers(data.map(p => ({ ...p, points: p.points ?? 0 })));
   }, []);
 
   useEffect(() => {
-    if (tab === "all") loadAllPlayers();
     if (tab === "points") loadPointsRanking();
     if (tab === "friends" && player) loadFriends();
     if (tab === "groups" && player) loadGroups();
-  }, [tab, player, loadAllPlayers, loadPointsRanking, loadFriends, loadGroups]);
+  }, [tab, player, loadPointsRanking, loadFriends, loadGroups]);
 
   useEffect(() => {
     if (selectedGroup) loadGroupMembers(selectedGroup);
@@ -218,8 +207,16 @@ const Rankings = () => {
     toast.success("Left group");
   };
 
-  const handleAcceptChallenge = async (challenge: any) => {
-    await acceptChallenge(challenge);
+  const handleSendChallenge = async (targetId: string) => {
+    setSending(true);
+    const result = await sendChallenge(targetId, challengeTimer, challengeWordLength, challengeLang);
+    setSending(false);
+    if (result) {
+      toast.success("Uitdaging verstuurd!");
+      setChallengingId(null);
+    } else {
+      toast.error("Kon uitdaging niet versturen");
+    }
   };
 
   if (loading) {
@@ -230,36 +227,117 @@ const Rankings = () => {
     );
   }
 
-  const renderRankRow = (entry: RankedPlayer, i: number, showPoints = false) => {
-    const isMe = player?.id === entry.id;
+  const renderChallengeSettings = (targetPlayerId: string) => {
+    if (challengingId !== targetPlayerId) return null;
     return (
-      <div
-        key={entry.id}
-        className={`flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-lg text-sm ${
-          isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"
-        }`}
-      >
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <span className="text-muted-foreground font-bold w-6 sm:w-8 text-right shrink-0">
-            {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
-          </span>
-          <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`}>
-            {entry.display_name}
-            {isMe && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
-          </span>
+      <div className="mt-2 p-3 rounded-lg bg-card border border-border flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium w-14">Timer:</span>
+          <div className="flex gap-1">
+            {TIMER_OPTIONS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setChallengeTimer(t)}
+                className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                  challengeTimer === t
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                }`}
+              >
+                {t}s
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          {showPoints ? (
-            <span className="font-extrabold">⭐ {entry.points}</span>
-          ) : (
-            <>
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                now: {entry.current_streak}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium w-14">Letters:</span>
+          <div className="flex gap-1">
+            {([4, 5, 6] as WordLength[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => setChallengeWordLength(l)}
+                className={`w-8 h-8 rounded text-xs font-bold transition-all ${
+                  challengeWordLength === l
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium w-14">Taal:</span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setChallengeLang("nl")}
+              className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                challengeLang === "nl" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+              }`}
+            >
+              🇳🇱 NL
+            </button>
+            <button
+              onClick={() => setChallengeLang("en")}
+              className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                challengeLang === "en" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+              }`}
+            >
+              🇬🇧 EN
+            </button>
+          </div>
+        </div>
+        <button
+          onClick={() => handleSendChallenge(targetPlayerId)}
+          disabled={sending}
+          className="w-full px-4 py-2 rounded-lg bg-accent text-accent-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
+        >
+          {sending ? "..." : "⚔️ Verstuur uitdaging"}
+        </button>
+      </div>
+    );
+  };
+
+  const renderRankRow = (entry: RankedPlayer, i: number) => {
+    const isMe = player?.id === entry.id;
+    const isOnline = onlinePlayerIds.has(entry.id);
+    const canChallenge = isOnline && !isMe;
+
+    return (
+      <div key={entry.id}>
+        <div
+          className={`flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-lg text-sm ${
+            isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"
+          }`}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="text-muted-foreground font-bold w-6 sm:w-8 text-right shrink-0">
+              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
+            </span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              {isOnline && (
+                <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+              )}
+              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`}>
+                {entry.display_name}
+                {isMe && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
               </span>
-              <span className="font-extrabold">🔥 {entry.best_streak}</span>
-            </>
-          )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <span className="font-extrabold">⭐ {entry.points}</span>
+            {canChallenge && (
+              <button
+                onClick={() => setChallengingId(challengingId === entry.id ? null : entry.id)}
+                className="px-2 py-1 rounded-lg bg-primary text-primary-foreground font-bold text-xs hover:brightness-110 transition-all"
+              >
+                ⚔️
+              </button>
+            )}
+          </div>
         </div>
+        {renderChallengeSettings(entry.id)}
       </div>
     );
   };
@@ -267,16 +345,13 @@ const Rankings = () => {
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "all", label: "🔥 Streaks" },
     { key: "points", label: "⭐ Points" },
-    { key: "online", label: `🟢 Online (${onlinePlayers.length})` },
     { key: "friends", label: "👥 Friends" },
     { key: "groups", label: "🏠 Groups" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
-      {/* Header */}
       <div className="w-full max-w-lg flex items-center justify-between mb-4 sm:mb-6">
         <button
           onClick={() => navigate("/")}
@@ -290,12 +365,11 @@ const Rankings = () => {
         <div className="w-16" />
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-4 sm:mb-6 w-full max-w-lg overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => { setTab(t.key); setSelectedGroup(null); }}
+            onClick={() => { setTab(t.key); setSelectedGroup(null); setChallengingId(null); }}
             className={`flex-shrink-0 px-2.5 py-2 rounded-lg font-bold text-xs transition-all ${
               tab === t.key
                 ? "bg-primary text-primary-foreground"
@@ -308,43 +382,13 @@ const Rankings = () => {
       </div>
 
       <div className="w-full max-w-lg flex flex-col gap-2">
-        {/* STREAKS TAB */}
-        {tab === "all" && (
-          <>
-            {allPlayers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No players yet</p>
-            ) : (
-              allPlayers.map((p, i) => renderRankRow(p, i, false))
-            )}
-          </>
-        )}
-
         {/* POINTS TAB */}
         {tab === "points" && (
           <>
             {allPlayers.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No players yet</p>
             ) : (
-              allPlayers.map((p, i) => renderRankRow(p, i, true))
-            )}
-          </>
-        )}
-
-        {/* ONLINE TAB */}
-        {tab === "online" && (
-          <>
-            {!player ? (
-              <p className="text-center text-muted-foreground py-8">Create a player first</p>
-            ) : (
-              <OnlineLobby
-                playerId={player.id}
-                onlinePlayers={onlinePlayers}
-                pendingChallenges={pendingChallenges}
-                onChallenge={sendChallenge}
-                onAccept={handleAcceptChallenge}
-                onDecline={declineChallenge}
-                language="nl"
-              />
+              allPlayers.map((p, i) => renderRankRow(p, i))
             )}
           </>
         )}
@@ -358,9 +402,9 @@ const Rankings = () => {
               <>
                 {(() => {
                   const combined = [
-                    { ...player, points: (player as any).points ?? 0 },
+                    { ...player, points: player.points ?? 0 },
                     ...friends.filter((f) => f.id !== player.id),
-                  ].sort((a, b) => b.best_streak - a.best_streak || b.current_streak - a.current_streak);
+                  ].sort((a, b) => b.points - a.points);
                   return combined.length === 1 && friends.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
                       Add friends from the home screen to see them here!

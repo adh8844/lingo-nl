@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePoints, getTimerBonus } from "@/hooks/usePoints";
+import { useStreaks } from "@/hooks/useStreaks";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -71,6 +72,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
 
   const { player } = usePlayer();
   const { awardSinglePlayerWin, awardMatchWin } = usePoints(player?.id);
+  const { recordGameCompletion } = useStreaks(player?.id);
 
   // Two-player state
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -179,8 +181,8 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
         const newCurrent = currentStreak + 1;
         const newBest = Math.max(bestStreak, newCurrent);
         onStreakUpdate(newCurrent, newBest);
-        // Award points: 1 base + timer bonus
         awardSinglePlayerWin(timerSeconds);
+        recordGameCompletion();
       } else if (gameMode === "two-player") {
         const newScores = [...scores];
         newScores[currentPlayer - 1]++;
