@@ -72,6 +72,7 @@ const LingoGame = ({ language, wordLength, timerSeconds, gameMode, onBack, curre
 
   const { player } = usePlayer();
   const { awardSinglePlayerWin, awardMatchWin } = usePoints(player?.id);
+  const { recordGameCompletion } = useStreaks(player?.id);
 
   // Two-player state
   const [currentPlayer, setCurrentPlayer] = useState(1);
