@@ -19,13 +19,13 @@ const OnlineMatchPage = () => {
     loadActiveMatch,
     requestRematch,
     declineRematch,
+    forfeitMatch,
   } = useOnlineMatch(player?.id);
   const { awardMatchWin } = usePoints(player?.id);
 
   const [opponentName, setOpponentName] = useState("Opponent");
   const [pointsAwarded, setPointsAwarded] = useState<string | null>(null);
 
-  // Load opponent name
   useEffect(() => {
     if (!activeMatch || !player) return;
     const opponentId = activeMatch.player1_id === player.id
@@ -60,7 +60,6 @@ const OnlineMatchPage = () => {
     const opRematch = isPlayer1 ? m.rematch_player2 : m.rematch_player1;
 
     if (opRematch === false) {
-      // Opponent declined - navigate after brief display
       const timer = setTimeout(() => {
         leaveMatch();
         navigate("/rankings");
@@ -75,6 +74,11 @@ const OnlineMatchPage = () => {
     }
     leaveMatch();
     navigate("/rankings");
+  };
+
+  const handleForfeit = async () => {
+    await forfeitMatch();
+    // Don't navigate yet - let the match status update show the result
   };
 
   if (loading) {
@@ -122,6 +126,7 @@ const OnlineMatchPage = () => {
         onLeave={handleLeave}
         onRequestRematch={requestRematch}
         onDeclineRematch={declineRematch}
+        onForfeit={handleForfeit}
       />
     </div>
   );

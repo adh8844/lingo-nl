@@ -23,6 +23,7 @@ interface OnlineGameProps {
   onLeave: () => void;
   onRequestRematch: () => void;
   onDeclineRematch: () => void;
+  onForfeit: () => void;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
@@ -61,6 +62,7 @@ const OnlineGame = ({
   onLeave,
   onRequestRematch,
   onDeclineRematch,
+  onForfeit,
 }: OnlineGameProps) => {
   const language = match.language as Language;
   const wordLength = match.word_length as WordLength;
@@ -78,11 +80,10 @@ const OnlineGame = ({
   const [submitted, setSubmitted] = useState(false);
   const [roundTransition, setRoundTransition] = useState<string | null>(null);
   const [rematchRequested, setRematchRequested] = useState(false);
+  const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
-  const wasPlayingRef = useRef(false);
 
-  // Word suggestion dialog
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [pendingWord, setPendingWord] = useState("");
 
@@ -107,7 +108,6 @@ const OnlineGame = ({
     prevRoundRef.current = currentRound.id;
 
     if (wasPlaying) {
-      // Round changed while we were still playing - opponent was faster
       stopTimer();
       setRoundTransition(language === "nl" ? `${opponentName} was sneller!` : `${opponentName} was faster!`);
       playRoundLoseSound();
@@ -141,12 +141,10 @@ const OnlineGame = ({
     }, 1000);
   }, [match.timer_seconds, stopTimer]);
 
-  // Cleanup timer
   useEffect(() => {
     return () => stopTimer();
   }, [stopTimer]);
 
-  // Timer expiry
   useEffect(() => {
     if (timeLeft === 0 && !gameOver && !submitted) {
       stopTimer();
@@ -156,16 +154,11 @@ const OnlineGame = ({
     }
   }, [timeLeft, gameOver, submitted, onSubmitFailed, stopTimer]);
 
-  // Track if we're actively playing (for round transition detection)
-  useEffect(() => {
-    wasPlayingRef.current = !gameOver && !submitted;
-  }, [gameOver, submitted]);
-
   // Check match finished
   useEffect(() => {
     if (match.status === "finished" && match.winner_id) {
       stopTimer();
-      if (match.winner_id === playerId) {
+      if (match.winner_id === playerId && !match.forfeited_by) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       }
     }
@@ -261,7 +254,7 @@ const OnlineGame = ({
   }, [language, pendingWord, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback((key: string) => {
-    if (gameOver || submitted || suggestionDialogOpen || roundTransition) return;
+    if (gameOver || submitted || suggestionDialogOpen || roundTransition || showForfeitConfirm) return;
 
     if (key === "Enter") { submitGuess(); return; }
     if (key === "Backspace") {
@@ -271,7 +264,7 @@ const OnlineGame = ({
     if (/^[a-zA-Z]$/.test(key) && currentGuess.length < wordLength) {
       setCurrentGuess(prev => prev + key.toLowerCase());
     }
-  }, [gameOver, submitted, currentGuess, wordLength, submitGuess, suggestionDialogOpen, roundTransition]);
+  }, [gameOver, submitted, currentGuess, wordLength, submitGuess, suggestionDialogOpen, roundTransition, showForfeitConfirm]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -288,20 +281,33 @@ const OnlineGame = ({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Match finished - show result + rematch
+  const handleLeaveClick = () => {
+    if (match.status === "finished") {
+      onLeave();
+      return;
+    }
+    setShowForfeitConfirm(true);
+  };
+
+  const handleConfirmForfeit = () => {
+    setShowForfeitConfirm(false);
+    onForfeit();
+  };
+
+  // Match finished - show result
   if (match.status === "finished") {
     const isWinner = match.winner_id === playerId;
+    const wasForfeit = !!match.forfeited_by;
+    const iForfeited = match.forfeited_by === playerId;
     const m = match as any;
     const myRematch = isPlayer1 ? m.rematch_player1 : m.rematch_player2;
     const opRematch = isPlayer1 ? m.rematch_player2 : m.rematch_player1;
 
-    // Opponent declined
+    // Opponent declined rematch
     if (opRematch === false) {
       return (
         <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
-          <p className="text-2xl font-extrabold text-foreground">
-            {isWinner ? "🏆🎉" : "😔"}
-          </p>
+          <p className="text-2xl font-extrabold text-foreground">{isWinner ? "🏆🎉" : "😔"}</p>
           <p className="text-xl font-extrabold text-foreground">
             {language === "nl" ? `${opponentName} wil niet opnieuw spelen` : `${opponentName} doesn't want a rematch`}
           </p>
@@ -312,7 +318,7 @@ const OnlineGame = ({
       );
     }
 
-    // Waiting for opponent's rematch decision
+    // Waiting for opponent
     if (myRematch === true && opRematch !== true) {
       return (
         <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
@@ -328,7 +334,7 @@ const OnlineGame = ({
       );
     }
 
-    // Both agreed - creating new match
+    // Both agreed
     if (myRematch === true && opRematch === true) {
       return (
         <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
@@ -344,14 +350,30 @@ const OnlineGame = ({
       <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
         <p className="text-3xl font-extrabold">{isWinner ? "🏆🎉" : "😔"}</p>
         <p className="text-2xl font-extrabold text-foreground">
-          {isWinner
-            ? language === "nl" ? "Je hebt gewonnen!" : "You won!"
-            : language === "nl" ? `${opponentName} wint!` : `${opponentName} wins!`}
+          {wasForfeit
+            ? iForfeited
+              ? language === "nl" ? "Je hebt opgegeven" : "You forfeited"
+              : language === "nl" ? `${opponentName} heeft opgegeven` : `${opponentName} forfeited`
+            : isWinner
+              ? language === "nl" ? "Je hebt gewonnen!" : "You won!"
+              : language === "nl" ? `${opponentName} wint!` : `${opponentName} wins!`}
         </p>
         <p className="text-lg font-bold text-muted-foreground">
           {match.player1_wins} - {match.player2_wins}
         </p>
-        <p className="text-sm text-accent font-bold">{isWinner ? "+10 ⭐" : ""}</p>
+        {isWinner && (
+          <p className="text-sm text-accent font-bold">+10 ⭐</p>
+        )}
+        {!isWinner && wasForfeit && (
+          <p className="text-sm text-muted-foreground font-bold">
+            {language === "nl" ? `${opponentName} ontvangt +10 ⭐` : `${opponentName} receives +10 ⭐`}
+          </p>
+        )}
+        {isWinner && wasForfeit && !iForfeited && (
+          <p className="text-sm text-accent font-bold">
+            {language === "nl" ? "Tegenstander heeft opgegeven — jij ontvangt +10 ⭐" : "Opponent forfeited — you receive +10 ⭐"}
+          </p>
+        )}
 
         <div className="flex gap-3 mt-2">
           <button
@@ -366,6 +388,36 @@ const OnlineGame = ({
             className="px-6 py-2.5 bg-secondary text-secondary-foreground font-bold rounded-lg hover:brightness-110 transition-all"
           >
             {language === "nl" ? "Terug" : "Back"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Forfeit confirmation dialog
+  if (showForfeitConfirm) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
+        <p className="text-xl font-extrabold text-foreground">
+          {language === "nl" ? "Wil je dit spel beëindigen?" : "Do you want to end this game?"}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {language === "nl"
+            ? `${opponentName} ontvangt 10 punten als je stopt.`
+            : `${opponentName} will receive 10 points if you quit.`}
+        </p>
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={handleConfirmForfeit}
+            className="px-6 py-2.5 bg-destructive text-destructive-foreground font-bold rounded-lg hover:brightness-110 transition-all"
+          >
+            {language === "nl" ? "Ja, stoppen" : "Yes, quit"}
+          </button>
+          <button
+            onClick={() => setShowForfeitConfirm(false)}
+            className="px-6 py-2.5 bg-secondary text-secondary-foreground font-bold rounded-lg hover:brightness-110 transition-all"
+          >
+            {language === "nl" ? "Nee, doorgaan" : "No, continue"}
           </button>
         </div>
       </div>
@@ -407,10 +459,10 @@ const OnlineGame = ({
       {/* Header */}
       <div className="flex items-center justify-between w-full">
         <button
-          onClick={onLeave}
+          onClick={handleLeaveClick}
           className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
         >
-          ← {language === "nl" ? "Verlaat" : "Leave"}
+          ← {language === "nl" ? "Terug" : "Back"}
         </button>
         <div className="flex items-center gap-4">
           <div className="text-sm font-bold text-primary">
@@ -429,7 +481,6 @@ const OnlineGame = ({
         {language === "nl" ? `Ronde ${match.current_round}` : `Round ${match.current_round}`} · {wordLength} {language === "nl" ? "letters" : "letters"}
       </div>
 
-      {/* Won/lost feedback after correct guess */}
       {gameOver && submitted && (
         <div className="px-4 py-2 rounded-lg bg-tile-correct/10 border border-tile-correct/20 text-tile-correct font-bold text-sm">
           {won
