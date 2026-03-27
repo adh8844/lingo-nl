@@ -81,9 +81,9 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !session) {
-      navigate("/auth");
+      window.location.href = "/auth";
     }
-  }, [loading, session, navigate]);
+  }, [loading, session]);
 
   if (loading || !session) {
     return (
