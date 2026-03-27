@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
-import { usePoints } from "@/hooks/usePoints";
 import { supabase } from "@/integrations/supabase/client";
 import OnlineGame from "@/components/OnlineGame";
 
@@ -21,10 +20,9 @@ const OnlineMatchPage = () => {
     declineRematch,
     forfeitMatch,
   } = useOnlineMatch(player?.id);
-  const { awardMatchWin } = usePoints(player?.id);
 
-  const [opponentName, setOpponentName] = useState("Opponent");
-  const [pointsAwarded, setPointsAwarded] = useState<string | null>(null);
+  const [opponentName, setOpponentName] = useState("Tegenstander");
+  
 
   useEffect(() => {
     if (!activeMatch || !player) return;
@@ -44,13 +42,7 @@ const OnlineMatchPage = () => {
       });
   }, [activeMatch?.id, activeMatch?.player1_id, activeMatch?.player2_id, player?.id]);
 
-  // Award points when match finishes and player wins
-  useEffect(() => {
-    if (activeMatch?.status === "finished" && activeMatch.winner_id === player?.id && pointsAwarded !== activeMatch.id) {
-      setPointsAwarded(activeMatch.id);
-      awardMatchWin();
-    }
-  }, [activeMatch?.status, activeMatch?.winner_id, activeMatch?.id, player?.id, awardMatchWin, pointsAwarded]);
+  // Points are now handled server-side via process-game-result edge function
 
   // Detect opponent declined rematch
   useEffect(() => {
@@ -98,13 +90,13 @@ const OnlineMatchPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="text-lg font-bold text-muted-foreground animate-pulse">
-          Waiting for match...
+          Wachten op wedstrijd...
         </div>
         <button
           onClick={() => navigate("/rankings")}
           className="px-4 py-2 bg-secondary text-secondary-foreground font-bold rounded-lg text-sm"
         >
-          ← Back
+          ← Terug
         </button>
       </div>
     );

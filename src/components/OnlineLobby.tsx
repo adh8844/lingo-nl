@@ -28,7 +28,7 @@ const OnlineLobby = ({
   const [challengingId, setChallengingId] = useState<string | null>(null);
   const [challengeTimer, setChallengeTimer] = useState(60);
   const [challengeWordLength, setChallengeWordLength] = useState<WordLength>(5);
-  const [challengeLang, setChallengeLang] = useState<Language>(language);
+  const [challengeLang] = useState<Language>("nl");
   const [sending, setSending] = useState(false);
 
   const handleSendChallenge = async (targetId: string) => {
@@ -161,34 +161,6 @@ const OnlineLobby = ({
                   </div>
                 </div>
 
-                {/* Language */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground font-medium w-14">
-                    {language === "nl" ? "Taal:" : "Lang:"}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setChallengeLang("nl")}
-                      className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                        challengeLang === "nl"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-secondary-foreground"
-                      }`}
-                    >
-                      🇳🇱 NL
-                    </button>
-                    <button
-                      onClick={() => setChallengeLang("en")}
-                      className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                        challengeLang === "en"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-secondary-foreground"
-                      }`}
-                    >
-                      🇬🇧 EN
-                    </button>
-                  </div>
-                </div>
 
                 <button
                   onClick={() => handleSendChallenge(p.player_id)}
