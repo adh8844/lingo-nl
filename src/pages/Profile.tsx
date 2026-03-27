@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Star, Flame, Trophy, Award, Calendar, Clock } from "lucide-react";
+import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library } from "lucide-react";
 
 interface Badge {
   id: string;
