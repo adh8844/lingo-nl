@@ -430,7 +430,7 @@ const Rankings = () => {
                   </span>
                 </div>
                 {groupMembers.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">No members yet</p>
+                  <p className="text-center text-muted-foreground py-4">Nog geen leden</p>
                 ) : (
                   groupMembers.map((p, i) => renderRankRow(p, i))
                 )}
@@ -442,7 +442,7 @@ const Rankings = () => {
                     type="text"
                     value={groupCode}
                     onChange={(e) => setGroupCode(e.target.value.toUpperCase())}
-                    placeholder="Group code"
+                    placeholder="Groepscode"
                     maxLength={6}
                     className="flex-1 px-3 py-2 rounded-lg bg-muted text-foreground font-mono font-bold text-center text-sm tracking-widest border-2 border-transparent focus:border-primary focus:outline-none transition-colors uppercase"
                   />
@@ -451,7 +451,7 @@ const Rankings = () => {
                     disabled={groupCode.length < 6}
                     className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                   >
-                    Join
+                    Deelnemen
                   </button>
                 </div>
 
@@ -461,7 +461,7 @@ const Rankings = () => {
                       type="text"
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
-                      placeholder="Group name"
+                      placeholder="Groepsnaam"
                       maxLength={30}
                       className="flex-1 px-3 py-2 rounded-lg bg-muted text-foreground font-bold text-sm border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
                     />
@@ -470,7 +470,7 @@ const Rankings = () => {
                       disabled={!newGroupName.trim()}
                       className="px-4 py-2 rounded-lg bg-accent text-accent-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                     >
-                      Create
+                       Aanmaken
                     </button>
                     <button
                       onClick={() => { setShowCreateGroup(false); setNewGroupName(""); }}
