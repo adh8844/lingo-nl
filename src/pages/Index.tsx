@@ -132,9 +132,9 @@ const Index = () => {
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
             <p>{unlockProgress.fourLetterPoints}/350 punten</p>
             <p>
-              Route B: {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)
+              {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)
             </p>
-            <p>Route C: {unlockProgress.firstAttemptWins}/8 eerste pogingen</p>
+            <p>{unlockProgress.firstAttemptWins}/8 eerste pogingen</p>
           </div>
         )}
 
