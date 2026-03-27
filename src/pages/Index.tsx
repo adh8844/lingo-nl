@@ -11,7 +11,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
-  const { player, loading, createPlayer, refreshPlayer } = usePlayer();
+  const { player, session, loading, refreshPlayer, signOut } = usePlayer();
 
   const [unlockProgress, setUnlockProgress] = useState({
     fourLetterPoints: 0,
