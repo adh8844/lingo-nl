@@ -5,7 +5,7 @@ import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3 } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -147,7 +147,7 @@ const Index = () => {
             </div>
 
             {/* Navigation */}
-            <div className="grid grid-cols-3 gap-2 w-full">
+            <div className="grid grid-cols-2 gap-2 w-full">
               <button
                 onClick={() => navigate("/profile")}
                 className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
@@ -168,6 +168,13 @@ const Index = () => {
               >
                 <BarChart3 className="w-5 h-5" />
                 Statistieken
+              </button>
+              <button
+                onClick={() => navigate("/spelregels")}
+                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
+              >
+                <BookOpen className="w-5 h-5" />
+                Spelregels
               </button>
             </div>
           </>
