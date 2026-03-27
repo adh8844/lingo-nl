@@ -5,7 +5,7 @@ import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3 } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
