@@ -23,8 +23,8 @@ const Profile = () => {
 
   const loadBadges = useCallback(async () => {
     if (!player) return;
-    const { data: badges } = await supabase.from("badges" as any).select("*");
-    if (badges) setAllBadges(badges as Badge[]);
+    const { data: badges } = await supabase.from("badges").select("*");
+    if (badges) setAllBadges(badges as unknown as Badge[]);
 
     const { data: earned } = await supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id);
     if (earned) setEarnedBadgeIds(new Set(earned.map((e: any) => e.badge_id)));
