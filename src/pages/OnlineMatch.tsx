@@ -22,7 +22,7 @@ const OnlineMatchPage = () => {
   } = useOnlineMatch(player?.id);
 
   const [opponentName, setOpponentName] = useState("Tegenstander");
-  const [pointsAwarded, setPointsAwarded] = useState<string | null>(null);
+  
 
   useEffect(() => {
     if (!activeMatch || !player) return;
