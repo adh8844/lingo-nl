@@ -137,6 +137,7 @@ const Profile = () => {
               <div className="grid grid-cols-2 gap-2">
                 {categoryBadges.map(badge => {
                   const earned = earnedBadgeIds.has(badge.id);
+                  const icon = BADGE_ICONS[badge.id];
                   return (
                     <div
                       key={badge.id}
@@ -145,17 +146,24 @@ const Profile = () => {
                           ? badge.is_rare
                             ? "bg-accent/10 border-accent/30"
                             : "bg-primary/10 border-primary/30"
-                          : "bg-card/50 border-border opacity-50"
+                          : "bg-card/50 border-border opacity-40 grayscale"
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <p className={`text-sm font-bold ${earned ? "text-foreground" : "text-muted-foreground"}`}>
-                          {earned ? badge.name : "???"}
-                          {badge.is_rare && " ★"}
-                        </p>
-                        <span className="text-[10px] font-bold text-primary">+{badge.points}</span>
+                      <div className="flex items-start gap-2.5">
+                        <div className={`shrink-0 mt-0.5 ${earned ? (badge.is_rare ? "text-accent" : "text-primary") : "text-muted-foreground"}`}>
+                          {icon || <Award className="w-6 h-6" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between">
+                            <p className={`text-sm font-bold ${earned ? "text-foreground" : "text-muted-foreground"}`}>
+                              {badge.name}
+                              {badge.is_rare && " ★"}
+                            </p>
+                            <span className="text-[10px] font-bold text-primary shrink-0">+{badge.points}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{badge.description}</p>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{earned ? badge.description : "???"}</p>
                     </div>
                   );
                 })}
