@@ -408,13 +408,13 @@ const Rankings = () => {
                     onClick={() => setSelectedGroup(null)}
                     className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    ← All groups
+                    ← Alle groepen
                   </button>
                   <button
                     onClick={() => leaveGroup(selectedGroup)}
                     className="text-xs px-3 py-1.5 rounded-lg bg-destructive/20 text-destructive font-bold hover:bg-destructive/30 transition-colors"
                   >
-                    Leave
+                    Verlaten
                   </button>
                 </div>
                 <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-card">
