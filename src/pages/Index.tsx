@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import LingoGame from "@/components/LingoGame";
-import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
-  const { player, loading, createPlayer, refreshPlayer } = usePlayer();
+  const { player, session, loading, refreshPlayer, signOut } = usePlayer();
 
   const [unlockProgress, setUnlockProgress] = useState({
     fourLetterPoints: 0,
@@ -80,7 +79,13 @@ const Index = () => {
     loadUnlockProgress();
   }, [refreshPlayer, loadUnlockProgress]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate("/auth");
+    }
+  }, [loading, session, navigate]);
+
+  if (loading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
@@ -130,11 +135,11 @@ const Index = () => {
         {/* Unlock progress for level 5 */}
         {level === 5 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
-            <p>{unlockProgress.fourLetterPoints}/350 punten</p>
+            <p>{unlockProgress.fourLetterPoints}/250 punten</p>
             <p>
-              {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)
+              {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/2 cat.)
             </p>
-            <p>{unlockProgress.firstAttemptWins}/8 eerste pogingen</p>
+            <p>{unlockProgress.firstAttemptWins}/5 eerste pogingen</p>
           </div>
         )}
 
@@ -164,12 +169,7 @@ const Index = () => {
         </div>
 
         {!player ? (
-          <PlayerSetup
-            language="nl"
-            onCreatePlayer={async (name) => {
-              await createPlayer(name);
-            }}
-          />
+          <div className="text-muted-foreground">Profiel laden...</div>
         ) : (
           <>
             {/* Player info */}
@@ -230,6 +230,15 @@ const Index = () => {
                 Spelregels
               </button>
             </div>
+
+            {/* Uitloggen */}
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Uitloggen
+            </button>
           </>
         )}
       </div>

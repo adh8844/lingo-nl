@@ -525,6 +525,7 @@ export type Database = {
           unlocked_5letter: boolean
           unlocked_6letter: boolean
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           best_streak?: number
@@ -541,6 +542,7 @@ export type Database = {
           unlocked_5letter?: boolean
           unlocked_6letter?: boolean
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           best_streak?: number
@@ -557,6 +559,7 @@ export type Database = {
           unlocked_5letter?: boolean
           unlocked_6letter?: boolean
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

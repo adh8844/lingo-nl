@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Rankings from "./pages/Rankings";
 import Profile from "./pages/Profile";
 import Statistics from "./pages/Statistics";
@@ -23,6 +24,7 @@ const App = () => (
         <GlobalOnlineManager />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/rankings" element={<Rankings />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/statistics" element={<Statistics />} />

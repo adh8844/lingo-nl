@@ -339,13 +339,13 @@ Deno.serve(async (req) => {
     if (!unlocked5) {
       const { data: fg } = await supabase.from('games').select('points_earned').eq('player_id', player_id).eq('level', 4)
       const fp = (fg || []).reduce((s: number, g: any) => s + (g.points_earned || 0), 0)
-      if (fp >= 350) unlocked5 = true
+      if (fp >= 250) unlocked5 = true
       if (!unlocked5) {
         const catCounts: Record<string, number> = {}
         earnedIds.forEach(id => { const b = badgeMap.get(id); if (b) catCounts[b.category] = (catCounts[b.category] || 0) + 1 })
-        if (earnedIds.size >= 4 && Object.keys(catCounts).length >= 3) unlocked5 = true
+        if (earnedIds.size >= 4 && Object.keys(catCounts).length >= 2) unlocked5 = true
       }
-      if (!unlocked5 && games.filter(g => g.solved && g.attempts === 1).length >= 8) unlocked5 = true
+      if (!unlocked5 && games.filter(g => g.solved && g.attempts === 1).length >= 5) unlocked5 = true
     }
 
     let unlocked6 = player.unlocked_6letter || false
