@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Star, Flame, Trophy, Award, Calendar, Clock } from "lucide-react";
+import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library } from "lucide-react";
 
 interface Badge {
   id: string;
@@ -14,6 +14,33 @@ interface Badge {
 }
 
 const CATEGORIES = ["Tijd", "Reeks", "Vaardigheid", "Sociaal", "Uithoudingsvermogen", "Prestige"];
+
+const BADGE_ICONS: Record<string, React.ReactNode> = {
+  nachtuil: <Moon className="w-6 h-6" />,
+  vroege_vogel: <Sun className="w-6 h-6" />,
+  maneschijn: <Sparkles className="w-6 h-6" />,
+  weekendstrijder: <Calendar className="w-6 h-6" />,
+  op_dreef: <Flame className="w-6 h-6" />,
+  niet_te_stoppen: <Zap className="w-6 h-6" />,
+  ijzersterk: <ShieldCheck className="w-6 h-6" />,
+  maandmaster: <Crown className="w-6 h-6" />,
+  supersnel: <Timer className="w-6 h-6" />,
+  vlekkeloos: <Target className="w-6 h-6" />,
+  comeback: <Swords className="w-6 h-6" />,
+  meesterspeler: <Trophy className="w-6 h-6" />,
+  fair_play: <HandshakeIcon className="w-6 h-6" />,
+  werver: <Users className="w-6 h-6" />,
+  feestbeest: <PartyPopper className="w-6 h-6" />,
+  uitdager: <Medal className="w-6 h-6" />,
+  marathonloper: <Footprints className="w-6 h-6" />,
+  golfrijder: <Waves className="w-6 h-6" />,
+  onvermoeibaar: <Brain className="w-6 h-6" />,
+  tijdloze: <Clock className="w-6 h-6" />,
+  alleskunner: <Gem className="w-6 h-6" />,
+  veteraan: <ScrollText className="w-6 h-6" />,
+  legend: <Star className="w-6 h-6" />,
+  verzamelaar: <Library className="w-6 h-6" />,
+};
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -110,6 +137,7 @@ const Profile = () => {
               <div className="grid grid-cols-2 gap-2">
                 {categoryBadges.map(badge => {
                   const earned = earnedBadgeIds.has(badge.id);
+                  const icon = BADGE_ICONS[badge.id];
                   return (
                     <div
                       key={badge.id}
@@ -118,17 +146,24 @@ const Profile = () => {
                           ? badge.is_rare
                             ? "bg-accent/10 border-accent/30"
                             : "bg-primary/10 border-primary/30"
-                          : "bg-card/50 border-border opacity-50"
+                          : "bg-card/50 border-border opacity-40 grayscale"
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <p className={`text-sm font-bold ${earned ? "text-foreground" : "text-muted-foreground"}`}>
-                          {earned ? badge.name : "???"}
-                          {badge.is_rare && " ★"}
-                        </p>
-                        <span className="text-[10px] font-bold text-primary">+{badge.points}</span>
+                      <div className="flex items-start gap-2.5">
+                        <div className={`shrink-0 mt-0.5 ${earned ? (badge.is_rare ? "text-accent" : "text-primary") : "text-muted-foreground"}`}>
+                          {icon || <Award className="w-6 h-6" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between">
+                            <p className={`text-sm font-bold ${earned ? "text-foreground" : "text-muted-foreground"}`}>
+                              {badge.name}
+                              {badge.is_rare && " ★"}
+                            </p>
+                            <span className="text-[10px] font-bold text-primary shrink-0">+{badge.points}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{badge.description}</p>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{earned ? badge.description : "???"}</p>
                     </div>
                   );
                 })}
