@@ -65,7 +65,7 @@ const Auth = () => {
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/auth`,
     });
     if (error) {
       toast({ title: "Fout", description: String(error), variant: "destructive" });
