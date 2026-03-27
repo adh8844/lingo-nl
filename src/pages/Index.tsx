@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import LingoGame from "@/components/LingoGame";
 import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
-import { Language, WordLength } from "@/data/words";
+import { WordLength } from "@/data/words";
 
 type GameMode = "single" | "two-player";
 
@@ -12,18 +12,15 @@ const TIMER_OPTIONS = [30, 60, 90, 120] as const;
 const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
-  const [language, setLanguage] = useState<Language>("nl");
   const [wordLength, setWordLength] = useState<WordLength>(5);
   const [timerSeconds, setTimerSeconds] = useState<number>(60);
   const [gameMode, setGameMode] = useState<GameMode>("single");
 
   const { player, loading, createPlayer, updateStreak, refreshPlayer } = usePlayer();
 
-  // Derive streaks from player (cloud) or fallback to localStorage
   const currentStreak = player?.current_streak ?? 0;
   const bestStreak = player?.best_streak ?? 0;
 
-  // Also keep localStorage in sync for offline play
   useEffect(() => {
     if (player) {
       localStorage.setItem("lingo-current-streak", String(player.current_streak));
@@ -62,7 +59,7 @@ const Index = () => {
           LINGO
         </h1>
         <LingoGame
-          language={language}
+          language="nl"
           wordLength={wordLength}
           timerSeconds={timerSeconds}
           gameMode={gameMode}
@@ -84,21 +81,19 @@ const Index = () => {
             LINGO
           </h1>
           <p className="text-muted-foreground text-lg">
-            Raad het woord · Guess the word
+            Raad het woord
           </p>
         </div>
 
         {/* Player setup or welcome */}
         {!player ? (
-          <PlayerSetup language={language} onCreatePlayer={async (name) => { await createPlayer(name); }} />
+          <PlayerSetup language="nl" onCreatePlayer={async (name) => { await createPlayer(name); }} />
         ) : (
           <>
-<div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-1">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  {language === "nl" ? "Welkom terug," : "Welcome back,"}
-                </p>
-                <p className="text-xl font-extrabold text-foreground">{player.display_name}</p>
+                <p className="text-sm text-muted-foreground">Welkom terug,</p>
+                <p className="text-xl font-extrabold text-foreground" translate="no">{player.display_name}</p>
               </div>
               
               {/* Stats */}
@@ -118,35 +113,9 @@ const Index = () => {
               )}
             </div>
 
-            {/* Language selector */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setLanguage("nl")}
-                className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                  language === "nl"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:brightness-110"
-                }`}
-              >
-                🇳🇱 Nederlands
-              </button>
-              <button
-                onClick={() => setLanguage("en")}
-                className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                  language === "en"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:brightness-110"
-                }`}
-              >
-                🇬🇧 English
-              </button>
-            </div>
-
             {/* Word length selector */}
             <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground font-medium">
-                {language === "nl" ? "Aantal letters" : "Word length"}
-              </p>
+              <p className="text-sm text-muted-foreground font-medium">Aantal letters</p>
               <div className="flex gap-2">
                 {([4, 5, 6] as WordLength[]).map((len) => (
                   <button
@@ -166,9 +135,7 @@ const Index = () => {
 
             {/* Timer selector */}
             <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground font-medium">
-                {language === "nl" ? "Timer (seconden)" : "Timer (seconds)"}
-              </p>
+              <p className="text-sm text-muted-foreground font-medium">Timer (seconden)</p>
               <div className="flex gap-2">
                 {TIMER_OPTIONS.map((sec) => (
                   <button
@@ -188,9 +155,7 @@ const Index = () => {
 
             {/* Game mode selector */}
             <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground font-medium">
-                {language === "nl" ? "Spelmodus" : "Game mode"}
-              </p>
+              <p className="text-sm text-muted-foreground font-medium">Spelmodus</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setGameMode("single")}
@@ -210,7 +175,7 @@ const Index = () => {
                       : "bg-secondary text-secondary-foreground hover:brightness-110"
                   }`}
                 >
-                  {language === "nl" ? "👥 Twee spelers" : "👥 Two players"}
+                  👥 Twee spelers
                 </button>
               </div>
             </div>
@@ -221,13 +186,13 @@ const Index = () => {
                 onClick={() => setGameStarted(true)}
                 className="flex-1 px-6 py-3.5 bg-accent text-accent-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-accent/30"
               >
-                {language === "nl" ? "▶ Start!" : "▶ Play!"}
+                ▶ Start!
               </button>
               <button
                 onClick={() => navigate("/rankings")}
                 className="flex-1 px-6 py-3.5 bg-secondary text-secondary-foreground font-extrabold text-base rounded-xl hover:brightness-110 transition-all active:scale-95"
               >
-                🏆 {language === "nl" ? "Rankings" : "Rankings"}
+                🏆 Rankings
               </button>
             </div>
           </>
