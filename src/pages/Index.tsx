@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import LingoGame from "@/components/LingoGame";
-import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -130,11 +129,11 @@ const Index = () => {
         {/* Unlock progress for level 5 */}
         {level === 5 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
-            <p>{unlockProgress.fourLetterPoints}/350 punten</p>
+            <p>{unlockProgress.fourLetterPoints}/250 punten</p>
             <p>
-              {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)
+              {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/2 cat.)
             </p>
-            <p>{unlockProgress.firstAttemptWins}/8 eerste pogingen</p>
+            <p>{unlockProgress.firstAttemptWins}/5 eerste pogingen</p>
           </div>
         )}
 
@@ -164,12 +163,7 @@ const Index = () => {
         </div>
 
         {!player ? (
-          <PlayerSetup
-            language="nl"
-            onCreatePlayer={async (name) => {
-              await createPlayer(name);
-            }}
-          />
+          (() => { navigate("/auth"); return null; })()
         ) : (
           <>
             {/* Player info */}
