@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
@@ -13,11 +14,13 @@ const Auth = () => {
   const { session, loading: authLoading, authReady } = usePlayer();
   const { toast } = useToast();
 
+  const navTo = useNavigate();
+
   useEffect(() => {
     if (authReady && session) {
-      window.location.replace("/");
+      navTo("/", { replace: true });
     }
-  }, [authReady, session]);
+  }, [authReady, session, navTo]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();

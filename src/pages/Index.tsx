@@ -81,9 +81,9 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !session) {
-      window.location.replace("/auth");
+      navigate("/auth", { replace: true });
     }
-  }, [loading, session]);
+  }, [loading, session, navigate]);
 
   if (loading || !session) {
     return (
