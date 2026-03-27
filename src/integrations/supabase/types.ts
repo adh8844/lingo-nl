@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      badges: {
+        Row: {
+          category: string
+          description: string
+          id: string
+          is_rare: boolean
+          name: string
+          points: number
+        }
+        Insert: {
+          category: string
+          description: string
+          id: string
+          is_rare?: boolean
+          name: string
+          points?: number
+        }
+        Update: {
+          category?: string
+          description?: string
+          id?: string
+          is_rare?: boolean
+          name?: string
+          points?: number
+        }
+        Relationships: []
+      }
       dutch_words: {
         Row: {
           approved: boolean
@@ -107,6 +134,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "game_completions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          attempts: number | null
+          duration_seconds: number | null
+          first_green_attempt: number | null
+          id: string
+          level: number
+          played_at: string
+          player_id: string
+          points_earned: number
+          session_id: string | null
+          solved: boolean
+          word: string
+        }
+        Insert: {
+          attempts?: number | null
+          duration_seconds?: number | null
+          first_green_attempt?: number | null
+          id?: string
+          level: number
+          played_at?: string
+          player_id: string
+          points_earned?: number
+          session_id?: string | null
+          solved?: boolean
+          word: string
+        }
+        Update: {
+          attempts?: number | null
+          duration_seconds?: number | null
+          first_green_attempt?: number | null
+          id?: string
+          level?: number
+          played_at?: string
+          player_id?: string
+          points_earned?: number
+          session_id?: string | null
+          solved?: boolean
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_games_player"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
@@ -370,6 +447,42 @@ export type Database = {
           },
         ]
       }
+      player_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          id: string
+          player_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          id?: string
+          player_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_pbadges_badge"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_pbadges_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_presence: {
         Row: {
           last_seen: string
@@ -399,35 +512,95 @@ export type Database = {
       players: {
         Row: {
           best_streak: number
+          birthdate: string | null
           created_at: string
           current_streak: number
           display_name: string
           id: string
+          last_played_date: string | null
           player_code: string
           points: number
+          total_games_played: number
+          total_hours_played: number
+          unlocked_5letter: boolean
+          unlocked_6letter: boolean
           updated_at: string
         }
         Insert: {
           best_streak?: number
+          birthdate?: string | null
           created_at?: string
           current_streak?: number
           display_name: string
           id?: string
+          last_played_date?: string | null
           player_code: string
           points?: number
+          total_games_played?: number
+          total_hours_played?: number
+          unlocked_5letter?: boolean
+          unlocked_6letter?: boolean
           updated_at?: string
         }
         Update: {
           best_streak?: number
+          birthdate?: string | null
           created_at?: string
           current_streak?: number
           display_name?: string
           id?: string
+          last_played_date?: string | null
           player_code?: string
           points?: number
+          total_games_played?: number
+          total_hours_played?: number
+          unlocked_5letter?: boolean
+          unlocked_6letter?: boolean
           updated_at?: string
         }
         Relationships: []
+      }
+      points_log: {
+        Row: {
+          created_at: string
+          game_id: string | null
+          id: string
+          player_id: string
+          points: number
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          game_id?: string | null
+          id?: string
+          player_id: string
+          points: number
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string | null
+          id?: string
+          player_id?: string
+          points?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_points_game"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_points_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
