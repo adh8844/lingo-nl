@@ -90,13 +90,13 @@ const OnlineMatchPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <div className="text-lg font-bold text-muted-foreground animate-pulse">
-          Waiting for match...
+          Wachten op wedstrijd...
         </div>
         <button
           onClick={() => navigate("/rankings")}
           className="px-4 py-2 bg-secondary text-secondary-foreground font-bold rounded-lg text-sm"
         >
-          ← Back
+          ← Terug
         </button>
       </div>
     );
