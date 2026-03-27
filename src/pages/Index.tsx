@@ -81,7 +81,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !session) {
-      window.location.href = "/auth";
+      window.location.replace("/auth");
     }
   }, [loading, session]);
 

@@ -12,27 +12,30 @@ import OnlineMatch from "./pages/OnlineMatch";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
+import { PlayerProvider } from "@/hooks/usePlayerContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <GlobalOnlineManager />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/rankings" element={<Rankings />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/statistics" element={<Statistics />} />
-          <Route path="/online-match" element={<OnlineMatch />} />
-          <Route path="/spelregels" element={<Rules />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <PlayerProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <GlobalOnlineManager />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/rankings" element={<Rankings />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/online-match" element={<OnlineMatch />} />
+            <Route path="/spelregels" element={<Rules />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </PlayerProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

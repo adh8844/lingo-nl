@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
+import { usePlayer } from "@/hooks/usePlayer";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,25 +10,14 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const { session, loading: authLoading, authReady } = usePlayer();
   const { toast } = useToast();
 
-  // Redirect if already logged in
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        window.location.href = "/";
-      }
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        window.location.href = "/";
-      } else {
-        setCheckingSession(false);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+    if (authReady && session) {
+      window.location.replace("/");
+    }
+  }, [authReady, session]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +63,7 @@ const Auth = () => {
     }
   };
 
-  if (checkingSession) {
+   if (!authReady || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>

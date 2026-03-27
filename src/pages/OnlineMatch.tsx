@@ -82,7 +82,7 @@ const OnlineMatchPage = () => {
   }
 
   if (!player) {
-    navigate("/");
+    window.location.replace("/");
     return null;
   }
 
