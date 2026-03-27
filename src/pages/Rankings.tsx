@@ -151,12 +151,12 @@ const Rankings = () => {
       .single();
 
     if (error) {
-      toast.error("Could not create group");
+      toast.error("Kon groep niet aanmaken");
       return;
     }
 
     await supabase.from("group_members").insert({ group_id: data.id, player_id: player.id });
-    toast.success(`Group "${data.name}" created! Code: ${code}`);
+    toast.success(`Groep "${data.name}" aangemaakt! Code: ${code}`);
     setNewGroupName("");
     setShowCreateGroup(false);
     loadGroups();
@@ -174,7 +174,7 @@ const Rankings = () => {
       .single();
 
     if (!group) {
-      toast.error("Group not found");
+      toast.error("Groep niet gevonden");
       return;
     }
 
@@ -183,11 +183,11 @@ const Rankings = () => {
       .insert({ group_id: group.id, player_id: player.id });
 
     if (error?.code === "23505") {
-      toast.info("Already in this group!");
+      toast.info("Je zit al in deze groep!");
     } else if (error) {
-      toast.error("Error joining group");
+      toast.error("Fout bij deelname");
     } else {
-      toast.success(`Joined "${group.name}"!`);
+      toast.success(`Lid geworden van "${group.name}"!`);
     }
 
     setGroupCode("");
@@ -203,7 +203,7 @@ const Rankings = () => {
       .eq("player_id", player.id);
     setSelectedGroup(null);
     loadGroups();
-    toast.success("Left group");
+    toast.success("Groep verlaten");
   };
 
   const handleSendChallenge = async (targetId: string) => {
@@ -364,7 +364,7 @@ const Rankings = () => {
         {tab === "points" && (
           <>
             {allPlayers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No players yet</p>
+              <p className="text-center text-muted-foreground py-8">Nog geen spelers</p>
             ) : (
               allPlayers.map((p, i) => renderRankRow(p, i))
             )}
@@ -375,7 +375,7 @@ const Rankings = () => {
         {tab === "friends" && (
           <>
             {!player ? (
-              <p className="text-center text-muted-foreground py-8">Create a player first</p>
+              <p className="text-center text-muted-foreground py-8">Maak eerst een speler aan</p>
             ) : (
               <>
                 {(() => {
@@ -385,7 +385,7 @@ const Rankings = () => {
                   ].sort((a, b) => b.points - a.points);
                   return combined.length === 1 && friends.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
-                      Add friends from the home screen to see them here!
+                      Voeg vrienden toe vanuit het startscherm!
                     </p>
                   ) : (
                     combined.map((p, i) => renderRankRow(p, i))
@@ -400,7 +400,7 @@ const Rankings = () => {
         {tab === "groups" && (
           <>
             {!player ? (
-              <p className="text-center text-muted-foreground py-8">Create a player first</p>
+              <p className="text-center text-muted-foreground py-8">Maak eerst een speler aan</p>
             ) : selectedGroup && selectedGroupData ? (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
@@ -423,7 +423,7 @@ const Rankings = () => {
                     className="font-mono text-xs text-primary cursor-pointer"
                     onClick={() => {
                       navigator.clipboard.writeText(selectedGroupData.invite_code);
-                      toast.success("Code copied!");
+                      toast.success("Code gekopieerd!");
                     }}
                   >
                     Code: {selectedGroupData.invite_code}
@@ -484,13 +484,13 @@ const Rankings = () => {
                     onClick={() => setShowCreateGroup(true)}
                     className="w-full px-4 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all"
                   >
-                    + Create a group
+                    + Groep aanmaken
                   </button>
                 )}
 
                 {groups.length === 0 ? (
                   <p className="text-center text-muted-foreground py-6">
-                    Join or create a group to compete!
+                    Maak of join een groep om te strijden!
                   </p>
                 ) : (
                   groups.map((g) => (
