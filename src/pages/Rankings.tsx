@@ -335,7 +335,7 @@ const Rankings = () => {
           onClick={() => navigate("/")}
           className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all"
         >
-          ← Back
+          ← Terug
         </button>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
           🏆 Rankings
