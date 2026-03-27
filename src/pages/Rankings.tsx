@@ -298,9 +298,9 @@ const Rankings = () => {
               {isOnline && (
                 <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
               )}
-              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`}>
+              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`} translate="no">
                 {entry.display_name}
-                {isMe && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
+                {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
               </span>
             </div>
           </div>
