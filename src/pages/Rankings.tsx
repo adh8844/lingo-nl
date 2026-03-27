@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence, OnlinePlayer } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
-import { Language, WordLength } from "@/data/words";
+import { WordLength } from "@/data/words";
 import { toast } from "sonner";
 
 type Tab = "points" | "friends" | "groups";
@@ -44,7 +44,6 @@ const Rankings = () => {
   const [challengingId, setChallengingId] = useState<string | null>(null);
   const [challengeTimer, setChallengeTimer] = useState(60);
   const [challengeWordLength, setChallengeWordLength] = useState<WordLength>(5);
-  const [challengeLang, setChallengeLang] = useState<Language>("nl");
   const [sending, setSending] = useState(false);
 
   const { onlinePlayers } = usePresence(player?.id);
