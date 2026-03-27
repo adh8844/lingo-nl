@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
 
 export interface Player {
   id: string;
@@ -15,6 +16,7 @@ export interface Player {
   unlocked_5letter: boolean;
   unlocked_6letter: boolean;
   created_at: string;
+  user_id?: string | null;
 }
 
 function generateCode(): string {
@@ -28,49 +30,79 @@ function generateCode(): string {
 
 export function usePlayer() {
   const [player, setPlayer] = useState<Player | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Listen for auth state changes
   useEffect(() => {
-    const loadPlayer = async () => {
-      const playerId = localStorage.getItem("lingo-player-id");
-      if (playerId) {
-        const { data } = await supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load or create player when session changes
+  useEffect(() => {
+    const loadOrCreatePlayer = async () => {
+      if (!session?.user) {
+        setPlayer(null);
+        setLoading(false);
+        return;
+      }
+
+      // Try to find existing player by user_id
+      const { data } = await supabase
+        .from("players")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (data) {
+        setPlayer(data as unknown as Player);
+        setLoading(false);
+        return;
+      }
+
+      // Auto-create player profile for new users
+      const displayName =
+        session.user.user_metadata?.display_name ||
+        session.user.user_metadata?.full_name ||
+        session.user.email?.split("@")[0] ||
+        "Speler";
+
+      let code = generateCode();
+      for (let i = 0; i < 3; i++) {
+        const { data: newPlayer, error } = await supabase
           .from("players")
-          .select("*")
-          .eq("id", playerId)
+          .insert({
+            display_name: displayName,
+            player_code: code,
+            user_id: session.user.id,
+          })
+          .select()
           .single();
-        if (data) {
-          setPlayer(data as unknown as Player);
+
+        if (newPlayer) {
+          setPlayer(newPlayer as unknown as Player);
+          break;
+        }
+        if (error?.code === "23505") {
+          code = generateCode();
         } else {
-          localStorage.removeItem("lingo-player-id");
+          console.error("Failed to create player:", error);
+          break;
         }
       }
       setLoading(false);
     };
-    loadPlayer();
-  }, []);
 
-  const createPlayer = useCallback(async (displayName: string) => {
-    let code = generateCode();
-    for (let i = 0; i < 3; i++) {
-      const { data, error } = await supabase
-        .from("players")
-        .insert({ display_name: displayName, player_code: code })
-        .select()
-        .single();
-      if (data) {
-        localStorage.setItem("lingo-player-id", data.id);
-        setPlayer(data as unknown as Player);
-        return data;
-      }
-      if (error?.code === "23505") {
-        code = generateCode();
-      } else {
-        throw error;
-      }
-    }
-    throw new Error("Could not generate unique code");
-  }, []);
+    loadOrCreatePlayer();
+  }, [session]);
 
   const refreshPlayer = useCallback(async () => {
     if (!player) return;
@@ -82,5 +114,10 @@ export function usePlayer() {
     if (data) setPlayer(data as unknown as Player);
   }, [player]);
 
-  return { player, loading, createPlayer, refreshPlayer };
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setPlayer(null);
+  }, []);
+
+  return { player, session, loading, refreshPlayer, signOut };
 }
