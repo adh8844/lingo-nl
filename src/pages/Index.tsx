@@ -5,7 +5,7 @@ import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -26,29 +26,53 @@ const Index = () => {
 
   const loadUnlockProgress = useCallback(async () => {
     if (!player) return;
-    const { data: fg } = await supabase.from("games" as any).select("points_earned").eq("player_id", player.id).eq("level", 4);
+    const { data: fg } = await supabase
+      .from("games" as any)
+      .select("points_earned")
+      .eq("player_id", player.id)
+      .eq("level", 4);
     const fourLetterPoints = (fg || []).reduce((s: number, g: any) => s + (g.points_earned || 0), 0);
 
-    const { data: badges } = await supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id);
+    const { data: badges } = await supabase
+      .from("player_badges" as any)
+      .select("badge_id")
+      .eq("player_id", player.id);
     const badgeIds = new Set((badges || []).map((b: any) => b.badge_id));
 
     const { data: defs } = await supabase.from("badges" as any).select("id, category, is_rare");
     const cats = new Set<string>();
-    let rare = 0, normal = 0;
+    let rare = 0,
+      normal = 0;
     (defs || []).forEach((b: any) => {
-      if (badgeIds.has(b.id)) { cats.add(b.category); if (b.is_rare) rare++; else normal++; }
+      if (badgeIds.has(b.id)) {
+        cats.add(b.category);
+        if (b.is_rare) rare++;
+        else normal++;
+      }
     });
 
-    const { data: fa } = await supabase.from("games" as any).select("id").eq("player_id", player.id).eq("solved", true).eq("attempts", 1);
+    const { data: fa } = await supabase
+      .from("games" as any)
+      .select("id")
+      .eq("player_id", player.id)
+      .eq("solved", true)
+      .eq("attempts", 1);
 
     setUnlockProgress({
-      fourLetterPoints, badgeCount: badgeIds.size, badgeCategories: cats.size,
-      firstAttemptWins: (fa || []).length, totalPoints: player.points || 0,
-      rareBadgeCount: rare, normalBadgeCount: normal, hasOpDreef: badgeIds.has("op_dreef"),
+      fourLetterPoints,
+      badgeCount: badgeIds.size,
+      badgeCategories: cats.size,
+      firstAttemptWins: (fa || []).length,
+      totalPoints: player.points || 0,
+      rareBadgeCount: rare,
+      normalBadgeCount: normal,
+      hasOpDreef: badgeIds.has("op_dreef"),
     });
   }, [player]);
 
-  useEffect(() => { if (player) loadUnlockProgress(); }, [player, loadUnlockProgress]);
+  useEffect(() => {
+    if (player) loadUnlockProgress();
+  }, [player, loadUnlockProgress]);
 
   const handleBack = useCallback(() => {
     setGameStarted(false);
@@ -67,7 +91,9 @@ const Index = () => {
   if (gameStarted) {
     return (
       <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">LINGO</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
+          LINGO
+        </h1>
         <LingoGame wordLength={selectedLevel} onBack={handleBack} />
       </div>
     );
@@ -82,7 +108,12 @@ const Index = () => {
     return (
       <button
         key={level}
-        onClick={() => { if (canPlay) { setSelectedLevel(level); setGameStarted(true); } }}
+        onClick={() => {
+          if (canPlay) {
+            setSelectedLevel(level);
+            setGameStarted(true);
+          }
+        }}
         disabled={!canPlay}
         className={`relative flex flex-col items-center gap-2 p-5 sm:p-6 rounded-2xl border-2 transition-all w-full ${
           canPlay
@@ -91,14 +122,18 @@ const Index = () => {
         }`}
       >
         {!canPlay && <Lock className="absolute top-3 right-3 w-5 h-5 text-muted-foreground" />}
-        <span className={`text-4xl sm:text-5xl font-extrabold ${canPlay ? "text-primary" : "text-muted-foreground"}`}>{level}</span>
+        <span className={`text-4xl sm:text-5xl font-extrabold ${canPlay ? "text-primary" : "text-muted-foreground"}`}>
+          {level}
+        </span>
         <span className={`text-sm font-bold ${canPlay ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
 
         {/* Unlock progress for level 5 */}
         {level === 5 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
-            <p>Route A: {unlockProgress.fourLetterPoints}/350 punten</p>
-            <p>Route B: {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)</p>
+            <p>{unlockProgress.fourLetterPoints}/350 punten</p>
+            <p>
+              Route B: {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)
+            </p>
             <p>Route C: {unlockProgress.firstAttemptWins}/8 eerste pogingen</p>
           </div>
         )}
@@ -106,8 +141,13 @@ const Index = () => {
         {/* Unlock progress for level 6 */}
         {level === 6 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
-            <p>{unlockProgress.totalPoints >= 600 ? "✓" : "✗"} {unlockProgress.totalPoints}/600 punten</p>
-            <p>{unlockProgress.rareBadgeCount >= 1 || unlockProgress.normalBadgeCount >= 8 ? "✓" : "✗"} {unlockProgress.rareBadgeCount}★ zeldzaam / {unlockProgress.normalBadgeCount}/8 normaal</p>
+            <p>
+              {unlockProgress.totalPoints >= 600 ? "✓" : "✗"} {unlockProgress.totalPoints}/600 punten
+            </p>
+            <p>
+              {unlockProgress.rareBadgeCount >= 1 || unlockProgress.normalBadgeCount >= 8 ? "✓" : "✗"}{" "}
+              {unlockProgress.rareBadgeCount}★ zeldzaam / {unlockProgress.normalBadgeCount}/8 normaal
+            </p>
             <p>{unlockProgress.hasOpDreef ? "✓" : "✗"} Op dreef badge</p>
           </div>
         )}
@@ -124,18 +164,31 @@ const Index = () => {
         </div>
 
         {!player ? (
-          <PlayerSetup language="nl" onCreatePlayer={async (name) => { await createPlayer(name); }} />
+          <PlayerSetup
+            language="nl"
+            onCreatePlayer={async (name) => {
+              await createPlayer(name);
+            }}
+          />
         ) : (
           <>
             {/* Player info */}
             <div className="flex items-center justify-between w-full px-2">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">Welkom terug,</p>
-                <p className="font-extrabold text-foreground" translate="no">{player.display_name}</p>
+                <p className="font-extrabold text-foreground" translate="no">
+                  {player.display_name}
+                </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-extrabold text-primary"><Star className="inline w-4 h-4 mr-0.5" />{player.points}</span>
-                <span className="font-extrabold text-accent"><Flame className="inline w-4 h-4 mr-0.5" />{player.current_streak}</span>
+                <span className="font-extrabold text-primary">
+                  <Star className="inline w-4 h-4 mr-0.5" />
+                  {player.points}
+                </span>
+                <span className="font-extrabold text-accent">
+                  <Flame className="inline w-4 h-4 mr-0.5" />
+                  {player.current_streak}
+                </span>
               </div>
             </div>
 
@@ -147,7 +200,7 @@ const Index = () => {
             </div>
 
             {/* Navigation */}
-            <div className="grid grid-cols-2 gap-2 w-full">
+            <div className="grid grid-cols-3 gap-2 w-full">
               <button
                 onClick={() => navigate("/profile")}
                 className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
@@ -168,13 +221,6 @@ const Index = () => {
               >
                 <BarChart3 className="w-5 h-5" />
                 Statistieken
-              </button>
-              <button
-                onClick={() => navigate("/spelregels")}
-                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
-              >
-                <BookOpen className="w-5 h-5" />
-                Spelregels
               </button>
             </div>
           </>
