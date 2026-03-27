@@ -208,7 +208,7 @@ const Rankings = () => {
 
   const handleSendChallenge = async (targetId: string) => {
     setSending(true);
-    const result = await sendChallenge(targetId, challengeTimer, challengeWordLength, challengeLang);
+    const result = await sendChallenge(targetId, challengeTimer, challengeWordLength, "nl");
     setSending(false);
     if (result) {
       toast.success("Uitdaging verstuurd!");
