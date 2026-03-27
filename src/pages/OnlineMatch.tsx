@@ -20,9 +20,8 @@ const OnlineMatchPage = () => {
     declineRematch,
     forfeitMatch,
   } = useOnlineMatch(player?.id);
-  const { awardMatchWin } = usePoints(player?.id);
 
-  const [opponentName, setOpponentName] = useState("Opponent");
+  const [opponentName, setOpponentName] = useState("Tegenstander");
   const [pointsAwarded, setPointsAwarded] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,13 +42,7 @@ const OnlineMatchPage = () => {
       });
   }, [activeMatch?.id, activeMatch?.player1_id, activeMatch?.player2_id, player?.id]);
 
-  // Award points when match finishes and player wins
-  useEffect(() => {
-    if (activeMatch?.status === "finished" && activeMatch.winner_id === player?.id && pointsAwarded !== activeMatch.id) {
-      setPointsAwarded(activeMatch.id);
-      awardMatchWin();
-    }
-  }, [activeMatch?.status, activeMatch?.winner_id, activeMatch?.id, player?.id, awardMatchWin, pointsAwarded]);
+  // Points are now handled server-side via process-game-result edge function
 
   // Detect opponent declined rematch
   useEffect(() => {
