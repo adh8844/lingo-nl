@@ -4,45 +4,57 @@ import LingoGame from "@/components/LingoGame";
 import PlayerSetup from "@/components/PlayerSetup";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
-
-type GameMode = "single" | "two-player";
-
-const TIMER_OPTIONS = [30, 60, 90, 120] as const;
+import { supabase } from "@/integrations/supabase/client";
+import { Lock, Star, Flame, Trophy, User, BarChart3 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
-  const [wordLength, setWordLength] = useState<WordLength>(5);
-  const [timerSeconds, setTimerSeconds] = useState<number>(60);
-  const [gameMode, setGameMode] = useState<GameMode>("single");
+  const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
+  const { player, loading, createPlayer, refreshPlayer } = usePlayer();
 
-  const { player, loading, createPlayer, updateStreak, refreshPlayer } = usePlayer();
+  const [unlockProgress, setUnlockProgress] = useState({
+    fourLetterPoints: 0,
+    badgeCount: 0,
+    badgeCategories: 0,
+    firstAttemptWins: 0,
+    totalPoints: 0,
+    rareBadgeCount: 0,
+    normalBadgeCount: 0,
+    hasOpDreef: false,
+  });
 
-  const currentStreak = player?.current_streak ?? 0;
-  const bestStreak = player?.best_streak ?? 0;
+  const loadUnlockProgress = useCallback(async () => {
+    if (!player) return;
+    const { data: fg } = await supabase.from("games" as any).select("points_earned").eq("player_id", player.id).eq("level", 4);
+    const fourLetterPoints = (fg || []).reduce((s: number, g: any) => s + (g.points_earned || 0), 0);
 
-  useEffect(() => {
-    if (player) {
-      localStorage.setItem("lingo-current-streak", String(player.current_streak));
-      localStorage.setItem("lingo-best-streak", String(player.best_streak));
-    }
+    const { data: badges } = await supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id);
+    const badgeIds = new Set((badges || []).map((b: any) => b.badge_id));
+
+    const { data: defs } = await supabase.from("badges" as any).select("id, category, is_rare");
+    const cats = new Set<string>();
+    let rare = 0, normal = 0;
+    (defs || []).forEach((b: any) => {
+      if (badgeIds.has(b.id)) { cats.add(b.category); if (b.is_rare) rare++; else normal++; }
+    });
+
+    const { data: fa } = await supabase.from("games" as any).select("id").eq("player_id", player.id).eq("solved", true).eq("attempts", 1);
+
+    setUnlockProgress({
+      fourLetterPoints, badgeCount: badgeIds.size, badgeCategories: cats.size,
+      firstAttemptWins: (fa || []).length, totalPoints: player.points || 0,
+      rareBadgeCount: rare, normalBadgeCount: normal, hasOpDreef: badgeIds.has("op_dreef"),
+    });
   }, [player]);
 
-  const handleStreakUpdate = useCallback(
-    async (newCurrent: number, newBest: number) => {
-      if (player) {
-        await updateStreak(newCurrent, newBest);
-      }
-      localStorage.setItem("lingo-current-streak", String(newCurrent));
-      localStorage.setItem("lingo-best-streak", String(newBest));
-    },
-    [player, updateStreak]
-  );
+  useEffect(() => { if (player) loadUnlockProgress(); }, [player, loadUnlockProgress]);
 
   const handleBack = useCallback(() => {
     setGameStarted(false);
     refreshPlayer();
-  }, [refreshPlayer]);
+    loadUnlockProgress();
+  }, [refreshPlayer, loadUnlockProgress]);
 
   if (loading) {
     return (
@@ -55,144 +67,107 @@ const Index = () => {
   if (gameStarted) {
     return (
       <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
-          LINGO
-        </h1>
-        <LingoGame
-          language="nl"
-          wordLength={wordLength}
-          timerSeconds={timerSeconds}
-          gameMode={gameMode}
-          onBack={handleBack}
-          currentStreak={currentStreak}
-          bestStreak={bestStreak}
-          onStreakUpdate={handleStreakUpdate}
-        />
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">LINGO</h1>
+        <LingoGame wordLength={selectedLevel} onBack={handleBack} />
       </div>
     );
   }
 
+  const is5Unlocked = player?.unlocked_5letter ?? false;
+  const is6Unlocked = player?.unlocked_6letter ?? false;
+
+  const renderLevelCard = (level: WordLength, label: string, unlocked: boolean) => {
+    const canPlay = level === 4 || unlocked;
+
+    return (
+      <button
+        key={level}
+        onClick={() => { if (canPlay) { setSelectedLevel(level); setGameStarted(true); } }}
+        disabled={!canPlay}
+        className={`relative flex flex-col items-center gap-2 p-5 sm:p-6 rounded-2xl border-2 transition-all w-full ${
+          canPlay
+            ? "bg-card border-primary/30 hover:border-primary hover:shadow-lg hover:shadow-primary/20 active:scale-95 cursor-pointer"
+            : "bg-card/50 border-border opacity-70 cursor-not-allowed"
+        }`}
+      >
+        {!canPlay && <Lock className="absolute top-3 right-3 w-5 h-5 text-muted-foreground" />}
+        <span className={`text-4xl sm:text-5xl font-extrabold ${canPlay ? "text-primary" : "text-muted-foreground"}`}>{level}</span>
+        <span className={`text-sm font-bold ${canPlay ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+
+        {/* Unlock progress for level 5 */}
+        {level === 5 && !unlocked && player && (
+          <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
+            <p>Route A: {unlockProgress.fourLetterPoints}/350 punten</p>
+            <p>Route B: {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/3 cat.)</p>
+            <p>Route C: {unlockProgress.firstAttemptWins}/8 eerste pogingen</p>
+          </div>
+        )}
+
+        {/* Unlock progress for level 6 */}
+        {level === 6 && !unlocked && player && (
+          <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
+            <p>{unlockProgress.totalPoints >= 600 ? "✓" : "✗"} {unlockProgress.totalPoints}/600 punten</p>
+            <p>{unlockProgress.rareBadgeCount >= 1 || unlockProgress.normalBadgeCount >= 8 ? "✓" : "✗"} {unlockProgress.rareBadgeCount}★ zeldzaam / {unlockProgress.normalBadgeCount}/8 normaal</p>
+            <p>{unlockProgress.hasOpDreef ? "✓" : "✗"} Op dreef badge</p>
+          </div>
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-primary">
-            LINGO
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Raad het woord
-          </p>
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-primary">LINGO</h1>
+          <p className="text-muted-foreground text-lg">Raad het woord</p>
         </div>
 
-        {/* Player setup or welcome */}
         {!player ? (
           <PlayerSetup language="nl" onCreatePlayer={async (name) => { await createPlayer(name); }} />
         ) : (
           <>
-            <div className="flex flex-col items-center gap-1">
-              <div className="text-center">
+            {/* Player info */}
+            <div className="flex items-center justify-between w-full px-2">
+              <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">Welkom terug,</p>
-                <p className="text-xl font-extrabold text-foreground" translate="no">{player.display_name}</p>
+                <p className="font-extrabold text-foreground" translate="no">{player.display_name}</p>
               </div>
-              
-              {/* Stats */}
-              {(bestStreak > 0 || (player.points ?? 0) > 0) && (
-                <div className="flex items-center gap-3 mt-1">
-                  {bestStreak > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xl font-extrabold text-primary">🔥 {currentStreak}</span>
-                    </div>
-                  )}
-                  {(player.points ?? 0) > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xl font-extrabold text-accent">⭐ {player.points}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Word length selector */}
-            <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground font-medium">Aantal letters</p>
-              <div className="flex gap-2">
-                {([4, 5, 6] as WordLength[]).map((len) => (
-                  <button
-                    key={len}
-                    onClick={() => setWordLength(len)}
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-extrabold text-lg sm:text-xl transition-all active:scale-95 ${
-                      wordLength === len
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        : "bg-secondary text-secondary-foreground hover:brightness-110"
-                    }`}
-                  >
-                    {len}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3">
+                <span className="font-extrabold text-primary"><Star className="inline w-4 h-4 mr-0.5" />{player.points}</span>
+                <span className="font-extrabold text-accent"><Flame className="inline w-4 h-4 mr-0.5" />{player.current_streak}</span>
               </div>
             </div>
 
-            {/* Timer selector */}
-            <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground font-medium">Timer (seconden)</p>
-              <div className="flex gap-2">
-                {TIMER_OPTIONS.map((sec) => (
-                  <button
-                    key={sec}
-                    onClick={() => setTimerSeconds(sec)}
-                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg font-extrabold text-base sm:text-lg transition-all active:scale-95 ${
-                      timerSeconds === sec
-                        ? "bg-accent text-accent-foreground shadow-lg shadow-accent/30"
-                        : "bg-secondary text-secondary-foreground hover:brightness-110"
-                    }`}
-                  >
-                    {sec}
-                  </button>
-                ))}
-              </div>
+            {/* Level cards */}
+            <div className="grid grid-cols-3 gap-3 w-full">
+              {renderLevelCard(4, "Vier letters", true)}
+              {renderLevelCard(5, "Vijf letters", is5Unlocked)}
+              {renderLevelCard(6, "Zes letters", is6Unlocked)}
             </div>
 
-            {/* Game mode selector */}
-            <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-muted-foreground font-medium">Spelmodus</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setGameMode("single")}
-                  className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                    gameMode === "single"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:brightness-110"
-                  }`}
-                >
-                  👤 Solo
-                </button>
-                <button
-                  onClick={() => setGameMode("two-player")}
-                  className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
-                    gameMode === "two-player"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:brightness-110"
-                  }`}
-                >
-                  👥 Twee spelers
-                </button>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
+            {/* Navigation */}
+            <div className="grid grid-cols-3 gap-2 w-full">
               <button
-                onClick={() => setGameStarted(true)}
-                className="flex-1 px-6 py-3.5 bg-accent text-accent-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-accent/30"
+                onClick={() => navigate("/profile")}
+                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
               >
-                ▶ Start!
+                <User className="w-5 h-5" />
+                Profiel
               </button>
               <button
                 onClick={() => navigate("/rankings")}
-                className="flex-1 px-6 py-3.5 bg-secondary text-secondary-foreground font-extrabold text-base rounded-xl hover:brightness-110 transition-all active:scale-95"
+                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
               >
-                🏆 Rankings
+                <Trophy className="w-5 h-5" />
+                Ranglijst
+              </button>
+              <button
+                onClick={() => navigate("/statistics")}
+                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
+              >
+                <BarChart3 className="w-5 h-5" />
+                Statistieken
               </button>
             </div>
           </>

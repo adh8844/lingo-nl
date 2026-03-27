@@ -8,6 +8,13 @@ export interface Player {
   current_streak: number;
   best_streak: number;
   points: number;
+  birthdate?: string | null;
+  total_games_played: number;
+  total_hours_played: number;
+  last_played_date?: string | null;
+  unlocked_5letter: boolean;
+  unlocked_6letter: boolean;
+  created_at: string;
 }
 
 function generateCode(): string {
@@ -23,7 +30,6 @@ export function usePlayer() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load player from localStorage id
   useEffect(() => {
     const loadPlayer = async () => {
       const playerId = localStorage.getItem("lingo-player-id");
@@ -34,7 +40,7 @@ export function usePlayer() {
           .eq("id", playerId)
           .single();
         if (data) {
-          setPlayer(data);
+          setPlayer(data as unknown as Player);
         } else {
           localStorage.removeItem("lingo-player-id");
         }
@@ -46,7 +52,6 @@ export function usePlayer() {
 
   const createPlayer = useCallback(async (displayName: string) => {
     let code = generateCode();
-    // Try up to 3 times for unique code
     for (let i = 0; i < 3; i++) {
       const { data, error } = await supabase
         .from("players")
@@ -55,7 +60,7 @@ export function usePlayer() {
         .single();
       if (data) {
         localStorage.setItem("lingo-player-id", data.id);
-        setPlayer(data);
+        setPlayer(data as unknown as Player);
         return data;
       }
       if (error?.code === "23505") {
@@ -67,20 +72,6 @@ export function usePlayer() {
     throw new Error("Could not generate unique code");
   }, []);
 
-  const updateStreak = useCallback(
-    async (currentStreak: number, bestStreak: number) => {
-      if (!player) return;
-      const { data } = await supabase
-        .from("players")
-        .update({ current_streak: currentStreak, best_streak: bestStreak })
-        .eq("id", player.id)
-        .select()
-        .single();
-      if (data) setPlayer(data);
-    },
-    [player]
-  );
-
   const refreshPlayer = useCallback(async () => {
     if (!player) return;
     const { data } = await supabase
@@ -88,8 +79,8 @@ export function usePlayer() {
       .select("*")
       .eq("id", player.id)
       .single();
-    if (data) setPlayer(data);
+    if (data) setPlayer(data as unknown as Player);
   }, [player]);
 
-  return { player, loading, createPlayer, updateStreak, refreshPlayer };
+  return { player, loading, createPlayer, refreshPlayer };
 }
