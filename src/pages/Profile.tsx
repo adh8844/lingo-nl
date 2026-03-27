@@ -15,6 +15,33 @@ interface Badge {
 
 const CATEGORIES = ["Tijd", "Reeks", "Vaardigheid", "Sociaal", "Uithoudingsvermogen", "Prestige"];
 
+const BADGE_ICONS: Record<string, React.ReactNode> = {
+  nachtuil: <Moon className="w-6 h-6" />,
+  vroege_vogel: <Sun className="w-6 h-6" />,
+  maneschijn: <Sparkles className="w-6 h-6" />,
+  weekendstrijder: <Calendar className="w-6 h-6" />,
+  op_dreef: <Flame className="w-6 h-6" />,
+  niet_te_stoppen: <Zap className="w-6 h-6" />,
+  ijzersterk: <ShieldCheck className="w-6 h-6" />,
+  maandmaster: <Crown className="w-6 h-6" />,
+  supersnel: <Timer className="w-6 h-6" />,
+  vlekkeloos: <Target className="w-6 h-6" />,
+  comeback: <Swords className="w-6 h-6" />,
+  meesterspeler: <Trophy className="w-6 h-6" />,
+  fair_play: <HandshakeIcon className="w-6 h-6" />,
+  werver: <Users className="w-6 h-6" />,
+  feestbeest: <PartyPopper className="w-6 h-6" />,
+  uitdager: <Medal className="w-6 h-6" />,
+  marathonloper: <Footprints className="w-6 h-6" />,
+  golfrijder: <Waves className="w-6 h-6" />,
+  onvermoeibaar: <Brain className="w-6 h-6" />,
+  tijdloze: <Clock className="w-6 h-6" />,
+  alleskunner: <Gem className="w-6 h-6" />,
+  veteraan: <ScrollText className="w-6 h-6" />,
+  legend: <Star className="w-6 h-6" />,
+  verzamelaar: <Library className="w-6 h-6" />,
+};
+
 const Profile = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
