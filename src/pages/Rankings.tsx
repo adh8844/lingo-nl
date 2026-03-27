@@ -323,9 +323,9 @@ const Rankings = () => {
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "points", label: "⭐ Points" },
-    { key: "friends", label: "👥 Friends" },
-    { key: "groups", label: "🏠 Groups" },
+    { key: "points", label: "⭐ Punten" },
+    { key: "friends", label: "👥 Vrienden" },
+    { key: "groups", label: "🏠 Groepen" },
   ];
 
   return (
