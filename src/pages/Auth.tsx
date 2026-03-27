@@ -73,6 +73,14 @@ const Auth = () => {
     }
   };
 
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-bounce-in">
