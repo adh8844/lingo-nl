@@ -9,6 +9,7 @@ import Profile from "./pages/Profile";
 import Statistics from "./pages/Statistics";
 import OnlineMatch from "./pages/OnlineMatch";
 import NotFound from "./pages/NotFound";
+import Rules from "./pages/Rules";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/online-match" element={<OnlineMatch />} />
+          <Route path="/spelregels" element={<Rules />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
