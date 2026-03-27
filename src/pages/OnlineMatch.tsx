@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
-import { usePoints } from "@/hooks/usePoints";
 import { supabase } from "@/integrations/supabase/client";
 import OnlineGame from "@/components/OnlineGame";
 
