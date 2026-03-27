@@ -79,7 +79,13 @@ const Index = () => {
     loadUnlockProgress();
   }, [refreshPlayer, loadUnlockProgress]);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && !session) {
+      navigate("/auth");
+    }
+  }, [loading, session, navigate]);
+
+  if (loading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
@@ -163,7 +169,7 @@ const Index = () => {
         </div>
 
         {!player ? (
-          (() => { navigate("/auth"); return null; })()
+          <div className="text-muted-foreground">Profiel laden...</div>
         ) : (
           <>
             {/* Player info */}
@@ -224,6 +230,15 @@ const Index = () => {
                 Spelregels
               </button>
             </div>
+
+            {/* Uitloggen */}
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Uitloggen
+            </button>
           </>
         )}
       </div>
