@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence, OnlinePlayer } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
-import { Language, WordLength } from "@/data/words";
+import { WordLength } from "@/data/words";
 import { toast } from "sonner";
 
 type Tab = "points" | "friends" | "groups";
@@ -44,7 +44,6 @@ const Rankings = () => {
   const [challengingId, setChallengingId] = useState<string | null>(null);
   const [challengeTimer, setChallengeTimer] = useState(60);
   const [challengeWordLength, setChallengeWordLength] = useState<WordLength>(5);
-  const [challengeLang, setChallengeLang] = useState<Language>("nl");
   const [sending, setSending] = useState(false);
 
   const { onlinePlayers } = usePresence(player?.id);
@@ -152,12 +151,12 @@ const Rankings = () => {
       .single();
 
     if (error) {
-      toast.error("Could not create group");
+      toast.error("Kon groep niet aanmaken");
       return;
     }
 
     await supabase.from("group_members").insert({ group_id: data.id, player_id: player.id });
-    toast.success(`Group "${data.name}" created! Code: ${code}`);
+    toast.success(`Groep "${data.name}" aangemaakt! Code: ${code}`);
     setNewGroupName("");
     setShowCreateGroup(false);
     loadGroups();
@@ -175,7 +174,7 @@ const Rankings = () => {
       .single();
 
     if (!group) {
-      toast.error("Group not found");
+      toast.error("Groep niet gevonden");
       return;
     }
 
@@ -184,11 +183,11 @@ const Rankings = () => {
       .insert({ group_id: group.id, player_id: player.id });
 
     if (error?.code === "23505") {
-      toast.info("Already in this group!");
+      toast.info("Je zit al in deze groep!");
     } else if (error) {
-      toast.error("Error joining group");
+      toast.error("Fout bij deelname");
     } else {
-      toast.success(`Joined "${group.name}"!`);
+      toast.success(`Lid geworden van "${group.name}"!`);
     }
 
     setGroupCode("");
@@ -204,12 +203,12 @@ const Rankings = () => {
       .eq("player_id", player.id);
     setSelectedGroup(null);
     loadGroups();
-    toast.success("Left group");
+    toast.success("Groep verlaten");
   };
 
   const handleSendChallenge = async (targetId: string) => {
     setSending(true);
-    const result = await sendChallenge(targetId, challengeTimer, challengeWordLength, challengeLang);
+    const result = await sendChallenge(targetId, challengeTimer, challengeWordLength, "nl");
     setSending(false);
     if (result) {
       toast.success("Uitdaging verstuurd!");
@@ -267,27 +266,6 @@ const Rankings = () => {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium w-14">Taal:</span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setChallengeLang("nl")}
-              className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                challengeLang === "nl" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              🇳🇱 NL
-            </button>
-            <button
-              onClick={() => setChallengeLang("en")}
-              className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                challengeLang === "en" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              🇬🇧 EN
-            </button>
-          </div>
-        </div>
         <button
           onClick={() => handleSendChallenge(targetPlayerId)}
           disabled={sending}
@@ -319,9 +297,9 @@ const Rankings = () => {
               {isOnline && (
                 <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
               )}
-              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`}>
+              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`} translate="no">
                 {entry.display_name}
-                {isMe && <span className="text-xs text-muted-foreground ml-1">(you)</span>}
+                {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
               </span>
             </div>
           </div>
@@ -345,9 +323,9 @@ const Rankings = () => {
   const selectedGroupData = groups.find((g) => g.id === selectedGroup);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "points", label: "⭐ Points" },
-    { key: "friends", label: "👥 Friends" },
-    { key: "groups", label: "🏠 Groups" },
+    { key: "points", label: "⭐ Punten" },
+    { key: "friends", label: "👥 Vrienden" },
+    { key: "groups", label: "🏠 Groepen" },
   ];
 
   return (
@@ -357,7 +335,7 @@ const Rankings = () => {
           onClick={() => navigate("/")}
           className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all"
         >
-          ← Back
+          ← Terug
         </button>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
           🏆 Rankings
@@ -386,7 +364,7 @@ const Rankings = () => {
         {tab === "points" && (
           <>
             {allPlayers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No players yet</p>
+              <p className="text-center text-muted-foreground py-8">Nog geen spelers</p>
             ) : (
               allPlayers.map((p, i) => renderRankRow(p, i))
             )}
@@ -397,7 +375,7 @@ const Rankings = () => {
         {tab === "friends" && (
           <>
             {!player ? (
-              <p className="text-center text-muted-foreground py-8">Create a player first</p>
+              <p className="text-center text-muted-foreground py-8">Maak eerst een speler aan</p>
             ) : (
               <>
                 {(() => {
@@ -407,7 +385,7 @@ const Rankings = () => {
                   ].sort((a, b) => b.points - a.points);
                   return combined.length === 1 && friends.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
-                      Add friends from the home screen to see them here!
+                      Voeg vrienden toe vanuit het startscherm!
                     </p>
                   ) : (
                     combined.map((p, i) => renderRankRow(p, i))
@@ -422,7 +400,7 @@ const Rankings = () => {
         {tab === "groups" && (
           <>
             {!player ? (
-              <p className="text-center text-muted-foreground py-8">Create a player first</p>
+              <p className="text-center text-muted-foreground py-8">Maak eerst een speler aan</p>
             ) : selectedGroup && selectedGroupData ? (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
@@ -430,13 +408,13 @@ const Rankings = () => {
                     onClick={() => setSelectedGroup(null)}
                     className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    ← All groups
+                    ← Alle groepen
                   </button>
                   <button
                     onClick={() => leaveGroup(selectedGroup)}
                     className="text-xs px-3 py-1.5 rounded-lg bg-destructive/20 text-destructive font-bold hover:bg-destructive/30 transition-colors"
                   >
-                    Leave
+                    Verlaten
                   </button>
                 </div>
                 <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-card">
@@ -445,14 +423,14 @@ const Rankings = () => {
                     className="font-mono text-xs text-primary cursor-pointer"
                     onClick={() => {
                       navigator.clipboard.writeText(selectedGroupData.invite_code);
-                      toast.success("Code copied!");
+                      toast.success("Code gekopieerd!");
                     }}
                   >
                     Code: {selectedGroupData.invite_code}
                   </span>
                 </div>
                 {groupMembers.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">No members yet</p>
+                  <p className="text-center text-muted-foreground py-4">Nog geen leden</p>
                 ) : (
                   groupMembers.map((p, i) => renderRankRow(p, i))
                 )}
@@ -464,7 +442,7 @@ const Rankings = () => {
                     type="text"
                     value={groupCode}
                     onChange={(e) => setGroupCode(e.target.value.toUpperCase())}
-                    placeholder="Group code"
+                    placeholder="Groepscode"
                     maxLength={6}
                     className="flex-1 px-3 py-2 rounded-lg bg-muted text-foreground font-mono font-bold text-center text-sm tracking-widest border-2 border-transparent focus:border-primary focus:outline-none transition-colors uppercase"
                   />
@@ -473,7 +451,7 @@ const Rankings = () => {
                     disabled={groupCode.length < 6}
                     className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                   >
-                    Join
+                    Deelnemen
                   </button>
                 </div>
 
@@ -483,7 +461,7 @@ const Rankings = () => {
                       type="text"
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
-                      placeholder="Group name"
+                      placeholder="Groepsnaam"
                       maxLength={30}
                       className="flex-1 px-3 py-2 rounded-lg bg-muted text-foreground font-bold text-sm border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
                     />
@@ -492,7 +470,7 @@ const Rankings = () => {
                       disabled={!newGroupName.trim()}
                       className="px-4 py-2 rounded-lg bg-accent text-accent-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
                     >
-                      Create
+                       Aanmaken
                     </button>
                     <button
                       onClick={() => { setShowCreateGroup(false); setNewGroupName(""); }}
@@ -506,13 +484,13 @@ const Rankings = () => {
                     onClick={() => setShowCreateGroup(true)}
                     className="w-full px-4 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all"
                   >
-                    + Create a group
+                    + Groep aanmaken
                   </button>
                 )}
 
                 {groups.length === 0 ? (
                   <p className="text-center text-muted-foreground py-6">
-                    Join or create a group to compete!
+                    Maak of join een groep om te strijden!
                   </p>
                 ) : (
                   groups.map((g) => (
