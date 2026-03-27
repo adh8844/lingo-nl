@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getRandomWordAsync, Language, WordLength } from "@/data/words";
+import { getRandomWordAsync, WordLength } from "@/data/words";
 import { playInviteSound, playAcceptSound } from "@/hooks/useSounds";
 
 interface ChallengeNotif {
@@ -14,6 +14,7 @@ interface ChallengeNotif {
 }
 
 const HEARTBEAT_INTERVAL = 15000;
+const ACTIVITY_TIMEOUT = 180000; // 3 minutes
 
 const GlobalOnlineManager = () => {
   const navigate = useNavigate();
@@ -22,22 +23,37 @@ const GlobalOnlineManager = () => {
   const [accepting, setAccepting] = useState<string | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const channelRef = useRef<any>(null);
+  const lastActivityRef = useRef<number>(Date.now());
 
-  // Re-check player ID on route changes
   const getPlayerId = useCallback(() => localStorage.getItem("lingo-player-id"), []);
 
-  // Presence heartbeat - always running when player exists
+  // Track user activity (clicks, touches, keys)
+  useEffect(() => {
+    const markActive = () => { lastActivityRef.current = Date.now(); };
+    const events = ["click", "touchstart", "keydown", "mousemove", "scroll"];
+    events.forEach(e => window.addEventListener(e, markActive, { passive: true }));
+    return () => {
+      events.forEach(e => window.removeEventListener(e, markActive));
+    };
+  }, []);
+
+  // Presence heartbeat - always running when player exists and recently active
   useEffect(() => {
     const playerId = getPlayerId();
     if (!playerId) return;
 
-    const updatePresence = () => {
-      supabase
-        .from("player_presence")
-        .upsert(
-          { player_id: playerId, last_seen: new Date().toISOString(), status: "online" },
-          { onConflict: "player_id" }
-        );
+    const updatePresence = async () => {
+      const isActive = Date.now() - lastActivityRef.current < ACTIVITY_TIMEOUT;
+      if (isActive) {
+        await supabase
+          .from("player_presence")
+          .upsert(
+            { player_id: playerId, last_seen: new Date().toISOString(), status: "online" },
+            { onConflict: "player_id" }
+          );
+      } else {
+        await supabase.from("player_presence").delete().eq("player_id", playerId);
+      }
     };
 
     updatePresence();
@@ -54,7 +70,6 @@ const GlobalOnlineManager = () => {
     const playerId = getPlayerId();
     if (!playerId) return;
 
-    // Load existing pending challenges
     const loadChallenges = async () => {
       const { data } = await supabase
         .from("online_challenges")
@@ -73,7 +88,7 @@ const GlobalOnlineManager = () => {
         setChallenges(data.map(c => ({
           id: c.id,
           challenger_id: c.challenger_id,
-          challenger_name: nameMap.get(c.challenger_id) || "Unknown",
+          challenger_name: nameMap.get(c.challenger_id) || "Onbekend",
           timer_seconds: c.timer_seconds,
           word_length: c.word_length,
           language: c.language,
@@ -107,7 +122,7 @@ const GlobalOnlineManager = () => {
           return [...prev, {
             id: c.id,
             challenger_id: c.challenger_id,
-            challenger_name: player?.display_name || "Unknown",
+            challenger_name: player?.display_name || "Onbekend",
             timer_seconds: c.timer_seconds,
             word_length: c.word_length,
             language: c.language,
@@ -124,7 +139,6 @@ const GlobalOnlineManager = () => {
         const c = payload.new as any;
         if (c.status === "accepted") {
           playAcceptSound();
-          // Challenger: navigate to match after brief delay for match creation
           setTimeout(() => navigate("/online-match"), 600);
         }
       })
@@ -158,7 +172,7 @@ const GlobalOnlineManager = () => {
         .eq("id", challenge.id);
 
       const word = await getRandomWordAsync(
-        challenge.language as Language,
+        "nl",
         challenge.word_length as WordLength
       );
 
@@ -169,7 +183,7 @@ const GlobalOnlineManager = () => {
           player2_id: playerId,
           timer_seconds: challenge.timer_seconds,
           word_length: challenge.word_length,
-          language: challenge.language,
+          language: "nl",
           current_word: word,
           status: "active",
         })
@@ -215,7 +229,7 @@ const GlobalOnlineManager = () => {
               ⚔️ {c.challenger_name} daagt je uit!
             </span>
             <span className="text-xs text-muted-foreground">
-              {c.word_length} letters · {c.timer_seconds}s · {c.language === "nl" ? "🇳🇱" : "🇬🇧"}
+              {c.word_length} letters · {c.timer_seconds}s
             </span>
           </div>
           <div className="flex gap-2 shrink-0">

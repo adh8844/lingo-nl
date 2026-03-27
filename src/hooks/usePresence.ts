@@ -12,25 +12,11 @@ export interface OnlinePlayer {
 }
 
 const HEARTBEAT_INTERVAL = 15000; // 15 seconds
-const ONLINE_THRESHOLD = 30000; // 30 seconds
+const ONLINE_THRESHOLD = 180000; // 3 minutes
 
 export function usePresence(playerId: string | undefined) {
   const [onlinePlayers, setOnlinePlayers] = useState<OnlinePlayer[]>([]);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Upsert presence
-  const updatePresence = useCallback(async (status: string = "online") => {
-    if (!playerId) return;
-    await supabase
-      .from("player_presence")
-      .upsert({ player_id: playerId, last_seen: new Date().toISOString(), status }, { onConflict: "player_id" });
-  }, [playerId]);
-
-  // Remove presence
-  const removePresence = useCallback(async () => {
-    if (!playerId) return;
-    await supabase.from("player_presence").delete().eq("player_id", playerId);
-  }, [playerId]);
 
   // Load online players
   const loadOnlinePlayers = useCallback(async () => {
@@ -72,15 +58,13 @@ export function usePresence(playerId: string | undefined) {
     }
   }, [playerId]);
 
-  // Start heartbeat and subscribe to changes
+  // Poll and subscribe to changes
   useEffect(() => {
     if (!playerId) return;
 
-    updatePresence("online");
     loadOnlinePlayers();
 
     heartbeatRef.current = setInterval(() => {
-      updatePresence("online");
       loadOnlinePlayers();
     }, HEARTBEAT_INTERVAL);
 
@@ -93,10 +77,9 @@ export function usePresence(playerId: string | undefined) {
 
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-      removePresence();
       supabase.removeChannel(channel);
     };
-  }, [playerId, updatePresence, removePresence, loadOnlinePlayers]);
+  }, [playerId, loadOnlinePlayers]);
 
-  return { onlinePlayers, updatePresence, loadOnlinePlayers };
+  return { onlinePlayers, loadOnlinePlayers };
 }
