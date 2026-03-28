@@ -264,6 +264,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog open={suggestionDialogOpen} word={pendingWord} language="nl" onConfirm={handleSuggestionConfirm} onCancel={handleSuggestionCancel} />
 
       {/* Header */}
