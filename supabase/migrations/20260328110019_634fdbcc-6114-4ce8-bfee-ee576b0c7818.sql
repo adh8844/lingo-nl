@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Anyone can update dutch_words" ON public.dutch_words;
+CREATE POLICY "Anyone can update dutch_words" ON public.dutch_words FOR UPDATE TO authenticated USING (true) WITH CHECK (true);

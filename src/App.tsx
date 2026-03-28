@@ -9,6 +9,7 @@ import Rankings from "./pages/Rankings";
 import Profile from "./pages/Profile";
 import Statistics from "./pages/Statistics";
 import OnlineMatch from "./pages/OnlineMatch";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/statistics" element={<Statistics />} />
             <Route path="/online-match" element={<OnlineMatch />} />
             <Route path="/spelregels" element={<Rules />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
