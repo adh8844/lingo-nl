@@ -1,91 +1,26 @@
 
 
-# Dingo Mascot & Win Animations Plan
+# Dingo Mascotte Logo — 5 Opties Genereren
 
-## Overzicht
-Een Dingo-mascotte ontwerpen als logo/mascotte voor Lingo en deze plaatsen op de Login- en hoofdpagina. Daarnaast 5 win-animaties toevoegen die willekeurig verschijnen naast de bestaande confetti.
+## Wat we gaan doen
+5 verschillende Dingo-logo varianten genereren met AI image generation, elk met een andere stijl/pose. De gebruiker kiest er één, daarna passen we het logo aan in de app.
 
-## 1. Dingo Mascotte genereren via AI Image Generation
+## Aanpak
 
-Gebruik de Lovable AI image generation (google/gemini-2.5-flash-image) om via een Edge Function 6 Dingo-afbeeldingen te genereren en op te slaan in Supabase Storage:
+1. **5 afbeeldingen genereren** via het AI gateway script met verschillende prompts:
+   - **Optie 1**: Realistische cartoon Dingo staand op vier poten, vriendelijk, warm oranje/bruin
+   - **Optie 2**: Speelse Dingo zittend met kwispelende staart, meer illustratief
+   - **Optie 3**: Stoere Dingo staand op vier poten, lichte grijns, game-mascotte stijl
+   - **Optie 4**: Schattige Dingo puppy staand, grote ogen, ronde vormen
+   - **Optie 5**: Elegante Dingo in profiel, staand op vier poten, minimalistisch logo-stijl
 
-1. **Mascotte/Logo** - Vrolijke cartoon Dingo met "LINGO" thema (voor login + hoofdpagina)
-2. **Dansende Dingo** - Win-animatie variant
-3. **Trotse Dingo met zonnebril** - Win-animatie variant
-4. **Dingo die de letter D eet** - Win-animatie variant
-5. **Dingo met confetti** - Win-animatie variant
-6. **Dingo met trofee** - Win-animatie variant
+2. **Alle 5 opslaan** in `/mnt/documents/` zodat de gebruiker ze kan bekijken en kiezen
 
-Omdat AI-gegenereerde afbeeldingen groot zijn en runtime generatie traag is, genereren we deze eenmalig via een Edge Function en slaan ze op in een Supabase Storage bucket. De app laadt ze vervolgens als statische URLs.
-
-## 2. Edge Function: `generate-mascot`
-
-- Roept de Lovable AI gateway aan met het `google/gemini-2.5-flash-image` model
-- Genereert alle 6 afbeeldingen met specifieke prompts
-- Slaat ze op in een `mascot` storage bucket
-- Wordt eenmalig handmatig aangeroepen door de admin
-
-## 3. Database/Storage wijzigingen
-
-- Nieuwe Supabase Storage bucket: `mascot` (public)
-- Geen tabelwijzigingen nodig
-
-## 4. UI Wijzigingen
-
-### `DingoMascot.tsx` (nieuw component)
-- Laadt de mascotte-afbeelding uit de storage bucket
-- Configureerbare grootte via props
-- Gebruikt op Auth.tsx en Index.tsx
-
-### `Auth.tsx`
-- Dingo mascotte toevoegen boven de "LINGO" titel
-- Grootte ~80-100px
-
-### `Index.tsx`
-- Dingo mascotte toevoegen boven de "LINGO" titel op de hoofdpagina
-- Kleinere versie in de game header
-
-### `WinAnimation.tsx` (nieuw component)
-- Toont een willekeurige Dingo win-animatie als overlay na het winnen
-- 5 varianten: dansend, trots met zonnebril, D etend, confetti, trofee
-- CSS animaties: bounce-in, lichte beweging/schudden
-- Verdwijnt na ~3 seconden of bij klik
-- Wordt getoond naast de bestaande confetti
-
-### `LingoGame.tsx`
-- Bij `won === true`: toon `<WinAnimation />` component
-- Willekeurige selectie uit de 5 varianten
-
-### `OnlineGame.tsx`
-- Zelfde win-animatie toevoegen bij match-winst
-
-## 5. Alternatieve aanpak: Inline SVG mascotte
-
-Omdat AI image generation onvoorspelbaar kan zijn qua stijl en consistentie, is een alternatief om de Dingo als inline SVG/CSS art te maken. Dit geeft:
-- Volledige controle over de stijl
-- Geen externe dependencies
-- Instant laden, geen storage nodig
-- Animeerbaar met CSS
-
-De win-animaties kunnen dan CSS-geanimeerde varianten zijn van dezelfde SVG basis.
+3. **Na keuze**: het gekozen logo vervangen in `src/assets/dingo-logo.png` en de win-animaties later aanpassen
 
 ## Technische details
-
-- Afbeeldingen worden opgeslagen als publieke URLs in Supabase Storage
-- Win-animatie overlay met `position: fixed`, `z-index: 50`, fade-in/out
-- Willekeurige selectie via `Math.random()`
-- CSS keyframe animaties voor bounce, wiggle, scale effecten
-
-## Bestanden die worden aangemaakt/gewijzigd
-
-| Bestand | Actie |
-|---|---|
-| `src/components/DingoMascot.tsx` | Nieuw - mascotte component |
-| `src/components/WinAnimation.tsx` | Nieuw - win animatie overlay |
-| `src/pages/Auth.tsx` | Mascotte toevoegen |
-| `src/pages/Index.tsx` | Mascotte toevoegen |
-| `src/components/LingoGame.tsx` | Win animatie toevoegen |
-| `src/components/OnlineGame.tsx` | Win animatie toevoegen |
-| `supabase/functions/generate-mascot/index.ts` | Nieuw - eenmalige image generatie |
-| Storage bucket `mascot` | Nieuw - publieke bucket |
+- Gebruik `google/gemini-3-pro-image-preview` model voor hogere kwaliteit
+- Prompts benadrukken: "dingo dog (NOT a cat), natural look, standing on four legs, Australian wild dog"
+- Output naar `/mnt/documents/dingo-option-1.png` t/m `dingo-option-5.png`
+- Geen codewijzigingen tot de gebruiker een keuze maakt
 
