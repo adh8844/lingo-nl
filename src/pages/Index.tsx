@@ -5,6 +5,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
 import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut } from "lucide-react";
+import DingoMascot from "@/components/DingoMascot";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -164,6 +165,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
+          <DingoMascot size={80} />
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-primary">LINGO</h1>
           <p className="text-muted-foreground text-lg">Raad het woord</p>
         </div>
