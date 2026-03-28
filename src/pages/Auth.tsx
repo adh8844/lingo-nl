@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayer } from "@/hooks/usePlayer";
+import DingoMascot from "@/components/DingoMascot";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -78,6 +79,7 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-bounce-in">
         <div className="flex flex-col items-center gap-2">
+          <DingoMascot size={96} />
           <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tighter text-primary">LINGO</h1>
           <p className="text-muted-foreground">{isLogin ? "Inloggen" : "Account aanmaken"}</p>
         </div>

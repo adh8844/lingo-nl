@@ -6,6 +6,7 @@ import { TileStatus } from "./LingoTile";
 import { isValidWordAsync, suggestWord, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import WinAnimation from "./WinAnimation";
 import { OnlineMatch, MatchRound } from "@/hooks/useOnlineMatch";
 import { playRoundWinSound, playRoundLoseSound } from "@/hooks/useSounds";
 
@@ -73,6 +74,7 @@ const OnlineGame = ({
   const [currentGuess, setCurrentGuess] = useState("");
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
+  const [showWinAnimation, setShowWinAnimation] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [revealedRow, setRevealedRow] = useState<number | null>(null);
   const [letterStatuses, setLetterStatuses] = useState<Record<string, TileStatus>>({});
@@ -160,6 +162,7 @@ const OnlineGame = ({
       stopTimer();
       if (match.winner_id === playerId && !match.forfeited_by) {
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        setShowWinAnimation(true);
       }
     }
   }, [match.status, match.winner_id, playerId, stopTimer]);
@@ -457,6 +460,7 @@ const OnlineGame = ({
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog
         open={suggestionDialogOpen}
         word={pendingWord}

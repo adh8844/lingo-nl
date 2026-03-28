@@ -6,6 +6,7 @@ import { TileStatus } from "./LingoTile";
 import { getRandomWordAsync, isValidWordAsync, suggestWord, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import WinAnimation from "./WinAnimation";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult, GameResultData } from "@/hooks/useGameResult";
 import { Star, Flame, Award } from "lucide-react";
@@ -40,6 +41,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   const [currentGuess, setCurrentGuess] = useState("");
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
+  const [showWinAnimation, setShowWinAnimation] = useState(false);
   const [shaking, setShaking] = useState(false);
   const [revealedRow, setRevealedRow] = useState<number | null>(null);
   const [letterStatuses, setLetterStatuses] = useState<Record<string, TileStatus>>({});
@@ -114,6 +116,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
     if (solved) {
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+      setShowWinAnimation(true);
     }
     const result = await submitResult({
       player_id: player.id,
@@ -261,6 +264,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog open={suggestionDialogOpen} word={pendingWord} language="nl" onConfirm={handleSuggestionConfirm} onCancel={handleSuggestionCancel} />
 
       {/* Header */}
