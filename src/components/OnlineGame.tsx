@@ -6,6 +6,7 @@ import { TileStatus } from "./LingoTile";
 import { isValidWordAsync, suggestWord, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import WinAnimation from "./WinAnimation";
 import { OnlineMatch, MatchRound } from "@/hooks/useOnlineMatch";
 import { playRoundWinSound, playRoundLoseSound } from "@/hooks/useSounds";
 
