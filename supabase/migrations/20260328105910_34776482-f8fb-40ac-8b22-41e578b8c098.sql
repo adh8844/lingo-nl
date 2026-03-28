@@ -1,0 +1,1 @@
+ALTER TABLE public.dutch_words ADD COLUMN IF NOT EXISTS rejected boolean NOT NULL DEFAULT false;
