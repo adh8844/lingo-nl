@@ -240,11 +240,20 @@ const OnlineGame = ({
   const handleSuggestionConfirm = useCallback(async () => {
     setSuggestionDialogOpen(false);
     const w = pendingWord;
-    await suggestWord(w, wordLength, playerId);
-    toast.success(language === "nl" ? `"${w.toUpperCase()}" is toegevoegd!` : `"${w.toUpperCase()}" has been added!`);
+    const result = await suggestWord(w, wordLength, playerId);
+    if (result.rejected) {
+      toast.error(`"${w.toUpperCase()}" is eerder afgekeurd en kan niet worden toegevoegd.`);
+      resumeTimer();
+      return;
+    }
+    if (result.success) {
+      toast.success(`"${w.toUpperCase()}" is voorgesteld ter goedkeuring!`);
+    } else {
+      toast.error("Woord kon niet worden voorgesteld.");
+    }
     processGuess(w);
     resumeTimer();
-  }, [pendingWord, wordLength, playerId, language, processGuess, resumeTimer]);
+  }, [pendingWord, wordLength, playerId, processGuess, resumeTimer]);
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);

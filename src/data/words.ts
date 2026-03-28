@@ -103,12 +103,26 @@ export async function isValidWordAsync(word: string, language: Language, length:
   return !!(data && data.length > 0);
 }
 
-export async function suggestWord(word: string, length: WordLength, playerId?: string): Promise<boolean> {
+export async function checkWordRejected(word: string, length: WordLength): Promise<boolean> {
+  const { data } = await supabase
+    .from("dutch_words")
+    .select("id")
+    .eq("word", word.toLowerCase())
+    .eq("length", length)
+    .eq("rejected", true)
+    .limit(1);
+  return !!(data && data.length > 0);
+}
+
+export async function suggestWord(word: string, length: WordLength, playerId?: string): Promise<{ success: boolean; rejected?: boolean }> {
+  const isRejected = await checkWordRejected(word, length);
+  if (isRejected) return { success: false, rejected: true };
+
   const { error } = await supabase
     .from("dutch_words")
-    .insert({ word: word.toLowerCase(), length, approved: true, suggested_by: playerId || null });
+    .insert({ word: word.toLowerCase(), length, approved: false, suggested_by: playerId || null });
   if (!error) delete dbWordsCache[length];
-  return !error;
+  return { success: !error };
 }
 
 export function getRandomWord(language: Language, length: WordLength): string {

@@ -47,6 +47,7 @@ export type Database = {
           created_at: string
           id: string
           length: number
+          rejected: boolean
           suggested_by: string | null
           word: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           created_at?: string
           id?: string
           length: number
+          rejected?: boolean
           suggested_by?: string | null
           word: string
         }
@@ -63,6 +65,7 @@ export type Database = {
           created_at?: string
           id?: string
           length?: number
+          rejected?: boolean
           suggested_by?: string | null
           word?: string
         }

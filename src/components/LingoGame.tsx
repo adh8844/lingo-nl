@@ -209,8 +209,17 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   const handleSuggestionConfirm = useCallback(async () => {
     setSuggestionDialogOpen(false);
     const w = pendingWord;
-    await suggestWord(w, wordLength, player?.id);
-    toast.success(`"${w.toUpperCase()}" is toegevoegd!`);
+    const result = await suggestWord(w, wordLength, player?.id);
+    if (result.rejected) {
+      toast.error(`"${w.toUpperCase()}" is eerder afgekeurd en kan niet worden toegevoegd.`);
+      resumeTimer();
+      return;
+    }
+    if (result.success) {
+      toast.success(`"${w.toUpperCase()}" is voorgesteld ter goedkeuring!`);
+    } else {
+      toast.error("Woord kon niet worden voorgesteld.");
+    }
     processGuessAsValid(w);
     resumeTimer();
   }, [pendingWord, wordLength, player, processGuessAsValid, resumeTimer]);
