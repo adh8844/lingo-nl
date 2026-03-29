@@ -4,13 +4,41 @@ import dingoSunglasses from "@/assets/dingo-sunglasses.png";
 import dingoEatingD from "@/assets/dingo-eating-d.png";
 import dingoConfetti from "@/assets/dingo-confetti.png";
 import dingoTrophy from "@/assets/dingo-trophy.png";
+import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
-const variants = [
-  { src: dingoDancing, alt: "Dansende Dingo" },
-  { src: dingoSunglasses, alt: "Coole Dingo" },
-  { src: dingoEatingD, alt: "Dingo eet de D" },
-  { src: dingoConfetti, alt: "Dingo viert feest" },
-  { src: dingoTrophy, alt: "Dingo met trofee" },
+type VariantType = "static" | "animated";
+
+interface StaticVariant {
+  type: "static";
+  src: string;
+  alt: string;
+  animClass: string;
+  duration: number;
+}
+
+interface AnimatedVariant {
+  type: "animated";
+  src: string;
+  alt: string;
+  animClass: string;
+  duration: number;
+}
+
+type Variant = StaticVariant | AnimatedVariant;
+
+const variants: Variant[] = [
+  // Existing static image variants
+  { type: "static", src: dingoDancing, alt: "Dansende Dingo", animClass: "animate-win-dingo", duration: 3500 },
+  { type: "static", src: dingoSunglasses, alt: "Coole Dingo", animClass: "animate-win-dingo", duration: 3500 },
+  { type: "static", src: dingoEatingD, alt: "Dingo eet de D", animClass: "animate-win-dingo", duration: 3500 },
+  { type: "static", src: dingoConfetti, alt: "Dingo viert feest", animClass: "animate-win-dingo", duration: 3500 },
+  { type: "static", src: dingoTrophy, alt: "Dingo met trofee", animClass: "animate-win-dingo", duration: 3500 },
+  // New animated variants using the main Dingo logo
+  { type: "animated", src: dingoLogo, alt: "Dingo springt juichend", animClass: "animate-dingo-jump", duration: 3000 },
+  { type: "animated", src: dingoLogo, alt: "Dingo doet de moonwalk", animClass: "animate-dingo-moonwalk", duration: 3500 },
+  { type: "animated", src: dingoLogo, alt: "Dingo steekt duim op", animClass: "animate-dingo-thumbsup", duration: 2500 },
+  { type: "animated", src: dingoLogo, alt: "Dingo wandelt weg", animClass: "animate-dingo-walkout", duration: 4000 },
+  { type: "animated", src: dingoLogo, alt: "Dingo blaast ballon op", animClass: "animate-dingo-balloon", duration: 3500 },
 ];
 
 interface WinAnimationProps {
@@ -25,18 +53,18 @@ const WinAnimation = ({ onDismiss }: WinAnimationProps) => {
     const timer = setTimeout(() => {
       setVisible(false);
       onDismiss?.();
-    }, 3500);
+    }, variant.duration);
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [onDismiss, variant.duration]);
 
   if (!visible) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none overflow-hidden"
       onClick={() => { setVisible(false); onDismiss?.(); }}
     >
-      <div className="pointer-events-auto animate-win-dingo">
+      <div className={`pointer-events-auto ${variant.animClass}`}>
         <img
           src={variant.src}
           alt={variant.alt}
