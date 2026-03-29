@@ -165,8 +165,11 @@ const Index = () => {
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
-          <DingoMascot size={80} />
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tighter text-primary">LINGO</h1>
+          <h1 className="text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
+            <span>L</span>
+            <DingoMascot size={80} className="mx-[-4px] mb-[2px]" />
+            <span>NGO</span>
+          </h1>
           <p className="text-muted-foreground text-lg">Raad het woord</p>
         </div>
 
