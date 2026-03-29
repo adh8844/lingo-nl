@@ -1,4 +1,4 @@
-import dingoLogo from "@/assets/dingo-logo.png";
+import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
 interface DingoMascotProps {
   size?: number;
