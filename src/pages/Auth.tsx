@@ -81,7 +81,8 @@ const Auth = () => {
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-7xl sm:text-8xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
             <span>L</span>
-            <DingoMascot size={72} className="mx-[-4px] mb-[2px]" />
+            <DingoMascot size={96} className="mx-[-4px] mb-[2px] hidden sm:block" />
+            <DingoMascot size={72} className="mx-[-4px] mb-[2px] block sm:hidden" />
             <span>NGO</span>
           </h1>
           <p className="text-muted-foreground">{isLogin ? "Inloggen" : "Account aanmaken"}</p>
