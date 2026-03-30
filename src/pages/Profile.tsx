@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
+import type { Player } from "@/types/player";
 import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library } from "lucide-react";
 
 interface Badge {
@@ -44,19 +45,32 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { player, loading } = usePlayer();
+  const { playerId } = useParams<{ playerId?: string }>();
+  const { player: currentPlayer, loading } = usePlayer();
+  const [viewPlayer, setViewPlayer] = useState<Player | null>(null);
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
 
+  const isOwnProfile = !playerId || playerId === currentPlayer?.id;
+  const displayPlayer = isOwnProfile ? currentPlayer : viewPlayer;
+
+  const loadViewPlayer = useCallback(async () => {
+    if (!playerId || isOwnProfile) return;
+    const { data } = await supabase.from("players").select("*").eq("id", playerId).single();
+    if (data) setViewPlayer(data as unknown as Player);
+  }, [playerId, isOwnProfile]);
+
   const loadBadges = useCallback(async () => {
-    if (!player) return;
+    const targetId = isOwnProfile ? currentPlayer?.id : playerId;
+    if (!targetId) return;
     const { data: badges } = await supabase.from("badges").select("*");
     if (badges) setAllBadges(badges as unknown as Badge[]);
 
-    const { data: earned } = await supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id);
+    const { data: earned } = await supabase.from("player_badges" as any).select("badge_id").eq("player_id", targetId);
     if (earned) setEarnedBadgeIds(new Set(earned.map((e: any) => e.badge_id)));
-  }, [player]);
+  }, [currentPlayer?.id, playerId, isOwnProfile]);
 
+  useEffect(() => { loadViewPlayer(); }, [loadViewPlayer]);
   useEffect(() => { loadBadges(); }, [loadBadges]);
 
   if (loading) {
@@ -67,11 +81,11 @@ const Profile = () => {
     );
   }
 
-  if (!player) {
+  if (!displayPlayer) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Maak eerst een speler aan</p>
-        <button onClick={() => navigate("/")} className="px-4 py-2 bg-primary text-primary-foreground font-bold rounded-lg">Terug</button>
+        <p className="text-muted-foreground">Speler niet gevonden</p>
+        <button onClick={() => navigate(-1)} className="px-4 py-2 bg-primary text-primary-foreground font-bold rounded-lg">Terug</button>
       </div>
     );
   }
@@ -81,45 +95,54 @@ const Profile = () => {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate("/")} className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all">← Terug</button>
+          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all">← Terug</button>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">Profiel</h1>
           <div className="w-16" />
         </div>
 
         {/* Player info */}
-        <div className="bg-card rounded-2xl border border-border p-5 mb-6">
-          <p className="text-2xl font-extrabold text-foreground mb-3" translate="no">{player.display_name}</p>
+        <div className="bg-card rounded-2xl border border-border p-5 mb-4">
+          <p className="text-2xl font-extrabold text-foreground mb-3" translate="no">{displayPlayer.display_name}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs text-muted-foreground">Punten</p>
-                <p className="font-extrabold text-foreground">{player.points}</p>
+                <p className="font-extrabold text-foreground">{displayPlayer.points}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Flame className="w-5 h-5 text-accent" />
               <div>
                 <p className="text-xs text-muted-foreground">Reeks</p>
-                <p className="font-extrabold text-foreground">{player.current_streak} / {player.best_streak}</p>
+                <p className="font-extrabold text-foreground">{displayPlayer.current_streak} / {displayPlayer.best_streak}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs text-muted-foreground">Spellen</p>
-                <p className="font-extrabold text-foreground">{player.total_games_played}</p>
+                <p className="font-extrabold text-foreground">{displayPlayer.total_games_played}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-xs text-muted-foreground">Speeltijd</p>
-                <p className="font-extrabold text-foreground">{Math.round(player.total_hours_played || 0)}u</p>
+                <p className="font-extrabold text-foreground">{Math.round(displayPlayer.total_hours_played || 0)}u</p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Statistics link */}
+        <button
+          onClick={() => navigate(isOwnProfile ? "/statistics" : `/statistics/${displayPlayer.id}`)}
+          className="w-full mb-6 px-4 py-3 rounded-xl bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all flex items-center justify-between"
+        >
+          <span>📊 Statistieken bekijken</span>
+          <span className="text-muted-foreground">→</span>
+        </button>
 
         {/* Badges */}
         <h2 className="text-lg font-extrabold text-foreground mb-3">

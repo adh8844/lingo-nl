@@ -16,6 +16,7 @@ interface RankedPlayer {
   current_streak: number;
   best_streak: number;
   points: number;
+  badgeCount?: number;
 }
 
 interface Group {
@@ -64,7 +65,24 @@ const Rankings = () => {
       .select("*")
       .order("points", { ascending: false })
       .limit(100);
-    if (data) setAllPlayers(data.map(p => ({ ...p, points: p.points ?? 0 })));
+    if (!data) return;
+    const players = data.map(p => ({ ...p, points: p.points ?? 0 }));
+    
+    // Load badge counts for all players
+    const playerIds = players.map(p => p.id);
+    const { data: badges } = await supabase
+      .from("player_badges")
+      .select("player_id")
+      .in("player_id", playerIds);
+    
+    const badgeCounts: Record<string, number> = {};
+    if (badges) {
+      (badges as any[]).forEach((b: any) => {
+        badgeCounts[b.player_id] = (badgeCounts[b.player_id] || 0) + 1;
+      });
+    }
+    
+    setAllPlayers(players.map(p => ({ ...p, badgeCount: badgeCounts[p.id] || 0 })));
   }, []);
 
   const loadFriends = useCallback(async () => {
@@ -297,10 +315,19 @@ const Rankings = () => {
               {isOnline && (
                 <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
               )}
-              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`} translate="no">
+              <span
+                className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                translate="no"
+                onClick={() => navigate(`/profile/${entry.id}`)}
+              >
                 {entry.display_name}
                 {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
               </span>
+              {(entry.badgeCount ?? 0) > 0 && (
+                <span className="text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded-full shrink-0">
+                  🏅{entry.badgeCount}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
