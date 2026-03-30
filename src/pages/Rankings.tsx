@@ -315,10 +315,19 @@ const Rankings = () => {
               {isOnline && (
                 <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
               )}
-              <span className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`} translate="no">
+              <span
+                className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                translate="no"
+                onClick={() => navigate(`/profile/${entry.id}`)}
+              >
                 {entry.display_name}
                 {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
               </span>
+              {(entry.badgeCount ?? 0) > 0 && (
+                <span className="text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded-full shrink-0">
+                  🏅{entry.badgeCount}
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
