@@ -30,7 +30,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:playerId" element={<Profile />} />
             <Route path="/statistics" element={<Statistics />} />
+            <Route path="/statistics/:playerId" element={<Statistics />} />
             <Route path="/online-match" element={<OnlineMatch />} />
             <Route path="/spelregels" element={<Rules />} />
             <Route path="/admin" element={<Admin />} />

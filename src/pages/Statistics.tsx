@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -16,17 +16,27 @@ interface LevelStats {
 
 const Statistics = () => {
   const navigate = useNavigate();
-  const { player, loading } = usePlayer();
+  const { playerId } = useParams<{ playerId?: string }>();
+  const { player: currentPlayer, loading } = usePlayer();
   const [stats, setStats] = useState<LevelStats[]>([]);
   const [pointsChart, setPointsChart] = useState<{ date: string; points: number }[]>([]);
+  const [playerName, setPlayerName] = useState<string>("");
+
+  const targetId = playerId || currentPlayer?.id;
 
   const loadStats = useCallback(async () => {
-    if (!player) return;
+    if (!targetId) return;
+
+    // Load player name if viewing another player
+    if (playerId && playerId !== currentPlayer?.id) {
+      const { data: p } = await supabase.from("players").select("display_name").eq("id", playerId).single();
+      if (p) setPlayerName(p.display_name);
+    }
 
     const { data: games } = await supabase
       .from("games" as any)
       .select("level, solved, attempts, duration_seconds, played_at, points_earned")
-      .eq("player_id", player.id);
+      .eq("player_id", targetId);
 
     if (!games) return;
 
@@ -50,11 +60,10 @@ const Statistics = () => {
 
     setStats(levelStats);
 
-    // Points per day chart (last 30 days)
     const { data: pointsData } = await supabase
       .from("points_log" as any)
       .select("points, created_at")
-      .eq("player_id", player.id)
+      .eq("player_id", targetId)
       .order("created_at", { ascending: true });
 
     if (pointsData) {
@@ -74,7 +83,7 @@ const Statistics = () => {
         points,
       })));
     }
-  }, [player]);
+  }, [targetId, playerId, currentPlayer?.id]);
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
@@ -86,12 +95,15 @@ const Statistics = () => {
     );
   }
 
+  const isOwnProfile = !playerId || playerId === currentPlayer?.id;
+  const title = isOwnProfile ? "Statistieken" : `Statistieken — ${playerName}`;
+
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
       <div className="w-full max-w-lg">
         <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate("/")} className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all">← Terug</button>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">Statistieken</h1>
+          <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all">← Terug</button>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-primary truncate max-w-[60%] text-center">{title}</h1>
           <div className="w-16" />
         </div>
 
