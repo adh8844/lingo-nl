@@ -65,7 +65,24 @@ const Rankings = () => {
       .select("*")
       .order("points", { ascending: false })
       .limit(100);
-    if (data) setAllPlayers(data.map(p => ({ ...p, points: p.points ?? 0 })));
+    if (!data) return;
+    const players = data.map(p => ({ ...p, points: p.points ?? 0 }));
+    
+    // Load badge counts for all players
+    const playerIds = players.map(p => p.id);
+    const { data: badges } = await supabase
+      .from("player_badges")
+      .select("player_id")
+      .in("player_id", playerIds);
+    
+    const badgeCounts: Record<string, number> = {};
+    if (badges) {
+      (badges as any[]).forEach((b: any) => {
+        badgeCounts[b.player_id] = (badgeCounts[b.player_id] || 0) + 1;
+      });
+    }
+    
+    setAllPlayers(players.map(p => ({ ...p, badgeCount: badgeCounts[p.id] || 0 })));
   }, []);
 
   const loadFriends = useCallback(async () => {
