@@ -16,6 +16,7 @@ interface RankedPlayer {
   current_streak: number;
   best_streak: number;
   points: number;
+  badgeCount?: number;
 }
 
 interface Group {
