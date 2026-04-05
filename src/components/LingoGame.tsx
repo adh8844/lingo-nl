@@ -50,6 +50,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gameResult, setGameResult] = useState<GameResultData | null>(null);
+  const [showChallenger, setShowChallenger] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const firstGreenAttemptRef = useRef<number | null>(null);
