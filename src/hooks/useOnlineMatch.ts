@@ -311,6 +311,7 @@ export function useOnlineMatch(playerId: string | undefined) {
             winner_id: matchWinner,
           })
           .eq("id", match.id);
+        await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
       } else {
         const nextWord = await getRandomWordAsync(
           match.language as Language,

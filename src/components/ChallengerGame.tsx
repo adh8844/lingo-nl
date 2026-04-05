@@ -264,7 +264,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
           return (
             <div
               key={i}
-              className={`w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center text-sm sm:text-lg font-extrabold rounded-lg border-2 transition-all uppercase ${
+              className={`min-w-[1.75rem] w-7 h-9 sm:min-w-[2.25rem] sm:w-9 sm:h-11 flex items-center justify-center text-xs sm:text-base font-extrabold rounded-md sm:rounded-lg border-2 transition-all uppercase flex-shrink-0 ${
                 status === "correct"
                   ? "bg-tile-correct text-white border-tile-correct"
                   : status === "absent"
