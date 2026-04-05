@@ -373,8 +373,7 @@ const OnlineGame = ({
         <p className="text-lg font-bold text-muted-foreground">
           {match.player1_wins} - {match.player2_wins}
         </p>
-        {isWinner && (
-          <p className="text-sm text-accent font-bold">+10 ⭐</p>
+          <p className="text-sm text-accent font-bold">+100 bonus ⭐ + {(isPlayer1 ? match.player1_wins : match.player2_wins) * 20} ronde punten</p>
         )}
         {!isWinner && wasForfeit && (
           <p className="text-sm text-muted-foreground font-bold">
