@@ -129,7 +129,9 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
       duration_seconds: duration,
       first_green_attempt: firstGreenAttemptRef.current,
     });
-    if (result) setGameResult(result);
+    if (result) {
+      setGameResult(result);
+    }
   }, [player, wordLength, targetWord, submitResult]);
 
   const handleRoundEnd = useCallback((playerWon: boolean, attemptCount: number) => {
