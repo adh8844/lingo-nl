@@ -83,7 +83,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       setRevealedIndices(revealed);
       revealedRef.current = revealed;
 
-      setCurrentGuess(Array.from({ length: word.length }, (_, i) => revealed.has(i) ? word[i] : "").join(""));
+      setGuessArr(Array.from({ length: word.length }, (_, i) => revealed.has(i) ? word[i] : ""));
 
       setIsLoading(false);
       startTimeRef.current = Date.now();
