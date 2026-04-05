@@ -249,6 +249,7 @@ const Index = () => {
           </>
         )}
       </div>
+      <p className="mt-6 text-[10px] text-muted-foreground/50">Laatst bijgewerkt: 5 april 2025, 22:00 CET</p>
     </div>
   );
 };
