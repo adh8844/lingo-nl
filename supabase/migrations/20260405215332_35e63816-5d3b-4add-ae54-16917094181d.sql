@@ -1,0 +1,1 @@
+UPDATE public.badges SET description = 'Speel 2 spellen tussen 22:00 en 00:00' WHERE id = 'maneschijn';
