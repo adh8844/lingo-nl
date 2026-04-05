@@ -13,6 +13,7 @@ export interface GameResultData {
   best_streak: number;
   unlocked_5letter: boolean;
   unlocked_6letter: boolean;
+  trigger_challenger?: boolean;
 }
 
 export function useGameResult() {
