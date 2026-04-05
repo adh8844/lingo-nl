@@ -10,7 +10,16 @@ import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult, GameResultData } from "@/hooks/useGameResult";
-import { Star, Flame, Award } from "lucide-react";
+import { Star, Flame, Award, Zap } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 const MAX_GUESSES = 5;
 const TIMER_SECONDS = 90;
