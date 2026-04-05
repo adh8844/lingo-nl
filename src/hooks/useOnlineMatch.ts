@@ -175,7 +175,6 @@ export function useOnlineMatch(playerId: string | undefined) {
     loadChallenges();
   }, [loadChallenges]);
 
-  // Forfeit: the player who forfeits loses, opponent gets 10 points
   const forfeitMatch = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !playerId) return;
@@ -190,6 +189,11 @@ export function useOnlineMatch(playerId: string | undefined) {
         forfeited_by: playerId,
       } as any)
       .eq("id", match.id);
+
+    // Award match points on forfeit too
+    const p1Wins = match.player1_wins;
+    const p2Wins = match.player2_wins;
+    await awardMatchPoints(match, p1Wins, p2Wins, opponentId);
   }, [playerId]);
 
   const submitGuessTime = useCallback(async (guessTimeMs: number) => {
