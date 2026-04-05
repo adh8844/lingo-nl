@@ -100,6 +100,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     setStatuses([]);
     setGameOver(false);
     setWon(false);
+    setShowWinAnimation(false);
     setShaking(false);
     setRevealedRow(null);
     setLetterStatuses({});
