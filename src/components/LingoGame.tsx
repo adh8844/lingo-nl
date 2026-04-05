@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
+import ChallengerGame from "./ChallengerGame";
 import { TileStatus } from "./LingoTile";
 import { getRandomWordAsync, isValidWordAsync, suggestWord, WordLength } from "@/data/words";
 import { toast } from "sonner";
