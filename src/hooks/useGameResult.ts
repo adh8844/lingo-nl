@@ -30,8 +30,8 @@ export function useGameResult() {
   }): Promise<GameResultData | null> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("process-game-result", {
-        body: { ...params, session_id: SESSION_ID },
+    const { data, error } = await supabase.functions.invoke("process-game-result", {
+        body: { ...params, session_id: SESSION_ID, is_challenger: params.is_challenger },
       });
       if (error) throw error;
       setResult(data);

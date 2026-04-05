@@ -32,7 +32,7 @@ const dutch6 = [
   "oceaan", "piloot", "schaap", "tassen", "vragen", "wassen", "zenden", "anders", "beiden", "tussen",
 ];
 
-export type WordLength = 4 | 5 | 6;
+export type WordLength = 4 | 5 | 6 | 10 | 12 | 14;
 export type Language = "nl";
 
 const wordLists: Record<WordLength, string[]> = { 4: dutch4, 5: dutch5, 6: dutch6 };
