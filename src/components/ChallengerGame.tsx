@@ -44,7 +44,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   );
   const [targetWord, setTargetWord] = useState("");
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
-  const [currentGuess, setCurrentGuess] = useState("");
+  const [guessArr, setGuessArr] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
   const [timeLeft, setTimeLeft] = useState(CHALLENGER_TIMER);
