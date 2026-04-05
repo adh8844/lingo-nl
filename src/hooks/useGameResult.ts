@@ -13,6 +13,7 @@ export interface GameResultData {
   best_streak: number;
   unlocked_5letter: boolean;
   unlocked_6letter: boolean;
+  trigger_challenger?: boolean;
 }
 
 export function useGameResult() {
@@ -27,11 +28,12 @@ export function useGameResult() {
     solved: boolean;
     duration_seconds: number;
     first_green_attempt?: number | null;
+    is_challenger?: boolean;
   }): Promise<GameResultData | null> => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("process-game-result", {
-        body: { ...params, session_id: SESSION_ID },
+    const { data, error } = await supabase.functions.invoke("process-game-result", {
+        body: { ...params, session_id: SESSION_ID, is_challenger: params.is_challenger },
       });
       if (error) throw error;
       setResult(data);
