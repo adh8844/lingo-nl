@@ -35,7 +35,7 @@ const dutch6 = [
 export type WordLength = 4 | 5 | 6 | 10 | 12 | 14;
 export type Language = "nl";
 
-const wordLists: Record<WordLength, string[]> = { 4: dutch4, 5: dutch5, 6: dutch6 };
+const wordLists: Record<number, string[]> = { 4: dutch4, 5: dutch5, 6: dutch6 };
 
 let dbWordsCache: Record<number, string[]> = {};
 let dbWordsCacheTime = 0;

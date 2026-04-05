@@ -28,6 +28,7 @@ export function useGameResult() {
     solved: boolean;
     duration_seconds: number;
     first_green_attempt?: number | null;
+    is_challenger?: boolean;
   }): Promise<GameResultData | null> => {
     setLoading(true);
     try {
