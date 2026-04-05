@@ -284,7 +284,7 @@ Deno.serve(async (req) => {
       const currentGameHour = getAmsterdamHour(game.played_at)
       if (!earnedIds.has('nachtuil') && currentGameHour >= 0 && currentGameHour < 5 && games.filter((g: any) => { const h = getAmsterdamHour(g.played_at); return h >= 0 && h < 5 }).length >= 5) tryAward('nachtuil')
       if (!earnedIds.has('vroege_vogel') && currentGameHour >= 5 && currentGameHour < 7 && games.filter((g: any) => { const h = getAmsterdamHour(g.played_at); return h >= 5 && h < 7 }).length >= 5) tryAward('vroege_vogel')
-      if (!earnedIds.has('maneschijn') && currentGameHour >= 22 && games.filter((g: any) => { const h = getAmsterdamHour(g.played_at); return h >= 22 }).length >= 2) tryAward('maneschijn')
+      if (!earnedIds.has('maneschijn') && currentGameHour >= 22 && currentGameHour < 24 && games.filter((g: any) => { const h = getAmsterdamHour(g.played_at); return h >= 22 && h < 24 }).length >= 2) tryAward('maneschijn')
       if (!earnedIds.has('weekendstrijder')) {
         const wkd: Record<string, number> = {}
         games.forEach((g: any) => { const d = new Date(g.played_at); if (d.getUTCDay() === 0 || d.getUTCDay() === 6) { const k = d.toISOString().split('T')[0]; wkd[k] = (wkd[k] || 0) + 1 } })
