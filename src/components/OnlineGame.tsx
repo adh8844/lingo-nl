@@ -338,7 +338,7 @@ const OnlineGame = ({
           <p className="text-xl font-extrabold text-foreground">
             {match.player1_wins} - {match.player2_wins}
           </p>
-          <p className="text-sm text-accent font-bold">{isWinner ? `+${match.player1_wins * 20 + match.player2_wins * 20 > 0 ? "" : ""}100 bonus ⭐` : ""}</p>
+          <p className="text-sm text-accent font-bold">{isWinner ? "+100 bonus ⭐" : ""}</p>
           <div className="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent font-bold text-sm animate-pulse">
             {language === "nl" ? "Wachten op tegenstander..." : "Waiting for opponent..."}
           </div>
