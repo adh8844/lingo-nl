@@ -1,0 +1,1 @@
+DELETE FROM public.player_badges WHERE player_id = (SELECT id FROM public.players WHERE display_name = 'Arjan' LIMIT 1) AND badge_id IN ('nachtuil','vroege_vogel');
