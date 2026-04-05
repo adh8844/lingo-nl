@@ -6,10 +6,13 @@ import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult } from "@/hooks/useGameResult";
-import { Star, Zap } from "lucide-react";
+import { Star, Zap, Plus } from "lucide-react";
 
-const CHALLENGER_TIMER = 20;
+const CHALLENGER_TIMER = 60;
 const CHALLENGER_LEVELS: WordLength[] = [10, 12, 14];
+
+const POINTS_TABLE = [500, 250, 150, 100, 60, 30];
+const MAX_EXTRA_LETTERS = 5;
 
 interface ChallengerGameProps {
   onComplete: () => void;
@@ -17,9 +20,8 @@ interface ChallengerGameProps {
 
 function getRevealedIndices(wordLength: number): Set<number> {
   const count = Math.ceil(wordLength * 0.25);
-  const indices = new Set<number>([0]); // First letter always included
+  const indices = new Set<number>([0]);
   const available = Array.from({ length: wordLength - 1 }, (_, i) => i + 1);
-  // Shuffle and pick
   for (let i = available.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [available[i], available[j]] = [available[j], available[i]];
@@ -30,6 +32,10 @@ function getRevealedIndices(wordLength: number): Set<number> {
     idx++;
   }
   return indices;
+}
+
+function getUnrevealedIndices(word: string, revealed: Set<number>): number[] {
+  return Array.from({ length: word.length }, (_, i) => i).filter(i => !revealed.has(i));
 }
 
 const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
@@ -46,11 +52,16 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   const [submitted, setSubmitted] = useState(false);
   const [tileStatuses, setTileStatuses] = useState<TileStatus[]>([]);
   const [pointsEarned, setPointsEarned] = useState(0);
+  const [extraLettersUsed, setExtraLettersUsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
+  const targetWordRef = useRef("");
+  const revealedRef = useRef<Set<number>>(new Set());
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
+
+  const currentPoints = POINTS_TABLE[Math.min(extraLettersUsed, POINTS_TABLE.length - 1)];
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -67,11 +78,11 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       }
       const word = words[Math.floor(Math.random() * words.length)].toLowerCase();
       setTargetWord(word);
+      targetWordRef.current = word;
       const revealed = getRevealedIndices(word.length);
       setRevealedIndices(revealed);
+      revealedRef.current = revealed;
 
-      // Build initial guess with revealed letters
-      const initial = word.split("").map((c, i) => revealed.has(i) ? c : "").join("");
       setCurrentGuess(Array.from({ length: word.length }, (_, i) => revealed.has(i) ? word[i] : "").join(""));
 
       setIsLoading(false);
@@ -87,7 +98,6 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     return () => stopTimer();
   }, [challengerLevel, stopTimer]);
 
-  // Time up
   useEffect(() => {
     if (timeLeft === 0 && !gameOver) {
       stopTimer();
@@ -95,20 +105,44 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     }
   }, [timeLeft, gameOver]);
 
+  const addExtraLetter = useCallback(() => {
+    if (extraLettersUsed >= MAX_EXTRA_LETTERS || gameOver || submitted) return;
+    const word = targetWordRef.current;
+    const revealed = revealedRef.current;
+    const unrevealed = getUnrevealedIndices(word, revealed);
+    if (unrevealed.length === 0) return;
+
+    const randomIdx = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+    const newRevealed = new Set(revealed);
+    newRevealed.add(randomIdx);
+    setRevealedIndices(newRevealed);
+    revealedRef.current = newRevealed;
+
+    // Update current guess with the new revealed letter
+    setCurrentGuess(prev => {
+      const arr = prev.split("");
+      while (arr.length < word.length) arr.push("");
+      arr[randomIdx] = word[randomIdx];
+      return arr.join("");
+    });
+
+    setExtraLettersUsed(prev => prev + 1);
+  }, [extraLettersUsed, gameOver, submitted]);
+
   const handleSubmit = useCallback(async (timedOut = false) => {
-    if (submitted || !player || !targetWord) return;
+    if (submitted || !player || !targetWordRef.current) return;
     setSubmitted(true);
     stopTimer();
 
+    const word = targetWordRef.current;
     const guess = currentGuess.toLowerCase();
-    const playerWon = !timedOut && guess === targetWord;
+    const playerWon = !timedOut && guess === word;
     setWon(playerWon);
     setGameOver(true);
 
-    // Compute tile statuses
-    const statuses: TileStatus[] = targetWord.split("").map((c, i) => {
+    // Only show correct (green) positions
+    const statuses: TileStatus[] = word.split("").map((c, i) => {
       if (guess[i] === c) return "correct";
-      if (guess[i] && targetWord.includes(guess[i])) return "present";
       return "absent";
     });
     setTileStatuses(statuses);
@@ -117,36 +151,39 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
     }
 
+    const earnedPoints = playerWon ? POINTS_TABLE[Math.min(extraLettersUsed, POINTS_TABLE.length - 1)] : 0;
+
     const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
     const result = await submitResult({
       player_id: player.id,
       level: challengerLevel,
-      word: targetWord,
+      word: word,
       attempts: 1,
       solved: playerWon,
       duration_seconds: duration,
       is_challenger: true,
+      challenger_points: earnedPoints,
     });
     if (result) {
       setPointsEarned(result.points_earned);
     }
-  }, [submitted, player, targetWord, currentGuess, challengerLevel, submitResult, stopTimer]);
+  }, [submitted, player, currentGuess, challengerLevel, extraLettersUsed, submitResult, stopTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || submitted) return;
+    const word = targetWordRef.current;
+    const revealed = revealedRef.current;
     if (key === "Enter") {
-      // Check all positions are filled
-      const filled = currentGuess.split("").every((c, i) => c !== "" && c !== " ");
-      if (currentGuess.length === targetWord.length && filled) {
+      const filled = currentGuess.split("").every((c) => c !== "" && c !== " ");
+      if (currentGuess.length === word.length && filled) {
         handleSubmit();
       }
       return;
     }
     if (key === "Backspace") {
-      // Find last non-revealed filled position
       const arr = currentGuess.split("");
       for (let i = arr.length - 1; i >= 0; i--) {
-        if (!revealedIndices.has(i) && arr[i] !== "") {
+        if (!revealed.has(i) && arr[i] !== "") {
           arr[i] = "";
           setCurrentGuess(arr.join(""));
           break;
@@ -156,16 +193,15 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     }
     if (/^[a-zA-Z]$/.test(key)) {
       const arr = currentGuess.split("");
-      // Find first empty non-revealed position
-      for (let i = 0; i < targetWord.length; i++) {
-        if (!revealedIndices.has(i) && (arr[i] === "" || arr[i] === " " || !arr[i])) {
+      for (let i = 0; i < word.length; i++) {
+        if (!revealed.has(i) && (arr[i] === "" || arr[i] === " " || !arr[i])) {
           arr[i] = key.toLowerCase();
           setCurrentGuess(arr.join(""));
           break;
         }
       }
     }
-  }, [gameOver, submitted, currentGuess, targetWord, revealedIndices, handleSubmit]);
+  }, [gameOver, submitted, currentGuess, handleSubmit]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -198,13 +234,23 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
           <Zap className="w-6 h-6 text-accent" />
         </div>
         <p className="text-sm text-muted-foreground">{challengerLevel} letters · 1 poging · {CHALLENGER_TIMER}s</p>
-        <p className="text-xs text-muted-foreground">Win 200 punten!</p>
       </div>
 
       {/* Timer */}
-      <div className={`text-3xl font-extrabold tabular-nums ${timeLeft <= 5 ? "text-accent animate-pulse" : "text-foreground"}`}>
+      <div className={`text-3xl font-extrabold tabular-nums ${timeLeft <= 10 ? "text-accent animate-pulse" : "text-foreground"}`}>
         ⏱ {formatTime(timeLeft)}
       </div>
+
+      {/* Points indicator */}
+      {!gameOver && (
+        <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-4 py-2">
+          <Star className="w-5 h-5 text-primary" />
+          <span className="text-lg font-extrabold text-primary">{currentPoints} punten</span>
+          {extraLettersUsed > 0 && (
+            <span className="text-xs text-muted-foreground">({extraLettersUsed}/{MAX_EXTRA_LETTERS} letters gebruikt)</span>
+          )}
+        </div>
+      )}
 
       {/* Word tiles */}
       <div className="flex flex-wrap justify-center gap-1" style={{ maxWidth: `${Math.min(challengerLevel * 48, 600)}px` }}>
@@ -219,8 +265,6 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
               className={`w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center text-sm sm:text-lg font-extrabold rounded-lg border-2 transition-all uppercase ${
                 status === "correct"
                   ? "bg-tile-correct text-white border-tile-correct"
-                  : status === "present"
-                  ? "bg-tile-present text-white border-tile-present"
                   : status === "absent"
                   ? "bg-tile-absent text-white border-tile-absent"
                   : isRevealed
@@ -236,13 +280,32 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
         })}
       </div>
 
+      {/* Add letter button */}
+      {!gameOver && extraLettersUsed < MAX_EXTRA_LETTERS && (
+        <button
+          onClick={addExtraLetter}
+          className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95 border border-border"
+        >
+          <Plus className="w-4 h-4" />
+          Voeg letter toe
+          <span className="text-xs text-muted-foreground ml-1">
+            (daarna {POINTS_TABLE[Math.min(extraLettersUsed + 1, POINTS_TABLE.length - 1)]} pts)
+          </span>
+        </button>
+      )}
+
       {/* Game Over */}
       {gameOver && (
         <div className="flex flex-col items-center gap-3 animate-bounce-in">
           {won ? (
             <div className="text-center">
               <p className="text-2xl font-extrabold text-tile-correct">🎉 Challenger gewonnen!</p>
-              <p className="text-lg font-bold text-primary mt-1"><Star className="inline w-5 h-5" /> +200 punten!</p>
+              <p className="text-lg font-bold text-primary mt-1">
+                <Star className="inline w-5 h-5" /> +{POINTS_TABLE[Math.min(extraLettersUsed, POINTS_TABLE.length - 1)]} punten!
+              </p>
+              {extraLettersUsed > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">{extraLettersUsed} extra letter{extraLettersUsed > 1 ? "s" : ""} gebruikt</p>
+              )}
             </div>
           ) : (
             <div className="text-center">
