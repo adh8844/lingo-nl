@@ -3,6 +3,65 @@ import { supabase } from "@/integrations/supabase/client";
 import { getRandomWordAsync, Language, WordLength } from "@/data/words";
 
 const WINS_TO_WIN = 5;
+const POINTS_PER_ROUND_WIN = 20;
+const MATCH_WINNER_BONUS = 100;
+
+async function awardMatchPoints(match: OnlineMatch, p1Wins: number, p2Wins: number, winnerId: string) {
+  const promises: Promise<any>[] = [];
+
+  // Award 20 points per round win to each player
+  if (p1Wins > 0) {
+    promises.push(
+      supabase.from("points_log").insert({
+        player_id: match.player1_id,
+        points: p1Wins * POINTS_PER_ROUND_WIN,
+        reason: `Online match: ${p1Wins} ronde(s) gewonnen`,
+      }),
+      supabase.rpc("", {}).then(() => {}) // placeholder removed
+    );
+    promises.push(
+      supabase.from("players").select("points").eq("id", match.player1_id).single().then(({ data }) => {
+        if (data) {
+          return supabase.from("players").update({ points: data.points + p1Wins * POINTS_PER_ROUND_WIN }).eq("id", match.player1_id);
+        }
+      })
+    );
+  }
+  if (p2Wins > 0) {
+    promises.push(
+      supabase.from("points_log").insert({
+        player_id: match.player2_id,
+        points: p2Wins * POINTS_PER_ROUND_WIN,
+        reason: `Online match: ${p2Wins} ronde(s) gewonnen`,
+      })
+    );
+    promises.push(
+      supabase.from("players").select("points").eq("id", match.player2_id).single().then(({ data }) => {
+        if (data) {
+          return supabase.from("players").update({ points: data.points + p2Wins * POINTS_PER_ROUND_WIN }).eq("id", match.player2_id);
+        }
+      })
+    );
+  }
+
+  // Award 100 bonus points to the match winner
+  promises.push(
+    supabase.from("points_log").insert({
+      player_id: winnerId,
+      points: MATCH_WINNER_BONUS,
+      reason: "Online match gewonnen: bonus",
+    })
+  );
+  promises.push(
+    supabase.from("players").select("points").eq("id", winnerId).single().then(({ data }) => {
+      if (data) {
+        return supabase.from("players").update({ points: data.points + MATCH_WINNER_BONUS }).eq("id", winnerId);
+      }
+    })
+  );
+
+  await Promise.all(promises);
+}
 
 export interface OnlineChallenge {
   id: string;
