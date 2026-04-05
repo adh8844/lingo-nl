@@ -171,34 +171,38 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     const word = targetWordRef.current;
     const revealed = revealedRef.current;
     if (key === "Enter") {
-      const filled = currentGuess.split("").every((c) => c !== "" && c !== " ");
-      if (currentGuess.length === word.length && filled) {
+      const filled = guessArr.every((c) => c !== "");
+      if (guessArr.length === word.length && filled) {
         handleSubmit();
       }
       return;
     }
     if (key === "Backspace") {
-      const arr = currentGuess.split("");
-      for (let i = arr.length - 1; i >= 0; i--) {
-        if (!revealed.has(i) && arr[i] !== "") {
-          arr[i] = "";
-          setCurrentGuess(arr.join(""));
-          break;
+      setGuessArr(prev => {
+        const arr = [...prev];
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (!revealed.has(i) && arr[i] !== "") {
+            arr[i] = "";
+            return arr;
+          }
         }
-      }
+        return prev;
+      });
       return;
     }
     if (/^[a-zA-Z]$/.test(key)) {
-      const arr = currentGuess.split("");
-      for (let i = 0; i < word.length; i++) {
-        if (!revealed.has(i) && (arr[i] === "" || arr[i] === " " || !arr[i])) {
-          arr[i] = key.toLowerCase();
-          setCurrentGuess(arr.join(""));
-          break;
+      setGuessArr(prev => {
+        const arr = [...prev];
+        for (let i = 0; i < word.length; i++) {
+          if (!revealed.has(i) && !arr[i]) {
+            arr[i] = key.toLowerCase();
+            return arr;
+          }
         }
-      }
+        return prev;
+      });
     }
-  }, [gameOver, submitted, currentGuess, handleSubmit]);
+  }, [gameOver, submitted, guessArr, handleSubmit]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
