@@ -3,6 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { getRandomWordAsync, Language, WordLength } from "@/data/words";
 
 const WINS_TO_WIN = 5;
+const POINTS_PER_ROUND_WIN = 20;
+const MATCH_WINNER_BONUS = 100;
+
+async function awardMatchPoints(match: OnlineMatch, p1Wins: number, p2Wins: number, winnerId: string) {
+  // Award round win points to each player
+  const awardPoints = async (playerId: string, pts: number, reason: string) => {
+    await supabase.from("points_log").insert({ player_id: playerId, points: pts, reason });
+    const { data } = await supabase.from("players").select("points").eq("id", playerId).single();
+    if (data) {
+      await supabase.from("players").update({ points: data.points + pts }).eq("id", playerId);
+    }
+  };
+
+  if (p1Wins > 0) {
+    await awardPoints(match.player1_id, p1Wins * POINTS_PER_ROUND_WIN, `Online match: ${p1Wins} ronde(s) gewonnen`);
+  }
+  if (p2Wins > 0) {
+    await awardPoints(match.player2_id, p2Wins * POINTS_PER_ROUND_WIN, `Online match: ${p2Wins} ronde(s) gewonnen`);
+  }
+  // Bonus for match winner
+  await awardPoints(winnerId, MATCH_WINNER_BONUS, "Online match gewonnen: bonus");
+}
 
 export interface OnlineChallenge {
   id: string;
@@ -153,7 +175,6 @@ export function useOnlineMatch(playerId: string | undefined) {
     loadChallenges();
   }, [loadChallenges]);
 
-  // Forfeit: the player who forfeits loses, opponent gets 10 points
   const forfeitMatch = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !playerId) return;
@@ -168,6 +189,11 @@ export function useOnlineMatch(playerId: string | undefined) {
         forfeited_by: playerId,
       } as any)
       .eq("id", match.id);
+
+    // Award match points on forfeit too
+    const p1Wins = match.player1_wins;
+    const p2Wins = match.player2_wins;
+    await awardMatchPoints(match, p1Wins, p2Wins, opponentId);
   }, [playerId]);
 
   const submitGuessTime = useCallback(async (guessTimeMs: number) => {
@@ -205,6 +231,7 @@ export function useOnlineMatch(playerId: string | undefined) {
           winner_id: matchWinner,
         })
         .eq("id", match.id);
+      await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
     } else {
       const nextWord = await getRandomWordAsync(
         match.language as Language,
@@ -288,6 +315,7 @@ export function useOnlineMatch(playerId: string | undefined) {
             winner_id: matchWinner,
           })
           .eq("id", match.id);
+        await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
       } else {
         const nextWord = await getRandomWordAsync(
           match.language as Language,

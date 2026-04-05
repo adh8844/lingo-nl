@@ -338,7 +338,7 @@ const OnlineGame = ({
           <p className="text-xl font-extrabold text-foreground">
             {match.player1_wins} - {match.player2_wins}
           </p>
-          <p className="text-sm text-accent font-bold">{isWinner ? "+10 ⭐" : ""}</p>
+          <p className="text-sm text-accent font-bold">{isWinner ? "+100 bonus ⭐" : ""}</p>
           <div className="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent font-bold text-sm animate-pulse">
             {language === "nl" ? "Wachten op tegenstander..." : "Waiting for opponent..."}
           </div>
@@ -374,16 +374,18 @@ const OnlineGame = ({
           {match.player1_wins} - {match.player2_wins}
         </p>
         {isWinner && (
-          <p className="text-sm text-accent font-bold">+10 ⭐</p>
+          <p className="text-sm text-accent font-bold">
+            +100 bonus ⭐ + {(isPlayer1 ? match.player1_wins : match.player2_wins) * 20} ronde punten
+          </p>
         )}
         {!isWinner && wasForfeit && (
           <p className="text-sm text-muted-foreground font-bold">
-            {language === "nl" ? `${opponentName} ontvangt +10 ⭐` : `${opponentName} receives +10 ⭐`}
+            {language === "nl" ? `${opponentName} ontvangt punten` : `${opponentName} receives points`}
           </p>
         )}
         {isWinner && wasForfeit && !iForfeited && (
           <p className="text-sm text-accent font-bold">
-            {language === "nl" ? "Tegenstander heeft opgegeven — jij ontvangt +10 ⭐" : "Opponent forfeited — you receive +10 ⭐"}
+            {language === "nl" ? "Tegenstander heeft opgegeven — jij ontvangt +100 bonus ⭐" : "Opponent forfeited — you receive +100 bonus ⭐"}
           </p>
         )}
 
