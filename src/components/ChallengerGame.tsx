@@ -44,7 +44,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   );
   const [targetWord, setTargetWord] = useState("");
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
-  const [currentGuess, setCurrentGuess] = useState("");
+  const [guessArr, setGuessArr] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
   const [timeLeft, setTimeLeft] = useState(CHALLENGER_TIMER);
@@ -83,7 +83,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       setRevealedIndices(revealed);
       revealedRef.current = revealed;
 
-      setCurrentGuess(Array.from({ length: word.length }, (_, i) => revealed.has(i) ? word[i] : "").join(""));
+      setGuessArr(Array.from({ length: word.length }, (_, i) => revealed.has(i) ? word[i] : ""));
 
       setIsLoading(false);
       startTimeRef.current = Date.now();
@@ -118,12 +118,10 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     setRevealedIndices(newRevealed);
     revealedRef.current = newRevealed;
 
-    // Update current guess with the new revealed letter
-    setCurrentGuess(prev => {
-      const arr = prev.split("");
-      while (arr.length < word.length) arr.push("");
+    setGuessArr(prev => {
+      const arr = [...prev];
       arr[randomIdx] = word[randomIdx];
-      return arr.join("");
+      return arr;
     });
 
     setExtraLettersUsed(prev => prev + 1);
@@ -135,14 +133,13 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     stopTimer();
 
     const word = targetWordRef.current;
-    const guess = currentGuess.toLowerCase();
+    const guess = guessArr.map(c => c || "").join("").toLowerCase();
     const playerWon = !timedOut && guess === word;
     setWon(playerWon);
     setGameOver(true);
 
-    // Only show correct (green) positions
     const statuses: TileStatus[] = word.split("").map((c, i) => {
-      if (guess[i] === c) return "correct";
+      if (guessArr[i]?.toLowerCase() === c) return "correct";
       return "absent";
     });
     setTileStatuses(statuses);
@@ -167,41 +164,45 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     if (result) {
       setPointsEarned(result.points_earned);
     }
-  }, [submitted, player, currentGuess, challengerLevel, extraLettersUsed, submitResult, stopTimer]);
+  }, [submitted, player, guessArr, challengerLevel, extraLettersUsed, submitResult, stopTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || submitted) return;
     const word = targetWordRef.current;
     const revealed = revealedRef.current;
     if (key === "Enter") {
-      const filled = currentGuess.split("").every((c) => c !== "" && c !== " ");
-      if (currentGuess.length === word.length && filled) {
+      const filled = guessArr.every((c) => c !== "");
+      if (guessArr.length === word.length && filled) {
         handleSubmit();
       }
       return;
     }
     if (key === "Backspace") {
-      const arr = currentGuess.split("");
-      for (let i = arr.length - 1; i >= 0; i--) {
-        if (!revealed.has(i) && arr[i] !== "") {
-          arr[i] = "";
-          setCurrentGuess(arr.join(""));
-          break;
+      setGuessArr(prev => {
+        const arr = [...prev];
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (!revealed.has(i) && arr[i] !== "") {
+            arr[i] = "";
+            return arr;
+          }
         }
-      }
+        return prev;
+      });
       return;
     }
     if (/^[a-zA-Z]$/.test(key)) {
-      const arr = currentGuess.split("");
-      for (let i = 0; i < word.length; i++) {
-        if (!revealed.has(i) && (arr[i] === "" || arr[i] === " " || !arr[i])) {
-          arr[i] = key.toLowerCase();
-          setCurrentGuess(arr.join(""));
-          break;
+      setGuessArr(prev => {
+        const arr = [...prev];
+        for (let i = 0; i < word.length; i++) {
+          if (!revealed.has(i) && !arr[i]) {
+            arr[i] = key.toLowerCase();
+            return arr;
+          }
         }
-      }
+        return prev;
+      });
     }
-  }, [gameOver, submitted, currentGuess, handleSubmit]);
+  }, [gameOver, submitted, guessArr, handleSubmit]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -256,7 +257,8 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       <div className="flex flex-wrap justify-center gap-1" style={{ maxWidth: `${Math.min(challengerLevel * 48, 600)}px` }}>
         {targetWord.split("").map((letter, i) => {
           const isRevealed = revealedIndices.has(i);
-          const guessLetter = currentGuess[i] || "";
+          const guessLetter = guessArr[i] || "";
+          const displayLetter = isRevealed ? letter : guessLetter;
           const status = gameOver ? tileStatuses[i] : (isRevealed ? "correct" : undefined);
 
           return (
@@ -274,7 +276,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
                   : "bg-card border-border text-muted-foreground"
               }`}
             >
-              {isRevealed ? letter : guessLetter || ""}
+              {displayLetter}
             </div>
           );
         })}
