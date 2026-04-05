@@ -1,0 +1,1 @@
+DELETE FROM player_badges WHERE id = '89b9028b-7850-46d0-a2f9-e51d3fa27a24';
