@@ -266,6 +266,25 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     );
   }
 
+  if (showChallenger) {
+    return (
+      <ChallengerGame
+        onComplete={() => {
+          setShowChallenger(false);
+          startNewRound();
+        }}
+      />
+    );
+  }
+
+  const handleNextRound = () => {
+    if (gameResult?.trigger_challenger) {
+      setShowChallenger(true);
+    } else {
+      startNewRound();
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
       {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
@@ -309,12 +328,12 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
               {gameResult.points_breakdown.map((p, i) => (
                 <div key={i} className="flex justify-between text-xs">
                   <span className="text-muted-foreground">{p.reason}</span>
-                  <span className="font-bold text-primary">+{p.points}</span>
+                  <span className={`font-bold ${p.points >= 0 ? "text-primary" : "text-accent"}`}>{p.points >= 0 ? "+" : ""}{p.points}</span>
                 </div>
               ))}
               <div className="flex justify-between text-sm font-extrabold pt-1.5 border-t border-border">
                 <span>Totaal</span>
-                <span className="text-primary">+{gameResult.points_earned} <Star className="inline w-3 h-3" /></span>
+                <span className={`${gameResult.points_earned >= 0 ? "text-primary" : "text-accent"}`}>{gameResult.points_earned >= 0 ? "+" : ""}{gameResult.points_earned} <Star className="inline w-3 h-3" /></span>
               </div>
             </div>
           )}
@@ -334,8 +353,16 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
             </div>
           )}
 
-          <button onClick={startNewRound} className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
-            Volgende ronde
+          {/* Challenger notification */}
+          {gameResult?.trigger_challenger && (
+            <div className="w-full max-w-xs bg-accent/10 border-2 border-accent rounded-xl p-3 text-center animate-pulse">
+              <p className="text-lg font-extrabold text-accent">⚡ CHALLENGER!</p>
+              <p className="text-xs text-muted-foreground mt-1">25 games gespeeld — tijd voor een uitdaging!</p>
+            </div>
+          )}
+
+          <button onClick={handleNextRound} className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
+            {gameResult?.trigger_challenger ? "⚡ Start Challenger" : "Volgende ronde"}
           </button>
         </div>
       )}
