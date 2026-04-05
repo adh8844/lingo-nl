@@ -133,14 +133,13 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     stopTimer();
 
     const word = targetWordRef.current;
-    const guess = currentGuess.toLowerCase();
+    const guess = guessArr.map(c => c || "").join("").toLowerCase();
     const playerWon = !timedOut && guess === word;
     setWon(playerWon);
     setGameOver(true);
 
-    // Only show correct (green) positions
     const statuses: TileStatus[] = word.split("").map((c, i) => {
-      if (guess[i] === c) return "correct";
+      if (guessArr[i]?.toLowerCase() === c) return "correct";
       return "absent";
     });
     setTileStatuses(statuses);
@@ -165,7 +164,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     if (result) {
       setPointsEarned(result.points_earned);
     }
-  }, [submitted, player, currentGuess, challengerLevel, extraLettersUsed, submitResult, stopTimer]);
+  }, [submitted, player, guessArr, challengerLevel, extraLettersUsed, submitResult, stopTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || submitted) return;
