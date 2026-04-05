@@ -452,7 +452,7 @@ Deno.serve(async (req) => {
     const bestStreak = Math.max(player.best_streak || 0, currentStreak)
 
     // Check if challenger should be triggered (every 25 games)
-    const shouldTriggerChallenger = newTotalGames > 0 && newTotalGames % 2 === 0 && ![10, 12, 14].includes(level)
+    const shouldTriggerChallenger = newTotalGames > 0 && newTotalGames % 25 === 0 && ![10, 12, 14].includes(level)
 
     await supabase.from('players').update({
       points: newTotalPoints,
