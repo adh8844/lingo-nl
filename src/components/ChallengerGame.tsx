@@ -257,7 +257,8 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       <div className="flex flex-wrap justify-center gap-1" style={{ maxWidth: `${Math.min(challengerLevel * 48, 600)}px` }}>
         {targetWord.split("").map((letter, i) => {
           const isRevealed = revealedIndices.has(i);
-          const guessLetter = currentGuess[i] || "";
+          const guessLetter = guessArr[i] || "";
+          const displayLetter = isRevealed ? letter : guessLetter;
           const status = gameOver ? tileStatuses[i] : (isRevealed ? "correct" : undefined);
 
           return (
@@ -275,7 +276,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
                   : "bg-card border-border text-muted-foreground"
               }`}
             >
-              {isRevealed ? letter : guessLetter || ""}
+              {displayLetter}
             </div>
           );
         })}
