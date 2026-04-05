@@ -254,7 +254,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       )}
 
       {/* Word tiles */}
-      <div className="flex flex-wrap justify-center gap-1" style={{ maxWidth: `${Math.min(challengerLevel * 48, 600)}px` }}>
+      <div className="flex flex-nowrap justify-center gap-0.5 sm:gap-1 w-full overflow-x-auto">
         {targetWord.split("").map((letter, i) => {
           const isRevealed = revealedIndices.has(i);
           const guessLetter = guessArr[i] || "";
