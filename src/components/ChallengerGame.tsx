@@ -118,12 +118,10 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
     setRevealedIndices(newRevealed);
     revealedRef.current = newRevealed;
 
-    // Update current guess with the new revealed letter
-    setCurrentGuess(prev => {
-      const arr = prev.split("");
-      while (arr.length < word.length) arr.push("");
+    setGuessArr(prev => {
+      const arr = [...prev];
       arr[randomIdx] = word[randomIdx];
-      return arr.join("");
+      return arr;
     });
 
     setExtraLettersUsed(prev => prev + 1);
