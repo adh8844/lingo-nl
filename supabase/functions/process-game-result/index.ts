@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger } = await req.json()
+    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points } = await req.json()
 
     const validLevels = [4, 5, 6, 10, 12, 14]
     if (!player_id || !validLevels.includes(level) || !word || typeof solved !== 'boolean') {
