@@ -408,7 +408,7 @@ Deno.serve(async (req) => {
     // Legend check
     if (!earnedIds.has('legend')) {
       const { data: topPlayers } = await supabase.from('players').select('id, points').order('points', { ascending: false }).limit(20)
-      if (topPlayers && topPlayers.length > 15) {
+      if (topPlayers && topPlayers.length >= 10) {
         const sorted = [...topPlayers].map(p => p.id === player_id ? { ...p, points: newTotalPoints } : p).sort((a, b) => b.points - a.points)
         const rank = sorted.findIndex(p => p.id === player_id)
         if (rank >= 0 && rank < 3) {
