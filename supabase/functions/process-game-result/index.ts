@@ -270,9 +270,15 @@ Deno.serve(async (req) => {
       const games = allGames || []
 
       // Tijd badges
-      if (!earnedIds.has('nachtuil') && games.filter((g: any) => { const h = new Date(g.played_at).getUTCHours(); return h >= 0 && h < 5 }).length >= 5) tryAward('nachtuil')
-      if (!earnedIds.has('vroege_vogel') && games.filter((g: any) => new Date(g.played_at).getUTCHours() < 7).length >= 5) tryAward('vroege_vogel')
-      if (!earnedIds.has('maneschijn') && games.filter((g: any) => new Date(g.played_at).getUTCHours() === 22).length >= 2) tryAward('maneschijn')
+      // Helper: get hour in CET/CEST (Europe/Amsterdam)
+      const getCETHour = (dateStr: string) => {
+        const d = new Date(dateStr)
+        const cetStr = d.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam', hour12: false })
+        return parseInt(cetStr.split(',')[1].trim().split(':')[0], 10)
+      }
+      if (!earnedIds.has('nachtuil') && games.filter((g: any) => { const h = getCETHour(g.played_at); return h >= 0 && h < 5 }).length >= 5) tryAward('nachtuil')
+      if (!earnedIds.has('vroege_vogel') && games.filter((g: any) => getCETHour(g.played_at) < 7).length >= 5) tryAward('vroege_vogel')
+      if (!earnedIds.has('maneschijn') && games.filter((g: any) => getCETHour(g.played_at) === 22).length >= 2) tryAward('maneschijn')
       if (!earnedIds.has('weekendstrijder')) {
         const wkd: Record<string, number> = {}
         games.forEach((g: any) => { const d = new Date(g.played_at); if (d.getUTCDay() === 0 || d.getUTCDay() === 6) { const k = d.toISOString().split('T')[0]; wkd[k] = (wkd[k] || 0) + 1 } })
@@ -402,7 +408,7 @@ Deno.serve(async (req) => {
     // Legend check
     if (!earnedIds.has('legend')) {
       const { data: topPlayers } = await supabase.from('players').select('id, points').order('points', { ascending: false }).limit(20)
-      if (topPlayers && topPlayers.length > 15) {
+      if (topPlayers && topPlayers.length >= 10) {
         const sorted = [...topPlayers].map(p => p.id === player_id ? { ...p, points: newTotalPoints } : p).sort((a, b) => b.points - a.points)
         const rank = sorted.findIndex(p => p.id === player_id)
         if (rank >= 0 && rank < 3) {
