@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger } = await req.json()
+    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points } = await req.json()
 
     const validLevels = [4, 5, 6, 10, 12, 14]
     if (!player_id || !validLevels.includes(level) || !word || typeof solved !== 'boolean') {
@@ -137,13 +137,14 @@ Deno.serve(async (req) => {
 
     // For challenger games, simplified scoring
     if (is_challenger || [10, 12, 14].includes(level)) {
+      const cPoints = solved ? (challenger_points || 200) : 0
       if (solved) {
-        pts.push({ points: 200, reason: `Challenger gewonnen! (${level}-letter)` })
+        pts.push({ points: cPoints, reason: `Challenger gewonnen! (${level}-letter, ${cPoints} pts)` })
       } else {
         pts.push({ points: 0, reason: `Challenger verloren (${level}-letter)` })
       }
       
-      await supabase.from('games').update({ points_earned: solved ? 200 : 0 }).eq('id', game.id)
+      await supabase.from('games').update({ points_earned: cPoints }).eq('id', game.id)
     } else {
       // 3. Base points (normal game)
       const baseKey = solved ? String(attempts || 1) : 'fail'

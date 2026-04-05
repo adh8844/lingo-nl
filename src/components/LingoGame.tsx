@@ -10,7 +10,16 @@ import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult, GameResultData } from "@/hooks/useGameResult";
-import { Star, Flame, Award } from "lucide-react";
+import { Star, Flame, Award, Zap } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 const MAX_GUESSES = 5;
 const TIMER_SECONDS = 90;
@@ -51,6 +60,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gameResult, setGameResult] = useState<GameResultData | null>(null);
   const [showChallenger, setShowChallenger] = useState(false);
+  const [showChallengerDialog, setShowChallengerDialog] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const firstGreenAttemptRef = useRef<number | null>(null);
@@ -279,7 +289,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   const handleNextRound = () => {
     if (gameResult?.trigger_challenger) {
-      setShowChallenger(true);
+      setShowChallengerDialog(true);
     } else {
       startNewRound();
     }
@@ -289,6 +299,33 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
       {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog open={suggestionDialogOpen} word={pendingWord} language="nl" onConfirm={handleSuggestionConfirm} onCancel={handleSuggestionCancel} />
+
+      {/* Challenger invitation dialog */}
+      <AlertDialog open={showChallengerDialog} onOpenChange={setShowChallengerDialog}>
+        <AlertDialogContent className="max-w-sm text-center">
+          <AlertDialogHeader className="items-center">
+            <Zap className="w-12 h-12 text-accent animate-pulse" />
+            <AlertDialogTitle className="text-2xl font-extrabold text-accent">⚡ CHALLENGER!</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Wil je <span className="font-extrabold text-primary">500 extra punten</span> verdienen? Doe nu de challenger!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              onClick={() => { setShowChallengerDialog(false); setShowChallenger(true); }}
+              className="bg-accent text-accent-foreground font-extrabold text-lg py-3 hover:brightness-110"
+            >
+              ⚡ Start Challenger!
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => { setShowChallengerDialog(false); startNewRound(); }}
+              className="bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80"
+            >
+              Nee, volgende ronde
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Header */}
       <div className="flex items-center justify-between w-full">
@@ -353,16 +390,8 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
             </div>
           )}
 
-          {/* Challenger notification */}
-          {gameResult?.trigger_challenger && (
-            <div className="w-full max-w-xs bg-accent/10 border-2 border-accent rounded-xl p-3 text-center animate-pulse">
-              <p className="text-lg font-extrabold text-accent">⚡ CHALLENGER!</p>
-              <p className="text-xs text-muted-foreground mt-1">25 games gespeeld — tijd voor een uitdaging!</p>
-            </div>
-          )}
-
           <button onClick={handleNextRound} className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
-            {gameResult?.trigger_challenger ? "⚡ Start Challenger" : "Volgende ronde"}
+            Volgende ronde
           </button>
         </div>
       )}
