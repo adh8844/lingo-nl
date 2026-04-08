@@ -76,7 +76,8 @@ export async function loadDutchWordsFromDB(length: WordLength): Promise<string[]
     .from("dutch_words")
     .select("word")
     .eq("length", length)
-    .eq("approved", true);
+    .eq("approved", true)
+    .eq("appropriate", true);
   if (error || !data || data.length === 0) {
     return wordLists[length].filter(w => w.length === length);
   }
@@ -99,6 +100,7 @@ export async function isValidWordAsync(word: string, language: Language, length:
     .eq("word", word.toLowerCase())
     .eq("length", length)
     .eq("approved", true)
+    .eq("appropriate", true)
     .limit(1);
   return !!(data && data.length > 0);
 }
@@ -120,7 +122,7 @@ export async function suggestWord(word: string, length: WordLength, playerId?: s
 
   const { error } = await supabase
     .from("dutch_words")
-    .insert({ word: word.toLowerCase(), length, approved: false, suggested_by: playerId || null });
+    .insert({ word: word.toLowerCase(), length, approved: false, appropriate: false, suggested_by: playerId || null });
   if (!error) delete dbWordsCache[length];
   return { success: !error };
 }
