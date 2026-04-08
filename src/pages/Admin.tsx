@@ -59,7 +59,7 @@ const Admin = () => {
       .from("dutch_words")
       .select("id, word, length, created_at, suggested_by, approved, appropriate")
       .eq("rejected", false)
-      .or("approved.eq.false,appropriate.eq.false")
+      .eq("approved", false)
       .order("created_at", { ascending: false });
 
     if (!data) {
