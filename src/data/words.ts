@@ -122,7 +122,7 @@ export async function suggestWord(word: string, length: WordLength, playerId?: s
 
   const { error } = await supabase
     .from("dutch_words")
-    .insert({ word: word.toLowerCase(), length, approved: false, suggested_by: playerId || null });
+    .insert({ word: word.toLowerCase(), length, approved: false, appropriate: false, suggested_by: playerId || null });
   if (!error) delete dbWordsCache[length];
   return { success: !error };
 }
