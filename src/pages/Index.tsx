@@ -243,6 +243,17 @@ const Index = () => {
               </button>
             </div>
 
+            {/* Admin link */}
+            {isAdmin && (
+              <button
+                onClick={() => navigate("/admin")}
+                className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </button>
+            )}
+
             {/* Uitloggen */}
             <button
               onClick={signOut}
@@ -254,7 +265,9 @@ const Index = () => {
           </>
         )}
       </div>
-      <p className="mt-6 text-[10px] text-muted-foreground/50">Laatst bijgewerkt: 5 april 2025, 22:00 CET</p>
+      <p className="mt-6 text-[10px] text-muted-foreground/50">
+        Laatst bijgewerkt: {new Date(__BUILD_TIMESTAMP__).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} CET
+      </p>
     </div>
   );
 };
