@@ -1,0 +1,1 @@
+ALTER TABLE public.dutch_words ADD COLUMN appropriate boolean NOT NULL DEFAULT true;

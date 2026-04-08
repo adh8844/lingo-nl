@@ -43,6 +43,7 @@ export type Database = {
       }
       dutch_words: {
         Row: {
+          appropriate: boolean
           approved: boolean
           created_at: string
           id: string
@@ -52,6 +53,7 @@ export type Database = {
           word: string
         }
         Insert: {
+          appropriate?: boolean
           approved?: boolean
           created_at?: string
           id?: string
@@ -61,6 +63,7 @@ export type Database = {
           word: string
         }
         Update: {
+          appropriate?: boolean
           approved?: boolean
           created_at?: string
           id?: string
