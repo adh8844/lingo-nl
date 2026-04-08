@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Check, X, Plus, Search, ChevronLeft, ChevronRight, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
@@ -28,6 +31,17 @@ interface WordRecord {
   approved: boolean;
 }
 
+interface FullWord {
+  id: string;
+  word: string;
+  length: number;
+  approved: boolean;
+  appropriate: boolean;
+  rejected: boolean;
+  suggested_by: string | null;
+  created_at: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { session, loading, authReady } = usePlayer();
@@ -37,6 +51,22 @@ const Admin = () => {
   const [loadingWords, setLoadingWords] = useState(true);
   const [allWords, setAllWords] = useState<WordRecord[]>([]);
   const [timeView, setTimeView] = useState<"dag" | "maand">("maand");
+
+  // Add word state
+  const [newWord, setNewWord] = useState("");
+  const [addingWord, setAddingWord] = useState(false);
+  const [wordExists, setWordExists] = useState<boolean | null>(null);
+  const [checkingWord, setCheckingWord] = useState(false);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FullWord[]>([]);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [searchPage, setSearchPage] = useState(0);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Partial<FullWord>>({});
+  const PAGE_SIZE = 5;
 
   useEffect(() => {
     if (!authReady) return;
@@ -104,7 +134,6 @@ const Admin = () => {
     }
   }, [isAdmin, loadPendingWords, loadAllWords]);
 
-  // Words per length chart data
   const lengthChartData = useMemo(() => {
     const counts: Record<number, number> = {};
     allWords.filter(w => w.approved).forEach(w => {
@@ -115,7 +144,6 @@ const Admin = () => {
       .sort((a, b) => parseInt(a.name) - parseInt(b.name));
   }, [allWords]);
 
-  // Words added over time
   const timeChartData = useMemo(() => {
     const counts: Record<string, number> = {};
     allWords.forEach(w => {
@@ -130,15 +158,87 @@ const Admin = () => {
       .map(([date, count]) => ({ name: date, count }));
   }, [allWords, timeView]);
 
+  // Check if word exists
+  useEffect(() => {
+    const trimmed = newWord.trim().toLowerCase();
+    if (trimmed.length < 2) { setWordExists(null); return; }
+    setCheckingWord(true);
+    const timeout = setTimeout(async () => {
+      const { data } = await supabase
+        .from("dutch_words")
+        .select("id")
+        .eq("word", trimmed)
+        .limit(1);
+      setWordExists(data && data.length > 0);
+      setCheckingWord(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [newWord]);
+
+  const handleAddWord = async () => {
+    const trimmed = newWord.trim().toLowerCase();
+    if (!trimmed || wordExists) return;
+    setAddingWord(true);
+    const { error } = await supabase
+      .from("dutch_words")
+      .insert({ word: trimmed, length: trimmed.length, approved: true, appropriate: true } as any);
+    setAddingWord(false);
+    if (error) { toast.error("Fout bij toevoegen"); return; }
+    toast.success(`"${trimmed.toUpperCase()}" toegevoegd!`);
+    setNewWord("");
+    setWordExists(null);
+    loadAllWords();
+  };
+
+  // Search
+  const doSearch = useCallback(async (page = 0) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return;
+    setHasSearched(true);
+    const from = page * PAGE_SIZE;
+    const { data, count } = await supabase
+      .from("dutch_words")
+      .select("id, word, length, approved, appropriate, rejected, suggested_by, created_at", { count: "exact" })
+      .ilike("word", `%${q}%`)
+      .order("word")
+      .range(from, from + PAGE_SIZE - 1);
+    setSearchResults((data as FullWord[]) || []);
+    setSearchTotal(count || 0);
+    setSearchPage(page);
+    setEditingId(null);
+  }, [searchQuery]);
+
+  const handleSaveEdit = async (word: FullWord) => {
+    const updates: any = {};
+    if (editData.word !== undefined) {
+      updates.word = editData.word.trim().toLowerCase();
+      updates.length = updates.word.length;
+    }
+    if (editData.approved !== undefined) updates.approved = editData.approved;
+    if (editData.appropriate !== undefined) updates.appropriate = editData.appropriate;
+    if (editData.rejected !== undefined) updates.rejected = editData.rejected;
+
+    if (Object.keys(updates).length === 0) { setEditingId(null); return; }
+
+    const { error } = await supabase
+      .from("dutch_words")
+      .update(updates)
+      .eq("id", word.id);
+    if (error) { toast.error("Fout bij opslaan"); return; }
+    toast.success("Woord bijgewerkt!");
+    setEditingId(null);
+    setEditData({});
+    doSearch(searchPage);
+    loadAllWords();
+    loadPendingWords();
+  };
+
   const handleApprove = async (word: PendingWord) => {
     const { error } = await supabase
       .from("dutch_words")
       .update({ approved: true, appropriate: true } as any)
       .eq("id", word.id);
-    if (error) {
-      toast.error("Fout bij goedkeuren");
-      return;
-    }
+    if (error) { toast.error("Fout bij goedkeuren"); return; }
     toast.success(`"${word.word.toUpperCase()}" goedgekeurd!`);
     setPendingWords(prev => prev.filter(w => w.id !== word.id));
   };
@@ -148,10 +248,7 @@ const Admin = () => {
       .from("dutch_words")
       .update({ approved: true, appropriate: false } as any)
       .eq("id", word.id);
-    if (error) {
-      toast.error("Fout bij goedkeuren");
-      return;
-    }
+    if (error) { toast.error("Fout bij goedkeuren"); return; }
     toast.success(`"${word.word.toUpperCase()}" goedgekeurd als correct maar niet geschikt voor Lingo.`);
     setPendingWords(prev => prev.filter(w => w.id !== word.id));
   };
@@ -161,10 +258,7 @@ const Admin = () => {
       .from("dutch_words")
       .update({ appropriate: true } as any)
       .eq("id", word.id);
-    if (error) {
-      toast.error("Fout bij markeren als geschikt");
-      return;
-    }
+    if (error) { toast.error("Fout bij markeren als geschikt"); return; }
     toast.success(`"${word.word.toUpperCase()}" gemarkeerd als geschikt!`);
     setPendingWords(prev => prev.filter(w => w.id !== word.id));
   };
@@ -174,10 +268,7 @@ const Admin = () => {
       .from("dutch_words")
       .update({ rejected: true } as any)
       .eq("id", word.id);
-    if (error) {
-      toast.error("Fout bij afkeuren");
-      return;
-    }
+    if (error) { toast.error("Fout bij afkeuren"); return; }
     toast.error(`"${word.word.toUpperCase()}" afgekeurd.`);
     setPendingWords(prev => prev.filter(w => w.id !== word.id));
   };
@@ -192,6 +283,8 @@ const Admin = () => {
 
   if (!isAdmin) return null;
 
+  const totalPages = Math.ceil(searchTotal / PAGE_SIZE);
+
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-4">
       <div className="w-full max-w-2xl">
@@ -204,64 +297,237 @@ const Admin = () => {
           </h1>
         </div>
 
-        {/* Stats Section */}
-        <div className="grid gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Woorden per woordlengte</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {lengthChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={lengthChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                    <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-                      labelStyle={{ color: "hsl(var(--foreground))" }}
-                    />
-                    <Bar dataKey="count" name="Aantal" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-muted-foreground text-sm">Geen data</p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Charts in tabs */}
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Statistieken</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="length">
+              <TabsList className="mb-4">
+                <TabsTrigger value="length">Per woordlengte</TabsTrigger>
+                <TabsTrigger value="time">Over tijd</TabsTrigger>
+              </TabsList>
+              <TabsContent value="length">
+                {lengthChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={lengthChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
+                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                      <Bar dataKey="count" name="Aantal" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Geen data</p>
+                )}
+              </TabsContent>
+              <TabsContent value="time">
+                <div className="flex justify-end mb-2">
+                  <Tabs value={timeView} onValueChange={(v) => setTimeView(v as "dag" | "maand")}>
+                    <TabsList className="h-8">
+                      <TabsTrigger value="maand" className="text-xs px-2 py-1">Maand</TabsTrigger>
+                      <TabsTrigger value="dag" className="text-xs px-2 py-1">Dag</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                {timeChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={timeChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} angle={-45} textAnchor="end" height={60} />
+                      <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
+                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                        labelStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                      <Bar dataKey="count" name="Aantal" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Geen data</p>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Woorden toegevoegd over tijd</CardTitle>
-                <Tabs value={timeView} onValueChange={(v) => setTimeView(v as "dag" | "maand")}>
-                  <TabsList className="h-8">
-                    <TabsTrigger value="maand" className="text-xs px-2 py-1">Maand</TabsTrigger>
-                    <TabsTrigger value="dag" className="text-xs px-2 py-1">Dag</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+        {/* Add word section */}
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Woord toevoegen</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Input
+                  placeholder="Typ een woord..."
+                  value={newWord}
+                  onChange={(e) => setNewWord(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddWord()}
+                  className="uppercase tracking-wider font-bold"
+                />
+                <div className="flex items-center gap-2 mt-1 min-h-[20px]">
+                  {newWord.trim().length >= 2 && (
+                    <>
+                      <span className="text-xs text-muted-foreground">{newWord.trim().length} letters</span>
+                      {checkingWord ? (
+                        <span className="text-xs text-muted-foreground">Controleren...</span>
+                      ) : wordExists === true ? (
+                        <span className="text-xs text-red-500">⚠ Bestaat al in database</span>
+                      ) : wordExists === false ? (
+                        <span className="text-xs text-green-500">✓ Nieuw woord</span>
+                      ) : null}
+                    </>
+                  )}
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              {timeChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={timeChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} angle={-45} textAnchor="end" height={60} />
-                    <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                    <Tooltip
-                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-                      labelStyle={{ color: "hsl(var(--foreground))" }}
-                    />
-                    <Bar dataKey="count" name="Aantal" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-muted-foreground text-sm">Geen data</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              <Button
+                onClick={handleAddWord}
+                disabled={!newWord.trim() || wordExists === true || addingWord}
+                size="sm"
+                className="mb-5"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Toevoegen
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Search section */}
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Woorden zoeken & bewerken</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Zoek op woord..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && doSearch(0)}
+              />
+              <Button size="sm" onClick={() => doSearch(0)}>
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {hasSearched && searchResults.length === 0 && (
+              <p className="text-sm text-muted-foreground">Geen resultaten gevonden.</p>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {searchResults.map(word => {
+                  const isEditing = editingId === word.id;
+                  const currentWord = isEditing && editData.word !== undefined ? editData.word : word.word;
+                  const currentApproved = isEditing && editData.approved !== undefined ? editData.approved : word.approved;
+                  const currentAppropriate = isEditing && editData.appropriate !== undefined ? editData.appropriate : word.appropriate;
+                  const currentRejected = isEditing && editData.rejected !== undefined ? editData.rejected : word.rejected;
+
+                  return (
+                    <div key={word.id} className="p-3 rounded-xl bg-card border border-border">
+                      {isEditing ? (
+                        <div className="space-y-3">
+                          <Input
+                            value={currentWord}
+                            onChange={(e) => setEditData(d => ({ ...d, word: e.target.value }))}
+                            className="uppercase tracking-wider font-bold"
+                          />
+                          <div className="text-xs text-muted-foreground">
+                            {(currentWord || "").trim().length} letters
+                          </div>
+                          <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={currentApproved}
+                                onCheckedChange={(v) => setEditData(d => ({ ...d, approved: v }))}
+                                id={`approved-${word.id}`}
+                              />
+                              <Label htmlFor={`approved-${word.id}`} className="text-xs">Goedgekeurd</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={currentAppropriate}
+                                onCheckedChange={(v) => setEditData(d => ({ ...d, appropriate: v }))}
+                                id={`appropriate-${word.id}`}
+                              />
+                              <Label htmlFor={`appropriate-${word.id}`} className="text-xs">Geschikt</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={currentRejected}
+                                onCheckedChange={(v) => setEditData(d => ({ ...d, rejected: v }))}
+                                id={`rejected-${word.id}`}
+                              />
+                              <Label htmlFor={`rejected-${word.id}`} className="text-xs">Afgewezen</Label>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleSaveEdit(word)}>
+                              <Save className="w-4 h-4 mr-1" /> Opslaan
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setEditingId(null); setEditData({}); }}>
+                              Annuleren
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-extrabold text-lg tracking-wider text-foreground">
+                              {word.word.toUpperCase()}
+                            </span>
+                            <div className="text-xs text-muted-foreground">
+                              {word.length} letters
+                              {word.approved && <span className="text-green-500 ml-2">✓ Correct</span>}
+                              {!word.approved && <span className="text-orange-500 ml-2">⏳ Niet goedgekeurd</span>}
+                              {word.appropriate && <span className="text-green-500 ml-2">✓ Geschikt</span>}
+                              {!word.appropriate && <span className="text-orange-500 ml-2">⏳ Niet geschikt</span>}
+                              {word.rejected && <span className="text-red-500 ml-2">✗ Afgewezen</span>}
+                            </div>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => { setEditingId(word.id); setEditData({}); }}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={searchPage === 0}
+                      onClick={() => doSearch(searchPage - 1)}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      Pagina {searchPage + 1} van {totalPages} ({searchTotal} resultaten)
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={searchPage >= totalPages - 1}
+                      onClick={() => doSearch(searchPage + 1)}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Pending words section */}
         {loadingWords ? (
