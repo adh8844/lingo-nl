@@ -18,6 +18,8 @@ interface PendingWord {
   created_at: string;
   suggested_by: string | null;
   suggestor_name?: string;
+  approved: boolean;
+  appropriate: boolean;
 }
 
 interface WordRecord {
@@ -55,9 +57,9 @@ const Admin = () => {
     setLoadingWords(true);
     const { data } = await supabase
       .from("dutch_words")
-      .select("id, word, length, created_at, suggested_by")
-      .eq("approved", false)
+      .select("id, word, length, created_at, suggested_by, approved, appropriate")
       .eq("rejected", false)
+      .or("approved.eq.false,appropriate.eq.false")
       .order("created_at", { ascending: false });
 
     if (!data) {
@@ -131,13 +133,39 @@ const Admin = () => {
   const handleApprove = async (word: PendingWord) => {
     const { error } = await supabase
       .from("dutch_words")
-      .update({ approved: true } as any)
+      .update({ approved: true, appropriate: true } as any)
       .eq("id", word.id);
     if (error) {
       toast.error("Fout bij goedkeuren");
       return;
     }
     toast.success(`"${word.word.toUpperCase()}" goedgekeurd!`);
+    setPendingWords(prev => prev.filter(w => w.id !== word.id));
+  };
+
+  const handleApproveCorrectOnly = async (word: PendingWord) => {
+    const { error } = await supabase
+      .from("dutch_words")
+      .update({ approved: true, appropriate: false } as any)
+      .eq("id", word.id);
+    if (error) {
+      toast.error("Fout bij goedkeuren");
+      return;
+    }
+    toast.success(`"${word.word.toUpperCase()}" goedgekeurd als correct maar niet geschikt voor Lingo.`);
+    setPendingWords(prev => prev.filter(w => w.id !== word.id));
+  };
+
+  const handleMarkAppropriate = async (word: PendingWord) => {
+    const { error } = await supabase
+      .from("dutch_words")
+      .update({ appropriate: true } as any)
+      .eq("id", word.id);
+    if (error) {
+      toast.error("Fout bij markeren als geschikt");
+      return;
+    }
+    toast.success(`"${word.word.toUpperCase()}" gemarkeerd als geschikt!`);
     setPendingWords(prev => prev.filter(w => w.id !== word.id));
   };
 
@@ -259,16 +287,49 @@ const Admin = () => {
                   <span className="text-xs text-muted-foreground">
                     {word.length} letters • voorgesteld door {word.suggestor_name}
                   </span>
+                  <span className="text-xs mt-0.5">
+                    {!word.approved && <span className="text-orange-500 mr-2">⏳ Niet goedgekeurd</span>}
+                    {word.approved && <span className="text-green-500 mr-2">✓ Correct</span>}
+                    {!word.appropriate && <span className="text-orange-500">⏳ Niet geschikt</span>}
+                    {word.appropriate && <span className="text-green-500">✓ Geschikt</span>}
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
-                    onClick={() => handleApprove(word)}
-                  >
-                    <Check className="w-4 h-4" />
-                  </Button>
+                <div className="flex gap-1">
+                  {!word.approved ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white text-xs"
+                        onClick={() => handleApprove(word)}
+                        title="Correct + Geschikt"
+                      >
+                        <Check className="w-4 h-4" />
+                        Alles
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white text-xs"
+                        onClick={() => handleApproveCorrectOnly(word)}
+                        title="Correct maar niet geschikt voor Lingo"
+                      >
+                        <Check className="w-4 h-4" />
+                        Alleen correct
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white text-xs"
+                      onClick={() => handleMarkAppropriate(word)}
+                      title="Markeer als geschikt voor Lingo"
+                    >
+                      <Check className="w-4 h-4" />
+                      Geschikt
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
