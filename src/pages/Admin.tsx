@@ -272,9 +272,67 @@ const Admin = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground mb-2">
-              {pendingWords.length} woord{pendingWords.length !== 1 ? "en" : ""} ter beoordeling
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-muted-foreground">
+                {pendingWords.length} woord{pendingWords.length !== 1 ? "en" : ""} ter beoordeling
+              </p>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white text-xs"
+                  onClick={async () => {
+                    const ids = pendingWords.map(w => w.id);
+                    const { error } = await supabase
+                      .from("dutch_words")
+                      .update({ approved: true, appropriate: true } as any)
+                      .in("id", ids);
+                    if (error) { toast.error("Fout bij bulk goedkeuren"); return; }
+                    toast.success(`${ids.length} woorden goedgekeurd!`);
+                    setPendingWords([]);
+                  }}
+                >
+                  <Check className="w-4 h-4" />
+                  Alles
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white text-xs"
+                  onClick={async () => {
+                    const ids = pendingWords.map(w => w.id);
+                    const { error } = await supabase
+                      .from("dutch_words")
+                      .update({ approved: true, appropriate: false } as any)
+                      .in("id", ids);
+                    if (error) { toast.error("Fout bij bulk goedkeuren"); return; }
+                    toast.success(`${ids.length} woorden goedgekeurd als alleen correct.`);
+                    setPendingWords([]);
+                  }}
+                >
+                  <Check className="w-4 h-4" />
+                  Alleen correct
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-600 border-red-600 hover:bg-red-600 hover:text-white text-xs"
+                  onClick={async () => {
+                    const ids = pendingWords.map(w => w.id);
+                    const { error } = await supabase
+                      .from("dutch_words")
+                      .update({ rejected: true } as any)
+                      .in("id", ids);
+                    if (error) { toast.error("Fout bij bulk afkeuren"); return; }
+                    toast.error(`${ids.length} woorden afgekeurd.`);
+                    setPendingWords([]);
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                  Afkeuren
+                </Button>
+              </div>
+            </div>
             {pendingWords.map(word => (
               <div
                 key={word.id}
