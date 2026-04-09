@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
@@ -64,6 +64,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const firstGreenAttemptRef = useRef<number | null>(null);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [pendingWord, setPendingWord] = useState("");
@@ -267,6 +268,30 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     return () => window.removeEventListener("keydown", handler);
   }, [handleKey]);
 
+  // Keep hidden input focused for native keyboard on mobile
+  const focusHiddenInput = useCallback(() => {
+    setTimeout(() => hiddenInputRef.current?.focus(), 50);
+  }, []);
+
+  useEffect(() => {
+    if (!gameOver && !suggestionDialogOpen) {
+      focusHiddenInput();
+    }
+  }, [gameOver, suggestionDialogOpen, guesses.length, focusHiddenInput]);
+
+  const handleHiddenInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Process the last character typed
+    if (val.length > 0) {
+      const lastChar = val[val.length - 1];
+      if (/^[a-zA-Z]$/.test(lastChar)) {
+        handleKey(lastChar);
+      }
+    }
+    // Reset the input to empty
+    e.target.value = "";
+  }, [handleKey]);
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   if (isLoading) {
@@ -297,7 +322,30 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4" onClick={focusHiddenInput}>
+      {/* Hidden input for native mobile keyboard */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        style={{ position: "absolute", top: -9999, left: -9999 }}
+        onInput={handleHiddenInput}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" || e.key === "Enter") {
+            e.preventDefault();
+            handleKey(e.key);
+          }
+        }}
+        onBlur={() => {
+          if (!gameOver && !suggestionDialogOpen) {
+            focusHiddenInput();
+          }
+        }}
+      />
       {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog open={suggestionDialogOpen} word={pendingWord} language="nl" onConfirm={handleSuggestionConfirm} onCancel={handleSuggestionCancel} />
 
