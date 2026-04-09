@@ -373,11 +373,23 @@ const Admin = () => {
                 )}
               </TabsContent>
               <TabsContent value="time">
-                <div className="flex justify-end mb-2">
+                <div className="flex items-center justify-between mb-2">
+                  {timeView === "dag" && (
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => shiftMonth(-1)}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm font-medium min-w-[120px] text-center capitalize">{dayMonthLabel}</span>
+                      <Button size="sm" variant="ghost" onClick={() => shiftMonth(1)}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {timeView !== "dag" && <div />}
                   <Tabs value={timeView} onValueChange={(v) => setTimeView(v as "dag" | "maand")}>
                     <TabsList className="h-8">
-                      <TabsTrigger value="maand" className="text-xs px-2 py-1">Maand</TabsTrigger>
                       <TabsTrigger value="dag" className="text-xs px-2 py-1">Dag</TabsTrigger>
+                      <TabsTrigger value="maand" className="text-xs px-2 py-1">Maand</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
@@ -385,7 +397,7 @@ const Admin = () => {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={timeChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} angle={-45} textAnchor="end" height={60} />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                       <Tooltip
                         contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
