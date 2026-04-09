@@ -50,7 +50,11 @@ const Admin = () => {
   const [pendingWords, setPendingWords] = useState<PendingWord[]>([]);
   const [loadingWords, setLoadingWords] = useState(true);
   const [allWords, setAllWords] = useState<WordRecord[]>([]);
-  const [timeView, setTimeView] = useState<"dag" | "maand">("maand");
+  const [timeView, setTimeView] = useState<"dag" | "maand">("dag");
+  const [dayMonth, setDayMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // Add word state
   const [newWord, setNewWord] = useState("");
@@ -120,11 +124,22 @@ const Admin = () => {
   }, []);
 
   const loadAllWords = useCallback(async () => {
-    const { data } = await supabase
-      .from("dutch_words")
-      .select("length, created_at, approved")
-      .eq("rejected", false);
-    if (data) setAllWords(data as WordRecord[]);
+    // Fetch all words in batches to avoid 1000-row limit
+    let all: WordRecord[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    while (true) {
+      const { data } = await supabase
+        .from("dutch_words")
+        .select("length, created_at, approved")
+        .eq("rejected", false)
+        .range(from, from + batchSize - 1);
+      if (!data || data.length === 0) break;
+      all = all.concat(data as WordRecord[]);
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
+    setAllWords(all);
   }, []);
 
   useEffect(() => {
@@ -146,17 +161,48 @@ const Admin = () => {
 
   const timeChartData = useMemo(() => {
     const counts: Record<string, number> = {};
-    allWords.forEach(w => {
-      const d = new Date(w.created_at);
-      const key = timeView === "dag"
-        ? d.toISOString().slice(0, 10)
-        : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      counts[key] = (counts[key] || 0) + 1;
-    });
+    if (timeView === "dag") {
+      // Parse selected month
+      const [year, month] = dayMonth.split("-").map(Number);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      // Initialize all days
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${dayMonth}-${String(d).padStart(2, "0")}`;
+        counts[key] = 0;
+      }
+      allWords.forEach(w => {
+        const d = new Date(w.created_at);
+        const key = d.toISOString().slice(0, 10);
+        if (key.startsWith(dayMonth)) {
+          counts[key] = (counts[key] || 0) + 1;
+        }
+      });
+    } else {
+      allWords.forEach(w => {
+        const d = new Date(w.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    }
     return Object.entries(counts)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, count]) => ({ name: date, count }));
-  }, [allWords, timeView]);
+      .map(([date, count]) => ({
+        name: timeView === "dag" ? date.slice(8) : date,
+        count,
+      }));
+  }, [allWords, timeView, dayMonth]);
+
+  const shiftMonth = (direction: number) => {
+    const [year, month] = dayMonth.split("-").map(Number);
+    const d = new Date(year, month - 1 + direction, 1);
+    setDayMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  };
+
+  const dayMonthLabel = useMemo(() => {
+    const [year, month] = dayMonth.split("-").map(Number);
+    const months = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
+    return `${months[month - 1]} ${year}`;
+  }, [dayMonth]);
 
   // Check if word exists
   useEffect(() => {
@@ -327,11 +373,23 @@ const Admin = () => {
                 )}
               </TabsContent>
               <TabsContent value="time">
-                <div className="flex justify-end mb-2">
+                <div className="flex items-center justify-between mb-2">
+                  {timeView === "dag" && (
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => shiftMonth(-1)}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm font-medium min-w-[120px] text-center capitalize">{dayMonthLabel}</span>
+                      <Button size="sm" variant="ghost" onClick={() => shiftMonth(1)}>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {timeView !== "dag" && <div />}
                   <Tabs value={timeView} onValueChange={(v) => setTimeView(v as "dag" | "maand")}>
                     <TabsList className="h-8">
-                      <TabsTrigger value="maand" className="text-xs px-2 py-1">Maand</TabsTrigger>
                       <TabsTrigger value="dag" className="text-xs px-2 py-1">Dag</TabsTrigger>
+                      <TabsTrigger value="maand" className="text-xs px-2 py-1">Maand</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
@@ -339,7 +397,7 @@ const Admin = () => {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={timeChartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} angle={-45} textAnchor="end" height={60} />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                       <Tooltip
                         contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
