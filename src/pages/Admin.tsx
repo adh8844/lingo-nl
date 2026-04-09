@@ -124,11 +124,22 @@ const Admin = () => {
   }, []);
 
   const loadAllWords = useCallback(async () => {
-    const { data } = await supabase
-      .from("dutch_words")
-      .select("length, created_at, approved")
-      .eq("rejected", false);
-    if (data) setAllWords(data as WordRecord[]);
+    // Fetch all words in batches to avoid 1000-row limit
+    let all: WordRecord[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    while (true) {
+      const { data } = await supabase
+        .from("dutch_words")
+        .select("length, created_at, approved")
+        .eq("rejected", false)
+        .range(from, from + batchSize - 1);
+      if (!data || data.length === 0) break;
+      all = all.concat(data as WordRecord[]);
+      if (data.length < batchSize) break;
+      from += batchSize;
+    }
+    setAllWords(all);
   }, []);
 
   useEffect(() => {
