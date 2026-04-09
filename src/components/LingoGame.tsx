@@ -262,6 +262,8 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Skip if the hidden input is focused — it handles its own input
+      if (hiddenInputRef.current && document.activeElement === hiddenInputRef.current) return;
       handleKey(e.key);
     };
     window.addEventListener("keydown", handler);
