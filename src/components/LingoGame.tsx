@@ -445,7 +445,17 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
         </div>
       )}
 
-      {!gameOver && <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />}
+      {!gameOver && (
+        <>
+          <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />
+          <button
+            onClick={() => hiddenInputRef.current?.focus()}
+            className="text-xs text-muted-foreground underline py-1"
+          >
+            ⌨️ Open toetsenbord
+          </button>
+        </>
+      )}
     </div>
   );
 };
