@@ -408,8 +408,8 @@ Deno.serve(async (req) => {
     }
 
     // Calculate total
-    const { data: totalData } = await supabase.from('points_log').select('points').eq('player_id', player_id)
-    const newTotalPoints = Math.max(0, (totalData || []).reduce((s: number, e: any) => s + e.points, 0))
+    const { data: rpcTotal } = await supabase.rpc('get_player_total_points', { p_id: player_id })
+    const newTotalPoints = Math.max(0, Number(rpcTotal) || 0)
 
     // Legend check
     if (!earnedIds.has('legend')) {
