@@ -1,38 +1,37 @@
 
-# Plan: Drie nieuwe features
 
-## 1. Dagelijks puntenverlies bij inactiviteit (-100 punten)
-- Wanneer een speler op een dag 0 games speelt, verliest hij 100 punten
-- Implementatie: bij elke login/game-start controleren hoeveel dagen sinds laatste spel er geen games zijn gespeeld
-- Voor elke gemiste dag -100 punten aftrekken (minimum 0 punten)
-- Logging in `points_log` met reden "inactivity_penalty"
-- Berekening in de `process-game-result` edge function of bij het laden van het spelersprofiel
+# Fix: Points Not Updating Due to 1000-Row Query Limit
 
-## 2. 600 Nederlandse lange woorden toevoegen
-- 200 woorden van 10 letters
-- 200 woorden van 12 letters  
-- 200 woorden van 14 letters
-- Alle woorden worden als `approved: false` ingevoerd
-- Admin kan ze later goedkeuren via de admin-pagina
-- Database ondersteunt al variabele woordlengtes
+## Problem
+The `process-game-result` edge function calculates total points by fetching all `points_log` entries for a player (line 411). However, Supabase has a default limit of 1000 rows per query. Janice has 1143 entries, so only 1000 are fetched, resulting in an incorrect (lower) total being written back to `players.points`.
 
-## 3. Challenger-modus (elke 25 games)
-- Na elke 25 afgeronde games krijgt de speler een Challenger
-- Challenger = een woord van 10, 12 of 14 letters
-- 25% van de letters worden getoond (naar boven afgerond), eerste letter altijd inbegrepen
-- Slechts 1 poging om het woord te raden
-- Timer: 20 seconden
-- Beloning: 200 punten bij succes, 0 bij falen
-- Nieuwe component `ChallengerGame` 
-- Tracking in `games` tabel met een speciaal level (10/12/14)
-- WordLength type uitbreiden naar 10 | 12 | 14
+**Affected players:**
+- Janice: 1143 entries — currently showing 10061 instead of 11547 (1486 points missing)
+- Arjan (905), Horse lover (789) will hit this limit soon
 
-## Technische stappen
-1. **Migration**: WordLength types hoeven niet in DB te wijzigen (length is al integer)
-2. **Insert**: 600 woorden invoegen via insert tool
-3. **Edge function update**: Inactiviteitsboete berekenen in `process-game-result`
-4. **Code**: 
-   - `WordLength` type uitbreiden
-   - Nieuw `ChallengerGame` component
-   - Challenger trigger in `LingoGame` na elke 25 games
-   - UI voor challenger met speciale layout (grotere tiles)
+## Solution
+
+### 1. Fix the edge function query (process-game-result/index.ts)
+Replace the points summation query (line 411) that fetches all rows with a Supabase RPC or aggregation approach. Two options:
+
+**Option A (simplest):** Use a database function to SUM points server-side:
+- Create a DB function `get_player_total_points(p_id uuid)` that returns `SELECT COALESCE(SUM(points), 0) FROM points_log WHERE player_id = p_id`
+- Call it via `supabase.rpc('get_player_total_points', { p_id: player_id })`
+
+**Option B:** Paginate the points_log query in the edge function to fetch all rows. This is less efficient.
+
+I recommend **Option A** — a simple DB function.
+
+### 2. Fix Janice's current points
+Run a data update to set Janice's points to the correct total (11547) based on the actual SUM of her points_log entries. Also verify and fix any other players whose `players.points` doesn't match their `points_log` SUM.
+
+## Technical Steps
+
+1. **Create migration**: Add `get_player_total_points` database function
+2. **Update edge function**: Replace line 411 with an RPC call to the new function
+3. **Fix existing data**: Update all players whose `players.points` differs from their actual `points_log` SUM
+
+## Files Changed
+- `supabase/functions/process-game-result/index.ts` — use RPC instead of fetching all rows
+- New migration for the database function + data fix
+
