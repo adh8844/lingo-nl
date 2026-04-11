@@ -266,7 +266,14 @@ const Index = () => {
         )}
       </div>
       <p className="mt-6 text-[10px] text-muted-foreground/50">
-        Laatst bijgewerkt: {new Date(__BUILD_TIMESTAMP__).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })} CET
+        Laatst bijgewerkt:{" "}
+        {new Date(__BUILD_TIMESTAMP__).toLocaleString("nl-NL", {
+          timeZone: "Europe/Amsterdam",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}{" "}
+        CET
       </p>
     </div>
   );
