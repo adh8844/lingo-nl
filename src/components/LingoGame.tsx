@@ -275,11 +275,6 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     setTimeout(() => hiddenInputRef.current?.focus(), 50);
   }, []);
 
-  useEffect(() => {
-    if (!gameOver && !suggestionDialogOpen) {
-      focusHiddenInput();
-    }
-  }, [gameOver, suggestionDialogOpen, guesses.length, focusHiddenInput]);
 
   const handleHiddenInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -324,7 +319,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4" onClick={focusHiddenInput}>
+    <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
       {/* Hidden input for native mobile keyboard */}
       <input
         ref={hiddenInputRef}
@@ -340,11 +335,6 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
           if (e.key === "Backspace" || e.key === "Enter") {
             e.preventDefault();
             handleKey(e.key);
-          }
-        }}
-        onBlur={() => {
-          if (!gameOver && !suggestionDialogOpen) {
-            focusHiddenInput();
           }
         }}
       />
