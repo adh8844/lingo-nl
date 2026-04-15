@@ -7,12 +7,13 @@ const POINTS_PER_ROUND_WIN = 20;
 const MATCH_WINNER_BONUS = 100;
 
 async function awardMatchPoints(match: OnlineMatch, p1Wins: number, p2Wins: number, winnerId: string) {
-  // Award round win points to each player
+  // Award round win points and sync total via RPC
   const awardPoints = async (playerId: string, pts: number, reason: string) => {
     await supabase.from("points_log").insert({ player_id: playerId, points: pts, reason });
-    const { data } = await supabase.from("players").select("points").eq("id", playerId).single();
-    if (data) {
-      await supabase.from("players").update({ points: data.points + pts }).eq("id", playerId);
+    // Sync players.points from the single source of truth
+    const { data: totalData } = await supabase.rpc("get_player_total_points", { p_id: playerId });
+    if (totalData !== null) {
+      await supabase.from("players").update({ points: Number(totalData) }).eq("id", playerId);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
@@ -85,6 +85,7 @@ const OnlineGame = ({
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [pendingWord, setPendingWord] = useState("");
@@ -281,10 +282,22 @@ const OnlineGame = ({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (hiddenInputRef.current && document.activeElement === hiddenInputRef.current) return;
       handleKey(e.key);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, [handleKey]);
+
+  const handleHiddenInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.length > 0) {
+      const lastChar = val[val.length - 1];
+      if (/^[a-zA-Z]$/.test(lastChar)) {
+        handleKey(lastChar);
+      }
+    }
+    e.target.value = "";
   }, [handleKey]);
 
   const formatTime = (s: number) => {
@@ -462,6 +475,24 @@ const OnlineGame = ({
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      {/* Hidden input for native mobile keyboard */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        style={{ position: "absolute", top: -9999, left: -9999 }}
+        onInput={handleHiddenInput}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" || e.key === "Enter") {
+            e.preventDefault();
+            handleKey(e.key);
+          }
+        }}
+      />
       {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog
         open={suggestionDialogOpen}
@@ -515,7 +546,17 @@ const OnlineGame = ({
         revealedRow={revealedRow}
       />
 
-      {!gameOver && !submitted && !suggestionDialogOpen && <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />}
+      {!gameOver && !submitted && !suggestionDialogOpen && (
+        <>
+          <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />
+          <button
+            onClick={() => hiddenInputRef.current?.focus()}
+            className="text-xs text-muted-foreground underline py-1"
+          >
+            ⌨️ Open toetsenbord
+          </button>
+        </>
+      )}
     </div>
   );
 };

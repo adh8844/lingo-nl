@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import Keyboard from "./Keyboard";
 import { TileStatus } from "./LingoTile";
 import { loadDutchWordsFromDB, WordLength } from "@/data/words";
@@ -57,6 +57,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   const startTimeRef = useRef<number>(Date.now());
   const targetWordRef = useRef("");
   const revealedRef = useRef<Set<number>>(new Set());
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
@@ -207,10 +208,22 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (hiddenInputRef.current && document.activeElement === hiddenInputRef.current) return;
       handleKey(e.key);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, [handleKey]);
+
+  const handleHiddenInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.length > 0) {
+      const lastChar = val[val.length - 1];
+      if (/^[a-zA-Z]$/.test(lastChar)) {
+        handleKey(lastChar);
+      }
+    }
+    e.target.value = "";
   }, [handleKey]);
 
   if (isLoading) {
@@ -227,6 +240,25 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
 
   return (
     <div className="flex flex-col items-center gap-4 w-full max-w-3xl mx-auto px-2">
+      {/* Hidden input for native mobile keyboard */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        style={{ position: "absolute", top: -9999, left: -9999 }}
+        onInput={handleHiddenInput}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" || e.key === "Enter") {
+            e.preventDefault();
+            handleKey(e.key);
+          }
+        }}
+      />
+
       {/* Header */}
       <div className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-2">
@@ -324,7 +356,17 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
         </div>
       )}
 
-      {!gameOver && <Keyboard onKey={handleKey} letterStatuses={{}} />}
+      {!gameOver && (
+        <>
+          <Keyboard onKey={handleKey} letterStatuses={{}} />
+          <button
+            onClick={() => hiddenInputRef.current?.focus()}
+            className="text-xs text-muted-foreground underline py-1"
+          >
+            ⌨️ Open toetsenbord
+          </button>
+        </>
+      )}
     </div>
   );
 };
