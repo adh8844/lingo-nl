@@ -258,6 +258,9 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
           }
         }}
       />
+
+      {/* Header */}
+      <div className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-2">
           <Zap className="w-6 h-6 text-accent" />
           <h2 className="text-2xl font-extrabold text-accent">CHALLENGER!</h2>
