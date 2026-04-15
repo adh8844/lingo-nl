@@ -57,6 +57,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   const startTimeRef = useRef<number>(Date.now());
   const targetWordRef = useRef("");
   const revealedRef = useRef<Set<number>>(new Set());
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
@@ -207,10 +208,22 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (hiddenInputRef.current && document.activeElement === hiddenInputRef.current) return;
       handleKey(e.key);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, [handleKey]);
+
+  const handleHiddenInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.length > 0) {
+      const lastChar = val[val.length - 1];
+      if (/^[a-zA-Z]$/.test(lastChar)) {
+        handleKey(lastChar);
+      }
+    }
+    e.target.value = "";
   }, [handleKey]);
 
   if (isLoading) {

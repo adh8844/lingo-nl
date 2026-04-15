@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
@@ -85,6 +85,7 @@ const OnlineGame = ({
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [pendingWord, setPendingWord] = useState("");
@@ -281,10 +282,22 @@ const OnlineGame = ({
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (hiddenInputRef.current && document.activeElement === hiddenInputRef.current) return;
       handleKey(e.key);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+  }, [handleKey]);
+
+  const handleHiddenInput = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val.length > 0) {
+      const lastChar = val[val.length - 1];
+      if (/^[a-zA-Z]$/.test(lastChar)) {
+        handleKey(lastChar);
+      }
+    }
+    e.target.value = "";
   }, [handleKey]);
 
   const formatTime = (s: number) => {
