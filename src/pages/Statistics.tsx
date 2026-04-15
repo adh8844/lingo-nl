@@ -60,29 +60,34 @@ const Statistics = () => {
 
     setStats(levelStats);
 
-    const { data: pointsData } = await supabase
-      .from("points_log" as any)
-      .select("points, created_at")
-      .eq("player_id", targetId)
-      .order("created_at", { ascending: true });
+    // Use server-side aggregation to avoid 1000-row limit
+    const today = new Date();
+    const fromDate = new Date(today);
+    fromDate.setDate(fromDate.getDate() - 29);
+    const fromStr = fromDate.toISOString().split("T")[0];
+    const toStr = today.toISOString().split("T")[0];
 
-    if (pointsData) {
-      const dayMap: Record<string, number> = {};
-      const today = new Date();
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        dayMap[d.toISOString().split("T")[0]] = 0;
-      }
-      (pointsData as any[]).forEach((p: any) => {
-        const day = new Date(p.created_at).toISOString().split("T")[0];
-        if (dayMap[day] !== undefined) dayMap[day] += p.points;
-      });
-      setPointsChart(Object.entries(dayMap).map(([date, points]) => ({
-        date: date.slice(5),
-        points,
-      })));
+    const { data: pointsData } = await supabase.rpc("get_player_daily_points" as any, {
+      p_id: targetId,
+      from_date: fromStr,
+      to_date: toStr,
+    });
+
+    const dayMap: Record<string, number> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      dayMap[d.toISOString().split("T")[0]] = 0;
     }
+    if (pointsData) {
+      (pointsData as any[]).forEach((p: any) => {
+        if (dayMap[p.day] !== undefined) dayMap[p.day] = Number(p.total_points);
+      });
+    }
+    setPointsChart(Object.entries(dayMap).map(([date, points]) => ({
+      date: date.slice(5),
+      points,
+    })));
   }, [targetId, playerId, currentPlayer?.id]);
 
   useEffect(() => { loadStats(); }, [loadStats]);

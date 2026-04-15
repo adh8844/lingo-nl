@@ -475,6 +475,24 @@ const OnlineGame = ({
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-lg mx-auto px-2 sm:px-4">
+      {/* Hidden input for native mobile keyboard */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        style={{ position: "absolute", top: -9999, left: -9999 }}
+        onInput={handleHiddenInput}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" || e.key === "Enter") {
+            e.preventDefault();
+            handleKey(e.key);
+          }
+        }}
+      />
       {showWinAnimation && <WinAnimation onDismiss={() => setShowWinAnimation(false)} />}
       <WordSuggestionDialog
         open={suggestionDialogOpen}
@@ -528,7 +546,17 @@ const OnlineGame = ({
         revealedRow={revealedRow}
       />
 
-      {!gameOver && !submitted && !suggestionDialogOpen && <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />}
+      {!gameOver && !submitted && !suggestionDialogOpen && (
+        <>
+          <Keyboard onKey={handleKey} letterStatuses={letterStatuses} />
+          <button
+            onClick={() => hiddenInputRef.current?.focus()}
+            className="text-xs text-muted-foreground underline py-1"
+          >
+            ⌨️ Open toetsenbord
+          </button>
+        </>
+      )}
     </div>
   );
 };
