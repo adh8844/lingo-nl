@@ -616,6 +616,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_player_daily_points: {
+        Args: { from_date: string; p_id: string; to_date: string }
+        Returns: {
+          day: string
+          total_points: number
+        }[]
+      }
       get_player_total_points: { Args: { p_id: string }; Returns: number }
     }
     Enums: {
