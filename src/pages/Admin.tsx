@@ -262,7 +262,14 @@ const Admin = () => {
     }
     if (editData.approved !== undefined) updates.approved = editData.approved;
     if (editData.appropriate !== undefined) updates.appropriate = editData.appropriate;
-    if (editData.rejected !== undefined) updates.rejected = editData.rejected;
+    if (editData.rejected !== undefined) {
+      updates.rejected = editData.rejected;
+      // Rejected words are by definition not correct and not appropriate.
+      if (editData.rejected) {
+        updates.approved = false;
+        updates.appropriate = false;
+      }
+    }
 
     if (Object.keys(updates).length === 0) { setEditingId(null); return; }
 
@@ -312,7 +319,7 @@ const Admin = () => {
   const handleReject = async (word: PendingWord) => {
     const { error } = await supabase
       .from("dutch_words")
-      .update({ rejected: true } as any)
+      .update({ rejected: true, approved: false, appropriate: false } as any)
       .eq("id", word.id);
     if (error) { toast.error("Fout bij afkeuren"); return; }
     toast.error(`"${word.word.toUpperCase()}" afgekeurd.`);
@@ -645,7 +652,7 @@ const Admin = () => {
                     const ids = pendingWords.map(w => w.id);
                     const { error } = await supabase
                       .from("dutch_words")
-                      .update({ rejected: true } as any)
+                      .update({ rejected: true, approved: false, appropriate: false } as any)
                       .in("id", ids);
                     if (error) { toast.error("Fout bij bulk afkeuren"); return; }
                     toast.error(`${ids.length} woorden afgekeurd.`);

@@ -94,13 +94,15 @@ export async function getRandomWordAsync(language: Language, length: WordLength)
 
 export async function isValidWordAsync(word: string, language: Language, length: WordLength): Promise<boolean> {
   if (word.length !== length || !/^[a-z]+$/i.test(word)) return false;
+  // A word counts as a valid guess as soon as it is approved (correct spelling),
+  // even if it is marked as not appropriate. Only rejected words are invalid.
   const { data } = await supabase
     .from("dutch_words")
     .select("id")
     .eq("word", word.toLowerCase())
     .eq("length", length)
     .eq("approved", true)
-    .eq("appropriate", true)
+    .eq("rejected", false)
     .limit(1);
   return !!(data && data.length > 0);
 }
