@@ -652,7 +652,7 @@ const Admin = () => {
                     const ids = pendingWords.map(w => w.id);
                     const { error } = await supabase
                       .from("dutch_words")
-                      .update({ rejected: true } as any)
+                      .update({ rejected: true, approved: false, appropriate: false } as any)
                       .in("id", ids);
                     if (error) { toast.error("Fout bij bulk afkeuren"); return; }
                     toast.error(`${ids.length} woorden afgekeurd.`);
