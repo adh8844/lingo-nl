@@ -319,7 +319,7 @@ const Admin = () => {
   const handleReject = async (word: PendingWord) => {
     const { error } = await supabase
       .from("dutch_words")
-      .update({ rejected: true } as any)
+      .update({ rejected: true, approved: false, appropriate: false } as any)
       .eq("id", word.id);
     if (error) { toast.error("Fout bij afkeuren"); return; }
     toast.error(`"${word.word.toUpperCase()}" afgekeurd.`);
