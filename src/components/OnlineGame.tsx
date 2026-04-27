@@ -261,10 +261,12 @@ const OnlineGame = ({
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
-    toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
-    handleInvalidGuess(pendingWord);
+    const w = pendingWord;
+    rejectWordSuggestion(w, wordLength, playerId).catch(() => {});
+    toast.error(language === "nl" ? `"${w.toUpperCase()}" is afgewezen — beurt verloren!` : `"${w.toUpperCase()}" rejected — turn lost!`);
+    handleInvalidGuess(w);
     resumeTimer();
-  }, [language, pendingWord, handleInvalidGuess, resumeTimer]);
+  }, [language, pendingWord, wordLength, playerId, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || submitted || suggestionDialogOpen || roundTransition || showForfeitConfirm) return;
