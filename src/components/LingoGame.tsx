@@ -253,10 +253,13 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
-    toast.error("Ongeldig woord — beurt verloren!");
-    handleInvalidGuess(pendingWord);
+    const w = pendingWord;
+    // Markeer direct als afgewezen in de database (fire-and-forget)
+    rejectWordSuggestion(w, wordLength, player?.id).catch(() => {});
+    toast.error(`"${w.toUpperCase()}" is afgewezen — beurt verloren!`);
+    handleInvalidGuess(w);
     resumeTimer();
-  }, [pendingWord, handleInvalidGuess, resumeTimer]);
+  }, [pendingWord, wordLength, player, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || suggestionDialogOpen) return;
