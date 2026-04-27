@@ -4,7 +4,7 @@ import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
 import ChallengerGame from "./ChallengerGame";
 import { TileStatus } from "./LingoTile";
-import { getRandomWordAsync, isValidWordAsync, suggestWord, checkWordRejected, WordLength } from "@/data/words";
+import { getRandomWordAsync, isValidWordAsync, suggestWord, checkWordRejected, rejectWordSuggestion, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
