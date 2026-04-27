@@ -4,7 +4,7 @@ import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
 import ChallengerGame from "./ChallengerGame";
 import { TileStatus } from "./LingoTile";
-import { getRandomWordAsync, isValidWordAsync, suggestWord, WordLength } from "@/data/words";
+import { getRandomWordAsync, isValidWordAsync, suggestWord, checkWordRejected, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
@@ -214,16 +214,24 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
       return;
     }
     setIsSubmitting(true);
+    const lower = currentGuess.toLowerCase();
+    const rejected = await checkWordRejected(lower, wordLength);
+    if (rejected) {
+      setIsSubmitting(false);
+      toast.error(`"${lower.toUpperCase()}" is afgekeurd — beurt verloren!`);
+      handleInvalidGuess(lower);
+      return;
+    }
     const valid = await isValidWordAsync(currentGuess, "nl", wordLength);
     setIsSubmitting(false);
     if (!valid) {
       stopTimer();
-      setPendingWord(currentGuess.toLowerCase());
+      setPendingWord(lower);
       setSuggestionDialogOpen(true);
       return;
     }
-    processGuessAsValid(currentGuess.toLowerCase());
-  }, [currentGuess, wordLength, isSubmitting, stopTimer, processGuessAsValid]);
+    processGuessAsValid(lower);
+  }, [currentGuess, wordLength, isSubmitting, stopTimer, processGuessAsValid, handleInvalidGuess]);
 
   const handleSuggestionConfirm = useCallback(async () => {
     setSuggestionDialogOpen(false);
