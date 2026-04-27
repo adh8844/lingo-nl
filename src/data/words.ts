@@ -129,6 +129,38 @@ export async function suggestWord(word: string, length: WordLength, playerId?: s
   return { success: !error };
 }
 
+// Markeer een woord direct als afgewezen / niet geschikt / niet goedgekeurd.
+// Wordt aangeroepen wanneer de speler in de suggestie-popup op "Nee" klikt.
+export async function rejectWordSuggestion(word: string, length: WordLength, playerId?: string): Promise<void> {
+  const lower = word.toLowerCase();
+  // Check of het woord al bestaat
+  const { data: existing } = await supabase
+    .from("dutch_words")
+    .select("id")
+    .eq("word", lower)
+    .eq("length", length)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    await supabase
+      .from("dutch_words")
+      .update({ approved: false, appropriate: false, rejected: true })
+      .eq("id", existing[0].id);
+  } else {
+    await supabase
+      .from("dutch_words")
+      .insert({
+        word: lower,
+        length,
+        approved: false,
+        appropriate: false,
+        rejected: true,
+        suggested_by: playerId || null,
+      });
+  }
+  delete dbWordsCache[length];
+}
+
 export function getRandomWord(language: Language, length: WordLength): string {
   const list = wordLists[length];
   const filtered = list.filter(w => w.length === length);

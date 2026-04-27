@@ -3,7 +3,7 @@ import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
 import { TileStatus } from "./LingoTile";
-import { isValidWordAsync, suggestWord, Language, WordLength } from "@/data/words";
+import { isValidWordAsync, suggestWord, rejectWordSuggestion, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
@@ -261,10 +261,12 @@ const OnlineGame = ({
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
-    toast.error(language === "nl" ? "Ongeldig woord — beurt verloren!" : "Invalid word — turn lost!");
-    handleInvalidGuess(pendingWord);
+    const w = pendingWord;
+    rejectWordSuggestion(w, wordLength, playerId).catch(() => {});
+    toast.error(language === "nl" ? `"${w.toUpperCase()}" is afgewezen — beurt verloren!` : `"${w.toUpperCase()}" rejected — turn lost!`);
+    handleInvalidGuess(w);
     resumeTimer();
-  }, [language, pendingWord, handleInvalidGuess, resumeTimer]);
+  }, [language, pendingWord, wordLength, playerId, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || submitted || suggestionDialogOpen || roundTransition || showForfeitConfirm) return;
