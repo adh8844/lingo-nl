@@ -3,7 +3,7 @@ import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
 import { TileStatus } from "./LingoTile";
-import { isValidWordAsync, suggestWord, Language, WordLength } from "@/data/words";
+import { isValidWordAsync, suggestWord, rejectWordSuggestion, Language, WordLength } from "@/data/words";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
