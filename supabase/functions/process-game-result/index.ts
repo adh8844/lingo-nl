@@ -77,9 +77,16 @@ async function applyInactivityPenalty(supabase: any, player_id: string, player: 
   const playedDates = new Set((completions || []).map((c: any) => c.completed_date))
   const inactiveDays = missedDays.filter(d => !playedDates.has(d)).length
   
-  if (inactiveDays > 0) {
-    const penalty = inactiveDays * 100
-    pts.push({ points: -penalty, reason: `Inactiviteitsboete` })
+  if (inactiveDays >= 7) {
+    const weeks = Math.floor(inactiveDays / 7)
+    let penalty = weeks * 100
+    // Nooit meer aftrekken dan de speler aan punten heeft
+    const { data: rpcCurrent } = await supabase.rpc('get_player_total_points', { p_id: player_id })
+    const currentTotal = Math.max(0, Number(rpcCurrent) || 0)
+    if (penalty > currentTotal) penalty = currentTotal
+    if (penalty > 0) {
+      pts.push({ points: -penalty, reason: `Inactiviteitsboete (${weeks} ${weeks === 1 ? 'week' : 'weken'})` })
+    }
   }
   
   return pts
