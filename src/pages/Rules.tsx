@@ -64,7 +64,7 @@ const Rules = () => {
               Bovenop het basisresultaat komen snelheidsbonussen (als je het woord snel raadt), reeksbonussen (als je
               meerdere dagen op rij speelt) en dagelijkse bonussen. Zie de puntentabel voor de exacte bedragen.
             </p>
-            <p className="mb-3">Voor elke dag dat je geen lingo speelt verlies je 100 punten.</p>
+            <p className="mb-3">Voor elke week dat je geen Lingo speelt verlies je 100 punten. Je puntentotaal kan nooit negatief worden — er wordt nooit meer afgetrokken dan je hebt.</p>
           </section>
 
           <section>
