@@ -686,7 +686,7 @@ const Rankings = () => {
                             >
                               {c.entry.display_name}
                             </span>
-                            <span className="font-extrabold shrink-0">{c.entry.value}</span>
+                            <span className="text-muted-foreground font-normal shrink-0">({c.entry.value})</span>
                           </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
