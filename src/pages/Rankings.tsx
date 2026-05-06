@@ -449,6 +449,15 @@ const Rankings = () => {
           </>
         )}
       </div>
+
+      {challengeTarget && (
+        <ChallengeDialog
+          targetId={challengeTarget.id}
+          targetName={challengeTarget.name}
+          onSend={sendChallenge}
+          onClose={() => setChallengeTarget(null)}
+        />
+      )}
     </div>
   );
 };
