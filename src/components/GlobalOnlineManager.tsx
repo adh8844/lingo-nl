@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getRandomWordAsync, WordLength } from "@/data/words";
 import { playInviteSound, playAcceptSound } from "@/hooks/useSounds";
+import { usePresenceSettings } from "@/hooks/useAppSettings";
 
 interface ChallengeNotif {
   id: string;
@@ -12,9 +13,6 @@ interface ChallengeNotif {
   word_length: number;
   language: string;
 }
-
-const HEARTBEAT_INTERVAL = 5000;
-const ACTIVITY_TIMEOUT = 15000; // 15 seconds
 
 const GlobalOnlineManager = () => {
   const navigate = useNavigate();
