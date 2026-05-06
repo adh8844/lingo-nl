@@ -6,9 +6,10 @@ import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
 import ChallengeDialog from "@/components/ChallengeDialog";
 
-type Tab = "overview" | "points" | "streak" | "games";
+type Tab = "overview" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
 type GamesSub = "total" | "today";
+type DaySub = "today" | "yesterday";
 
 interface PlayerRow {
   id: string;
