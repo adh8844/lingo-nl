@@ -175,6 +175,17 @@ const OnlineGame = ({
     }
   }, [match.status, match.winner_id, playerId, stopTimer]);
 
+  const writeProgress = useCallback((attemptNumber: number, correctCount: number) => {
+    if (!currentRound) return;
+    supabase.from("match_round_progress").insert({
+      round_id: currentRound.id,
+      match_id: match.id,
+      player_id: playerId,
+      attempt_number: attemptNumber,
+      correct_count: correctCount,
+    }).then(() => {});
+  }, [currentRound, match.id, playerId]);
+
   const processGuess = useCallback((guess: string) => {
     const evaluation = evaluateGuess(guess, word);
     const newGuesses = [...guesses, guess];
@@ -195,6 +206,9 @@ const OnlineGame = ({
     setLetterStatuses(newLetterStatuses);
     setTimeout(() => setRevealedRow(null), 600);
 
+    const correctCount = evaluation.filter(s => s === "correct").length;
+    writeProgress(newGuesses.length, correctCount);
+
     if (guess === word) {
       stopTimer();
       setGameOver(true);
@@ -203,6 +217,12 @@ const OnlineGame = ({
       playRoundWinSound();
       const guessTimeMs = roundStartTime ? Date.now() - roundStartTime : 0;
       onSubmitGuessTime(guessTimeMs);
+      // Show the word to the winner during the 3s gap before next round
+      const msg = language === "nl"
+        ? `Jij won deze ronde! 🎉 Het woord was: ${word.toUpperCase()}`
+        : `You won this round! 🎉 The word was: ${word.toUpperCase()}`;
+      setRoundTransition(msg);
+      setTimeout(() => setRoundTransition(null), 3000);
     } else if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
       setGameOver(true);
@@ -211,7 +231,7 @@ const OnlineGame = ({
     } else {
       setCurrentGuess(word[0]);
     }
-  }, [word, guesses, statuses, letterStatuses, roundStartTime, onSubmitGuessTime, onSubmitFailed, stopTimer]);
+  }, [word, guesses, statuses, letterStatuses, roundStartTime, onSubmitGuessTime, onSubmitFailed, stopTimer, writeProgress, language]);
 
   const handleInvalidGuess = useCallback((guess: string) => {
     const emptyStatuses: TileStatus[] = Array(wordLength).fill("absent");
@@ -222,6 +242,8 @@ const OnlineGame = ({
     setRevealedRow(guesses.length);
     setTimeout(() => setRevealedRow(null), 600);
 
+    writeProgress(newGuesses.length, 0);
+
     if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
       setGameOver(true);
@@ -230,7 +252,7 @@ const OnlineGame = ({
     } else {
       setCurrentGuess(word[0]);
     }
-  }, [wordLength, guesses, statuses, word, stopTimer, onSubmitFailed]);
+  }, [wordLength, guesses, statuses, word, stopTimer, onSubmitFailed, writeProgress]);
 
   const submitGuess = useCallback(async () => {
     if (currentGuess.length !== wordLength || submitted) return;
