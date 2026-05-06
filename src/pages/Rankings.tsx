@@ -543,7 +543,107 @@ const Rankings = () => {
                   {valueIcon} {e.value}
                 </span>
               </div>
+  );
+
+  const MergedCard = ({
+    title,
+    icon,
+    valueIcon,
+    tabs: subTabs,
+    activeKey,
+    onTabChange,
+    list,
+    onTitleClick,
+  }: {
+    title: string;
+    icon: string;
+    valueIcon: string;
+    tabs: { key: string; label: string }[];
+    activeKey: string;
+    onTabChange: (key: string) => void;
+    list: RankEntry[];
+    onTitleClick?: () => void;
+  }) => (
+    <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onTitleClick}
+          className="flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary hover:underline text-left"
+        >
+          <span>{icon}</span>
+          <span>{title}</span>
+        </button>
+        <div className="flex gap-1">
+          {subTabs.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => onTabChange(s.key)}
+              className={`px-2 py-1 rounded font-bold text-xs transition-all ${
+                activeKey === s.key
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-secondary text-secondary-foreground hover:brightness-110"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {list.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {list.slice(0, 3).map((e, i) => {
+            const isMe = player?.id === e.id;
+            const op = onlineMap.get(e.id);
+            const isOnline = !!op;
+            const canChallenge = isOnline && !isMe && op?.status !== "in_game";
+            return (
+              <div
+                key={e.id}
+                className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                  isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-5 text-right shrink-0">{medal(i)}</span>
+                  {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
+                  <span
+                    className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                    translate="no"
+                    onClick={() => navigate(`/profile/${e.id}`)}
+                  >
+                    {e.display_name}
+                  </span>
+                  {e.secondary && (
+                    <span className="text-xs text-muted-foreground shrink-0">({e.secondary})</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-extrabold shrink-0">
+                    {valueIcon} {e.value}
+                  </span>
+                  {canChallenge && (
+                    <button
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        openChallenge(e.id, e.display_name);
+                      }}
+                      title="Uitdagen"
+                      className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-bold text-xs hover:brightness-110"
+                    >
+                      ⚔️
+                    </button>
+                  )}
+                </div>
+              </div>
             );
+          })}
+        </div>
+      )}
+    </div>
+  );
           })}
         </div>
       )}
