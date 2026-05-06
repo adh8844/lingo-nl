@@ -73,6 +73,7 @@ export function useOnlineMatch(playerId: string | undefined) {
   const [activeMatch, setActiveMatch] = useState<OnlineMatch | null>(null);
   const [currentRound, setCurrentRound] = useState<MatchRound | null>(null);
   const [roundStartTime, setRoundStartTime] = useState<number | null>(null);
+  const [opponentProgress, setOpponentProgress] = useState<Record<number, number>>({});
   const activeMatchRef = useRef<OnlineMatch | null>(null);
 
   useEffect(() => {
@@ -234,26 +235,38 @@ export function useOnlineMatch(playerId: string | undefined) {
         .eq("id", match.id);
       await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
     } else {
-      const nextWord = await getRandomWordAsync(
-        match.language as Language,
-        match.word_length as WordLength
-      );
-      const nextRoundNum = match.current_round + 1;
+      // Delay next round so both players can see what the word was
+      setTimeout(async () => {
+        const nextWord = await getRandomWordAsync(
+          match.language as Language,
+          match.word_length as WordLength
+        );
+        const nextRoundNum = match.current_round + 1;
 
-      await supabase.from("match_rounds").insert({
-        match_id: match.id,
-        round_number: nextRoundNum,
-        word: nextWord,
-        status: "active",
-      });
+        await supabase.from("match_rounds").insert({
+          match_id: match.id,
+          round_number: nextRoundNum,
+          word: nextWord,
+          status: "active",
+        });
 
+        await supabase
+          .from("online_matches")
+          .update({
+            player1_wins: newP1Wins,
+            player2_wins: newP2Wins,
+            current_round: nextRoundNum,
+            current_word: nextWord,
+          })
+          .eq("id", match.id);
+      }, 3000);
+
+      // Update wins immediately so both clients see new score
       await supabase
         .from("online_matches")
         .update({
           player1_wins: newP1Wins,
           player2_wins: newP2Wins,
-          current_round: nextRoundNum,
-          current_word: nextWord,
         })
         .eq("id", match.id);
     }
@@ -318,26 +331,36 @@ export function useOnlineMatch(playerId: string | undefined) {
           .eq("id", match.id);
         await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
       } else {
-        const nextWord = await getRandomWordAsync(
-          match.language as Language,
-          match.word_length as WordLength
-        );
-        const nextRoundNum = match.current_round + 1;
+        setTimeout(async () => {
+          const nextWord = await getRandomWordAsync(
+            match.language as Language,
+            match.word_length as WordLength
+          );
+          const nextRoundNum = match.current_round + 1;
 
-        await supabase.from("match_rounds").insert({
-          match_id: match.id,
-          round_number: nextRoundNum,
-          word: nextWord,
-          status: "active",
-        });
+          await supabase.from("match_rounds").insert({
+            match_id: match.id,
+            round_number: nextRoundNum,
+            word: nextWord,
+            status: "active",
+          });
+
+          await supabase
+            .from("online_matches")
+            .update({
+              player1_wins: newP1Wins,
+              player2_wins: newP2Wins,
+              current_round: nextRoundNum,
+              current_word: nextWord,
+            })
+            .eq("id", match.id);
+        }, 3000);
 
         await supabase
           .from("online_matches")
           .update({
             player1_wins: newP1Wins,
             player2_wins: newP2Wins,
-            current_round: nextRoundNum,
-            current_word: nextWord,
           })
           .eq("id", match.id);
       }
@@ -446,7 +469,20 @@ export function useOnlineMatch(playerId: string | undefined) {
         if (round && round.status === "active") {
           setCurrentRound(round);
           setRoundStartTime(Date.now());
+          setOpponentProgress({});
         }
+      })
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "match_round_progress",
+        filter: `match_id=eq.${matchId}`,
+      }, (payload) => {
+        const row = payload.new as { player_id: string; attempt_number: number; correct_count: number; round_id: string };
+        if (!playerId || row.player_id === playerId) return;
+        const cur = activeMatchRef.current;
+        // Map by attempt number for the current round only
+        setOpponentProgress(prev => ({ ...prev, [row.attempt_number]: row.correct_count }));
       })
       .on("postgres_changes", {
         event: "UPDATE",
@@ -571,6 +607,7 @@ export function useOnlineMatch(playerId: string | undefined) {
     activeMatch,
     currentRound,
     roundStartTime,
+    opponentProgress,
     sendChallenge,
     acceptChallenge,
     declineChallenge,

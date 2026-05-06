@@ -12,6 +12,7 @@ const OnlineMatchPage = () => {
     activeMatch,
     currentRound,
     roundStartTime,
+    opponentProgress,
     submitGuessTime,
     submitFailed,
     leaveMatch,
@@ -111,6 +112,7 @@ const OnlineMatchPage = () => {
         match={activeMatch}
         currentRound={currentRound}
         roundStartTime={roundStartTime}
+        opponentProgress={opponentProgress}
         playerId={player.id}
         opponentName={opponentName}
         onSubmitGuessTime={submitGuessTime}

@@ -249,17 +249,23 @@ const Rankings = () => {
     icon,
     valueIcon,
     list,
+    onTitleClick,
   }: {
     title: string;
     icon: string;
     valueIcon: string;
     list: RankEntry[];
+    onTitleClick?: () => void;
   }) => (
     <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+      <button
+        type="button"
+        onClick={onTitleClick}
+        className="flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary hover:underline text-left"
+      >
         <span>{icon}</span>
         <span>{title}</span>
-      </div>
+      </button>
       {list.length === 0 ? (
         <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
       ) : (
@@ -335,12 +341,12 @@ const Rankings = () => {
       <div className="w-full max-w-lg flex flex-col gap-2">
         {tab === "overview" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} />
-            <MiniCard title="Dagscore" icon="📅" valueIcon="⭐" list={pointsToday} />
-            <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} />
-            <MiniCard title="Huidige reeks" icon="⚡" valueIcon="🔥" list={currentStreakList} />
-            <MiniCard title="# Spellen totaal" icon="🎮" valueIcon="🎮" list={gamesTotal} />
-            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} />
+            <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} onTitleClick={() => { setTab("points"); setPointsSub("total"); }} />
+            <MiniCard title="Dagscore" icon="⭐" valueIcon="⭐" list={pointsToday} onTitleClick={() => { setTab("points"); setPointsSub("today"); }} />
+            <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} onTitleClick={() => setTab("streak")} />
+            <MiniCard title="Huidige reeks" icon="🔥" valueIcon="🔥" list={currentStreakList} onTitleClick={() => setTab("streak")} />
+            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
+            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
           </div>
         )}
 

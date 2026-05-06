@@ -9,6 +9,7 @@ import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
 import { OnlineMatch, MatchRound } from "@/hooks/useOnlineMatch";
 import { playRoundWinSound, playRoundLoseSound } from "@/hooks/useSounds";
+import { supabase } from "@/integrations/supabase/client";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -17,6 +18,7 @@ interface OnlineGameProps {
   match: OnlineMatch;
   currentRound: MatchRound | null;
   roundStartTime: number | null;
+  opponentProgress: Record<number, number>;
   playerId: string;
   opponentName: string;
   onSubmitGuessTime: (timeMs: number) => void;
@@ -56,6 +58,7 @@ const OnlineGame = ({
   match,
   currentRound,
   roundStartTime,
+  opponentProgress,
   playerId,
   opponentName,
   onSubmitGuessTime,
@@ -108,17 +111,21 @@ const OnlineGame = ({
     if (!currentRound || currentRound.id === prevRoundRef.current) return;
 
     const wasPlaying = prevRoundRef.current !== null && !gameOver && !submitted;
+    const prevWord = word;
     prevRoundRef.current = currentRound.id;
 
     if (wasPlaying) {
       stopTimer();
-      setRoundTransition(language === "nl" ? `${opponentName} was sneller!` : `${opponentName} was faster!`);
+      const msg = language === "nl"
+        ? `${opponentName} was sneller! Het woord was: ${prevWord.toUpperCase()}`
+        : `${opponentName} was faster! The word was: ${prevWord.toUpperCase()}`;
+      setRoundTransition(msg);
       playRoundLoseSound();
 
       setTimeout(() => {
         setRoundTransition(null);
         resetBoard(currentRound);
-      }, 1500);
+      }, 3000);
     } else {
       resetBoard(currentRound);
     }
@@ -168,6 +175,17 @@ const OnlineGame = ({
     }
   }, [match.status, match.winner_id, playerId, stopTimer]);
 
+  const writeProgress = useCallback((attemptNumber: number, correctCount: number) => {
+    if (!currentRound) return;
+    supabase.from("match_round_progress").insert({
+      round_id: currentRound.id,
+      match_id: match.id,
+      player_id: playerId,
+      attempt_number: attemptNumber,
+      correct_count: correctCount,
+    }).then(() => {});
+  }, [currentRound, match.id, playerId]);
+
   const processGuess = useCallback((guess: string) => {
     const evaluation = evaluateGuess(guess, word);
     const newGuesses = [...guesses, guess];
@@ -188,6 +206,9 @@ const OnlineGame = ({
     setLetterStatuses(newLetterStatuses);
     setTimeout(() => setRevealedRow(null), 600);
 
+    const correctCount = evaluation.filter(s => s === "correct").length;
+    writeProgress(newGuesses.length, correctCount);
+
     if (guess === word) {
       stopTimer();
       setGameOver(true);
@@ -196,6 +217,12 @@ const OnlineGame = ({
       playRoundWinSound();
       const guessTimeMs = roundStartTime ? Date.now() - roundStartTime : 0;
       onSubmitGuessTime(guessTimeMs);
+      // Show the word to the winner during the 3s gap before next round
+      const msg = language === "nl"
+        ? `Jij won deze ronde! 🎉 Het woord was: ${word.toUpperCase()}`
+        : `You won this round! 🎉 The word was: ${word.toUpperCase()}`;
+      setRoundTransition(msg);
+      setTimeout(() => setRoundTransition(null), 3000);
     } else if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
       setGameOver(true);
@@ -204,7 +231,7 @@ const OnlineGame = ({
     } else {
       setCurrentGuess(word[0]);
     }
-  }, [word, guesses, statuses, letterStatuses, roundStartTime, onSubmitGuessTime, onSubmitFailed, stopTimer]);
+  }, [word, guesses, statuses, letterStatuses, roundStartTime, onSubmitGuessTime, onSubmitFailed, stopTimer, writeProgress, language]);
 
   const handleInvalidGuess = useCallback((guess: string) => {
     const emptyStatuses: TileStatus[] = Array(wordLength).fill("absent");
@@ -215,6 +242,8 @@ const OnlineGame = ({
     setRevealedRow(guesses.length);
     setTimeout(() => setRevealedRow(null), 600);
 
+    writeProgress(newGuesses.length, 0);
+
     if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
       setGameOver(true);
@@ -223,7 +252,7 @@ const OnlineGame = ({
     } else {
       setCurrentGuess(word[0]);
     }
-  }, [wordLength, guesses, statuses, word, stopTimer, onSubmitFailed]);
+  }, [wordLength, guesses, statuses, word, stopTimer, onSubmitFailed, writeProgress]);
 
   const submitGuess = useCallback(async () => {
     if (currentGuess.length !== wordLength || submitted) return;
@@ -353,7 +382,13 @@ const OnlineGame = ({
           <p className="text-xl font-extrabold text-foreground">
             {match.player1_wins} - {match.player2_wins}
           </p>
-          <p className="text-sm text-accent font-bold">{isWinner ? "+100 bonus ⭐" : ""}</p>
+          <div className="flex flex-col items-center">
+            {isWinner && <p className="text-sm text-accent font-bold">+100 bonus ⭐</p>}
+            {(() => {
+              const myRoundWins = isPlayer1 ? match.player1_wins : match.player2_wins;
+              return myRoundWins > 0 ? <p className="text-sm text-accent font-bold">+{myRoundWins * 20} ronde punten</p> : null;
+            })()}
+          </div>
           <div className="px-4 py-2 rounded-lg bg-accent/10 border border-accent/20 text-accent font-bold text-sm animate-pulse">
             {language === "nl" ? "Wachten op tegenstander..." : "Waiting for opponent..."}
           </div>
@@ -388,21 +423,25 @@ const OnlineGame = ({
         <p className="text-lg font-bold text-muted-foreground">
           {match.player1_wins} - {match.player2_wins}
         </p>
-        {isWinner && (
-          <p className="text-sm text-accent font-bold">
-            +100 bonus ⭐ + {(isPlayer1 ? match.player1_wins : match.player2_wins) * 20} ronde punten
-          </p>
-        )}
-        {!isWinner && wasForfeit && (
-          <p className="text-sm text-muted-foreground font-bold">
-            {language === "nl" ? `${opponentName} ontvangt punten` : `${opponentName} receives points`}
-          </p>
-        )}
-        {isWinner && wasForfeit && !iForfeited && (
-          <p className="text-sm text-accent font-bold">
-            {language === "nl" ? "Tegenstander heeft opgegeven — jij ontvangt +100 bonus ⭐" : "Opponent forfeited — you receive +100 bonus ⭐"}
-          </p>
-        )}
+        {(() => {
+          const myRoundWins = isPlayer1 ? match.player1_wins : match.player2_wins;
+          const roundPts = myRoundWins * 20;
+          return (
+            <div className="flex flex-col items-center gap-1">
+              {isWinner && (
+                <p className="text-sm text-accent font-bold">+100 bonus ⭐</p>
+              )}
+              {roundPts > 0 && (
+                <p className="text-sm text-accent font-bold">+{roundPts} ronde punten</p>
+              )}
+              {isWinner && wasForfeit && !iForfeited && (
+                <p className="text-xs text-muted-foreground">
+                  {language === "nl" ? "(tegenstander heeft opgegeven)" : "(opponent forfeited)"}
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="flex gap-3 mt-2">
           <button
@@ -537,16 +576,38 @@ const OnlineGame = ({
         </div>
       )}
 
-      <LingoBoard
-        guesses={guesses}
-        statuses={statuses}
-        currentGuess={currentGuess}
-        currentRow={guesses.length}
-        wordLength={wordLength}
-        maxGuesses={MAX_GUESSES}
-        shaking={shaking}
-        revealedRow={revealedRow}
-      />
+      <div className="flex items-start gap-2 sm:gap-3">
+        <LingoBoard
+          guesses={guesses}
+          statuses={statuses}
+          currentGuess={currentGuess}
+          currentRow={guesses.length}
+          wordLength={wordLength}
+          maxGuesses={MAX_GUESSES}
+          shaking={shaking}
+          revealedRow={revealedRow}
+        />
+        <div className="flex flex-col gap-1 sm:gap-1.5 pt-0.5" aria-label={language === "nl" ? "Voortgang tegenstander" : "Opponent progress"}>
+          {Array.from({ length: MAX_GUESSES }, (_, i) => {
+            const attempt = i + 1;
+            const correct = opponentProgress?.[attempt];
+            const has = typeof correct === "number";
+            return (
+              <div
+                key={i}
+                className={`h-9 sm:h-12 min-w-[2rem] px-1.5 flex items-center justify-center rounded-md text-xs font-extrabold border ${
+                  has
+                    ? "bg-tile-correct/15 border-tile-correct/40 text-tile-correct"
+                    : "bg-card/40 border-border/50 text-muted-foreground/40"
+                }`}
+                title={language === "nl" ? `Tegenstander poging ${attempt}` : `Opponent attempt ${attempt}`}
+              >
+                {has ? `🟩 ${correct}` : "·"}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {!gameOver && !submitted && !suggestionDialogOpen && (
         <>

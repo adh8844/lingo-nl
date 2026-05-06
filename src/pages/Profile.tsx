@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { usePlayer } from "@/hooks/usePlayer";
+import { usePlayerContext } from "@/hooks/usePlayerContext";
+import { toast } from "sonner";
 import type { Player } from "@/types/player";
-import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library } from "lucide-react";
+import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library, Pencil, Check, X } from "lucide-react";
 
 interface Badge {
   id: string;
@@ -46,13 +47,43 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 const Profile = () => {
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId?: string }>();
-  const { player: currentPlayer, loading } = usePlayer();
+  const { player: currentPlayer, loading, refreshPlayer } = usePlayerContext();
   const [viewPlayer, setViewPlayer] = useState<Player | null>(null);
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const isOwnProfile = !playerId || playerId === currentPlayer?.id;
   const displayPlayer = isOwnProfile ? currentPlayer : viewPlayer;
+
+  const startEditName = () => {
+    setNameInput(displayPlayer?.display_name || "");
+    setEditingName(true);
+  };
+
+  const saveName = async () => {
+    if (!currentPlayer) return;
+    const trimmed = nameInput.trim();
+    if (trimmed.length < 2 || trimmed.length > 24) {
+      toast.error("Naam moet tussen 2 en 24 tekens zijn");
+      return;
+    }
+    setSavingName(true);
+    const { error } = await supabase
+      .from("players")
+      .update({ display_name: trimmed })
+      .eq("id", currentPlayer.id);
+    setSavingName(false);
+    if (error) {
+      toast.error("Kon naam niet opslaan");
+      return;
+    }
+    toast.success("Naam bijgewerkt");
+    setEditingName(false);
+    await refreshPlayer();
+  };
 
   const loadViewPlayer = useCallback(async () => {
     if (!playerId || isOwnProfile) return;
@@ -102,7 +133,33 @@ const Profile = () => {
 
         {/* Player info */}
         <div className="bg-card rounded-2xl border border-border p-5 mb-4">
-          <p className="text-2xl font-extrabold text-foreground mb-3" translate="no">{displayPlayer.display_name}</p>
+          {editingName && isOwnProfile ? (
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                maxLength={24}
+                autoFocus
+                className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground font-bold text-lg border border-border focus:outline-none focus:border-primary"
+              />
+              <button onClick={saveName} disabled={savingName} className="p-2 rounded-lg bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-50">
+                <Check className="w-5 h-5" />
+              </button>
+              <button onClick={() => setEditingName(false)} disabled={savingName} className="p-2 rounded-lg bg-secondary text-secondary-foreground hover:brightness-110">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-2xl font-extrabold text-foreground" translate="no">{displayPlayer.display_name}</p>
+              {isOwnProfile && (
+                <button onClick={startEditName} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Naam wijzigen">
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-primary" />
