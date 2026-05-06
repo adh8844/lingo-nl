@@ -607,6 +607,7 @@ export function useOnlineMatch(playerId: string | undefined) {
     activeMatch,
     currentRound,
     roundStartTime,
+    opponentProgress,
     sendChallenge,
     acceptChallenge,
     declineChallenge,
