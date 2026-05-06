@@ -74,6 +74,36 @@ const Admin = () => {
   const [editData, setEditData] = useState<Partial<FullWord>>({});
   const PAGE_SIZE = 5;
 
+  // Presence settings (instelbaar)
+  const presence = usePresenceSettings();
+  const [heartbeatInput, setHeartbeatInput] = useState<string>("");
+  const [thresholdInput, setThresholdInput] = useState<string>("");
+  const [savingSetting, setSavingSetting] = useState<string | null>(null);
+  useEffect(() => {
+    setHeartbeatInput(String(presence.heartbeatIntervalMs));
+    setThresholdInput(String(presence.onlineThresholdMs));
+  }, [presence.heartbeatIntervalMs, presence.onlineThresholdMs]);
+
+  const savePresenceSetting = async (key: "heartbeat_interval_ms" | "online_threshold_ms", value: string) => {
+    const num = parseInt(value);
+    if (!num || num < 1000) { toast.error("Geef een waarde van minimaal 1000 ms"); return; }
+    setSavingSetting(key);
+    const err = await updatePresenceSetting(key, num);
+    setSavingSetting(null);
+    if (err) toast.error("Fout bij opslaan");
+    else toast.success("Instelling opgeslagen");
+  };
+
+  // Collapsible open state per card
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({
+    settings: false,
+    stats: true,
+    add: true,
+    search: true,
+    pending: true,
+  });
+  const toggleCard = (k: string) => setOpenCards(s => ({ ...s, [k]: !s[k] }));
+
   useEffect(() => {
     if (!authReady) return;
     if (!session) {
