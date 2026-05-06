@@ -111,17 +111,21 @@ const OnlineGame = ({
     if (!currentRound || currentRound.id === prevRoundRef.current) return;
 
     const wasPlaying = prevRoundRef.current !== null && !gameOver && !submitted;
+    const prevWord = word;
     prevRoundRef.current = currentRound.id;
 
     if (wasPlaying) {
       stopTimer();
-      setRoundTransition(language === "nl" ? `${opponentName} was sneller!` : `${opponentName} was faster!`);
+      const msg = language === "nl"
+        ? `${opponentName} was sneller! Het woord was: ${prevWord.toUpperCase()}`
+        : `${opponentName} was faster! The word was: ${prevWord.toUpperCase()}`;
+      setRoundTransition(msg);
       playRoundLoseSound();
 
       setTimeout(() => {
         setRoundTransition(null);
         resetBoard(currentRound);
-      }, 1500);
+      }, 3000);
     } else {
       resetBoard(currentRound);
     }
