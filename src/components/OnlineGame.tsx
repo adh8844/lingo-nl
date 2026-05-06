@@ -9,6 +9,7 @@ import confetti from "canvas-confetti";
 import WinAnimation from "./WinAnimation";
 import { OnlineMatch, MatchRound } from "@/hooks/useOnlineMatch";
 import { playRoundWinSound, playRoundLoseSound } from "@/hooks/useSounds";
+import { supabase } from "@/integrations/supabase/client";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -17,6 +18,7 @@ interface OnlineGameProps {
   match: OnlineMatch;
   currentRound: MatchRound | null;
   roundStartTime: number | null;
+  opponentProgress: Record<number, number>;
   playerId: string;
   opponentName: string;
   onSubmitGuessTime: (timeMs: number) => void;
