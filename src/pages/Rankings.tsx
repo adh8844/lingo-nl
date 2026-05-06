@@ -648,14 +648,15 @@ const Rankings = () => {
     </div>
   );
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "overview", label: "📊 Overzicht" },
-    { key: "points", label: "⭐ Punten" },
-    { key: "streak", label: "🔥 Reeks" },
-    { key: "games", label: "🎮 # Spellen" },
-    { key: "badges", label: "🏅 Badges" },
-    { key: "challenges", label: "⚔️ Uitdagingen" },
+  const tabs: { key: Tab; icon: string; title: string }[] = [
+    { key: "overview", icon: "📊", title: "Overzicht" },
+    { key: "points", icon: "⭐", title: "Punten" },
+    { key: "streak", icon: "🔥", title: "Reeks" },
+    { key: "games", icon: "🎮", title: "# Spellen" },
+    { key: "badges", icon: "🏅", title: "Badges" },
+    { key: "challenges", icon: "⚔️", title: "Uitdagingen" },
   ];
+  const currentTabTitle = tabs.find((t) => t.key === tab)?.title ?? "";
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
