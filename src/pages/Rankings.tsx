@@ -331,6 +331,20 @@ const Rankings = () => {
     (games || []).forEach((g: any) => {
       gCounts[g.player_id] = (gCounts[g.player_id] || 0) + 1;
     });
+    // Voeg uitdagingsrondes binnen tijdvenster toe
+    let rQ = supabase
+      .from("match_rounds")
+      .select("created_at, online_matches!inner(player1_id, player2_id)")
+      .eq("status", "finished")
+      .gte("created_at", startISO);
+    if (endISO) rQ = rQ.lt("created_at", endISO);
+    const { data: rounds } = await rQ;
+    (rounds || []).forEach((r: any) => {
+      const m = r.online_matches;
+      if (!m) return;
+      gCounts[m.player1_id] = (gCounts[m.player1_id] || 0) + 1;
+      gCounts[m.player2_id] = (gCounts[m.player2_id] || 0) + 1;
+    });
 
     // Badges earned
     let bQ = supabase.from("player_badges").select("player_id, earned_at").gte("earned_at", startISO);
@@ -341,14 +355,17 @@ const Rankings = () => {
       bCounts[b.player_id] = (bCounts[b.player_id] || 0) + 1;
     });
 
-    // Challenges completed (matches updated/created in range with a 5-win player)
+    // Uitdagingen voltooid: tel beide deelnemers wanneer match afgerond
     let cQ = supabase.from("online_matches").select("player1_id, player2_id, player1_wins, player2_wins, updated_at").gte("updated_at", startISO);
     if (endISO) cQ = cQ.lt("updated_at", endISO);
     const { data: matches } = await cQ;
     const cCounts: Record<string, number> = {};
     (matches || []).forEach((m: any) => {
-      if ((m.player1_wins ?? 0) >= 5) cCounts[m.player1_id] = (cCounts[m.player1_id] || 0) + 1;
-      if ((m.player2_wins ?? 0) >= 5) cCounts[m.player2_id] = (cCounts[m.player2_id] || 0) + 1;
+      const completed = (m.player1_wins ?? 0) >= 5 || (m.player2_wins ?? 0) >= 5;
+      if (completed) {
+        cCounts[m.player1_id] = (cCounts[m.player1_id] || 0) + 1;
+        cCounts[m.player2_id] = (cCounts[m.player2_id] || 0) + 1;
+      }
     });
 
     return Promise.all([
