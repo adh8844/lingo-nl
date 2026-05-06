@@ -97,9 +97,9 @@ const Admin = () => {
   // Collapsible open state per card
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({
     settings: false,
-    stats: true,
-    add: true,
-    search: true,
+    stats: false,
+    add: false,
+    search: false,
     pending: true,
   });
   const toggleCard = (k: string) => setOpenCards(s => ({ ...s, [k]: !s[k] }));
