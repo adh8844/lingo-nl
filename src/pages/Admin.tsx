@@ -382,12 +382,84 @@ const Admin = () => {
           </h1>
         </div>
 
+        {/* Online presence settings */}
+        <Card className="mb-8">
+          <Collapsible open={openCards.settings} onOpenChange={() => toggleCard("settings")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Online-detectie instellingen
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.settings ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-xs">Heartbeat-interval (ms)</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Hoe vaak een speler een teken van leven naar de server stuurt.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={1000}
+                      step={500}
+                      value={heartbeatInput}
+                      onChange={(e) => setHeartbeatInput(e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => savePresenceSetting("heartbeat_interval_ms", heartbeatInput)}
+                      disabled={savingSetting === "heartbeat_interval_ms"}
+                    >
+                      <Save className="w-4 h-4 mr-1" /> Opslaan
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Online-threshold (ms)</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Een speler wordt als online getoond als zijn laatste activiteit korter geleden is dan deze waarde.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={1000}
+                      step={500}
+                      value={thresholdInput}
+                      onChange={(e) => setThresholdInput(e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => savePresenceSetting("online_threshold_ms", thresholdInput)}
+                      disabled={savingSetting === "online_threshold_ms"}
+                    >
+                      <Save className="w-4 h-4 mr-1" /> Opslaan
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Huidige waarden: heartbeat {presence.heartbeatIntervalMs} ms, threshold {presence.onlineThresholdMs} ms.
+                </p>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
         {/* Charts in tabs */}
         <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Statistieken</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Collapsible open={openCards.stats} onOpenChange={() => toggleCard("stats")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Statistieken
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.stats ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
             <Tabs defaultValue="length">
               <TabsList className="mb-4">
                 <TabsTrigger value="length">Per woordlengte</TabsTrigger>
