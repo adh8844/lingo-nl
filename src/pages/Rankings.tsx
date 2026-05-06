@@ -134,6 +134,24 @@ const Rankings = () => {
       if (data.length < pageSize) break;
       from += pageSize;
     }
+    // Tel ook online uitdagingsrondes mee — paginate
+    let rFrom = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("match_rounds")
+        .select("match_id, online_matches!inner(player1_id, player2_id)")
+        .eq("status", "finished")
+        .range(rFrom, rFrom + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      data.forEach((r: any) => {
+        const m = r.online_matches;
+        if (!m) return;
+        counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
+        counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+      });
+      if (data.length < pageSize) break;
+      rFrom += pageSize;
+    }
     const ids = Object.keys(counts);
     if (ids.length === 0) {
       setGamesTotal([]);
