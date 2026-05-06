@@ -836,28 +836,49 @@ const Rankings = () => {
         )}
 
         {tab !== "overview" && (
-          <h2 className="text-lg font-bold text-foreground px-1">
-            {tabs.find((t) => t.key === tab)?.icon} {currentTabTitle}
-          </h2>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <h2 className="text-lg font-bold text-foreground">
+              {tabs.find((t) => t.key === tab)?.icon} {currentTabTitle}
+            </h2>
+            {tab === "points" && (
+              <div className="flex gap-1">
+                {(["total", "today"] as PointsSub[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setPointsSub(s)}
+                    className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                      pointsSub === s
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-secondary text-secondary-foreground hover:brightness-110"
+                    }`}
+                  >
+                    {s === "total" ? "Totaal" : "Vandaag"}
+                  </button>
+                ))}
+              </div>
+            )}
+            {tab === "games" && (
+              <div className="flex gap-1">
+                {(["total", "today"] as GamesSub[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setGamesSub(s)}
+                    className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                      gamesSub === s
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-secondary text-secondary-foreground hover:brightness-110"
+                    }`}
+                  >
+                    {s === "total" ? "Totaal" : "Vandaag"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {tab === "points" && (
           <>
-            <div className="flex gap-1 mb-2">
-              {(["total", "today"] as PointsSub[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setPointsSub(s)}
-                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
-                    pointsSub === s
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-secondary text-secondary-foreground hover:brightness-110"
-                  }`}
-                >
-                  {s === "total" ? "Totaal" : "Vandaag"}
-                </button>
-              ))}
-            </div>
             {(pointsSub === "total" ? pointsTotalList : pointsToday).length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nog geen data</p>
             ) : (
@@ -880,21 +901,6 @@ const Rankings = () => {
 
         {tab === "games" && (
           <>
-            <div className="flex gap-1 mb-2">
-              {(["total", "today"] as GamesSub[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setGamesSub(s)}
-                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
-                    gamesSub === s
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-secondary text-secondary-foreground hover:brightness-110"
-                  }`}
-                >
-                  {s === "total" ? "Totaal" : "Vandaag"}
-                </button>
-              ))}
-            </div>
             {(gamesSub === "total" ? gamesTotal : gamesToday).length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nog geen data</p>
             ) : (
