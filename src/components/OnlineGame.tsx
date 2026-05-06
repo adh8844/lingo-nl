@@ -58,6 +58,7 @@ const OnlineGame = ({
   match,
   currentRound,
   roundStartTime,
+  opponentProgress,
   playerId,
   opponentName,
   onSubmitGuessTime,
