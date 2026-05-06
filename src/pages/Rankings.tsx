@@ -650,9 +650,9 @@ const Rankings = () => {
 
   const tabs: { key: Tab; icon: string; title: string }[] = [
     { key: "overview", icon: "📊", title: "Overzicht" },
-    { key: "points", icon: "⭐", title: "Punten" },
+    { key: "points", icon: "⭐", title: "Aantal punten" },
     { key: "streak", icon: "🔥", title: "Reeks" },
-    { key: "games", icon: "🎮", title: "# Spellen" },
+    { key: "games", icon: "🎯", title: "Aantal spellen" },
     { key: "badges", icon: "🏅", title: "Badges" },
     { key: "challenges", icon: "⚔️", title: "Uitdagingen" },
   ];
@@ -810,7 +810,7 @@ const Rankings = () => {
           />
           <MergedCard
             title="Aantal spellen"
-            icon="🎮"
+            icon="🎯"
             valueIcon="🎮"
             tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
             activeKey={gamesSub}
