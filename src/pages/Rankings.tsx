@@ -219,7 +219,9 @@ const Rankings = () => {
 
   const renderRow = (entry: RankEntry, i: number, icon: string) => {
     const isMe = player?.id === entry.id;
-    const isOnline = onlineIds.has(entry.id);
+    const op = onlineMap.get(entry.id);
+    const isOnline = !!op;
+    const canChallenge = isOnline && !isMe && op?.status !== "in_game";
     return (
       <div
         key={entry.id}
@@ -250,6 +252,18 @@ const Rankings = () => {
           <span className="font-extrabold">
             {icon} {entry.value}
           </span>
+          {canChallenge && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openChallenge(entry.id, entry.display_name);
+              }}
+              title="Uitdagen"
+              className="ml-1 px-2 py-1 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:brightness-110"
+            >
+              ⚔️
+            </button>
+          )}
         </div>
       </div>
     );
