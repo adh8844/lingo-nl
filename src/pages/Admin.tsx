@@ -523,6 +523,8 @@ const Admin = () => {
               </TabsContent>
             </Tabs>
           </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Add word section */}
