@@ -234,26 +234,38 @@ export function useOnlineMatch(playerId: string | undefined) {
         .eq("id", match.id);
       await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
     } else {
-      const nextWord = await getRandomWordAsync(
-        match.language as Language,
-        match.word_length as WordLength
-      );
-      const nextRoundNum = match.current_round + 1;
+      // Delay next round so both players can see what the word was
+      setTimeout(async () => {
+        const nextWord = await getRandomWordAsync(
+          match.language as Language,
+          match.word_length as WordLength
+        );
+        const nextRoundNum = match.current_round + 1;
 
-      await supabase.from("match_rounds").insert({
-        match_id: match.id,
-        round_number: nextRoundNum,
-        word: nextWord,
-        status: "active",
-      });
+        await supabase.from("match_rounds").insert({
+          match_id: match.id,
+          round_number: nextRoundNum,
+          word: nextWord,
+          status: "active",
+        });
 
+        await supabase
+          .from("online_matches")
+          .update({
+            player1_wins: newP1Wins,
+            player2_wins: newP2Wins,
+            current_round: nextRoundNum,
+            current_word: nextWord,
+          })
+          .eq("id", match.id);
+      }, 3000);
+
+      // Update wins immediately so both clients see new score
       await supabase
         .from("online_matches")
         .update({
           player1_wins: newP1Wins,
           player2_wins: newP2Wins,
-          current_round: nextRoundNum,
-          current_word: nextWord,
         })
         .eq("id", match.id);
     }
