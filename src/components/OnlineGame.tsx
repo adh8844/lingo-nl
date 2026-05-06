@@ -88,6 +88,7 @@ const OnlineGame = ({
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
+  const prevWordRef = useRef<string>("");
   const lossShownForRoundRef = useRef<string | null>(null);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
@@ -107,28 +108,59 @@ const OnlineGame = ({
     }, 1000);
   }, []);
 
-  // Reset state when round changes
+  // Detect that the current round has finished and we did NOT win → show loss message immediately
+  // (so it appears at the same time as the winner's message, not 3s later when next round inserts).
+  useEffect(() => {
+    if (!currentRound) return;
+    if (currentRound.status !== "finished") return;
+    if (!currentRound.winner_id || currentRound.winner_id === playerId) return;
+    if (lossShownForRoundRef.current === currentRound.id) return;
+    lossShownForRoundRef.current = currentRound.id;
+    stopTimer();
+    setGameOver(true);
+    setSubmitted(true);
+    const msg = language === "nl"
+      ? `${opponentName} was sneller! Het woord was: ${currentRound.word.toUpperCase()}`
+      : `${opponentName} was faster! The word was: ${currentRound.word.toUpperCase()}`;
+    setRoundTransition(msg);
+    playRoundLoseSound();
+    setTimeout(() => setRoundTransition(null), 3000);
+  }, [currentRound?.id, currentRound?.status, currentRound?.winner_id, currentRound?.word, playerId, language, opponentName, stopTimer]);
+
+  // Reset state when round changes (new round inserted)
   useEffect(() => {
     if (!currentRound || currentRound.id === prevRoundRef.current) return;
 
-    const wasPlaying = prevRoundRef.current !== null && !gameOver && !submitted;
-    const prevWord = word;
+    const isFirstRound = prevRoundRef.current === null;
     prevRoundRef.current = currentRound.id;
+    const wordForNext = currentRound.word;
 
-    if (wasPlaying) {
-      stopTimer();
+    if (isFirstRound) {
+      prevWordRef.current = wordForNext;
+      resetBoard(currentRound);
+      return;
+    }
+
+    // If we haven't shown a transition yet (e.g. both failed, or our loss-effect didn't fire),
+    // show the previous word now.
+    if (!roundTransition && lossShownForRoundRef.current !== prevRoundRef.current) {
+      const prevWord = prevWordRef.current;
       const msg = language === "nl"
-        ? `${opponentName} was sneller! Het woord was: ${prevWord.toUpperCase()}`
-        : `${opponentName} was faster! The word was: ${prevWord.toUpperCase()}`;
+        ? `Het woord was: ${prevWord.toUpperCase()}`
+        : `The word was: ${prevWord.toUpperCase()}`;
       setRoundTransition(msg);
-      playRoundLoseSound();
-
       setTimeout(() => {
         setRoundTransition(null);
+        prevWordRef.current = wordForNext;
         resetBoard(currentRound);
       }, 3000);
     } else {
-      resetBoard(currentRound);
+      // Transition already showing — wait briefly then reset
+      setTimeout(() => {
+        setRoundTransition(null);
+        prevWordRef.current = wordForNext;
+        resetBoard(currentRound);
+      }, 1500);
     }
   }, [currentRound?.id]);
 
