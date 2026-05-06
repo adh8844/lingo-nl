@@ -576,16 +576,38 @@ const OnlineGame = ({
         </div>
       )}
 
-      <LingoBoard
-        guesses={guesses}
-        statuses={statuses}
-        currentGuess={currentGuess}
-        currentRow={guesses.length}
-        wordLength={wordLength}
-        maxGuesses={MAX_GUESSES}
-        shaking={shaking}
-        revealedRow={revealedRow}
-      />
+      <div className="flex items-start gap-2 sm:gap-3">
+        <LingoBoard
+          guesses={guesses}
+          statuses={statuses}
+          currentGuess={currentGuess}
+          currentRow={guesses.length}
+          wordLength={wordLength}
+          maxGuesses={MAX_GUESSES}
+          shaking={shaking}
+          revealedRow={revealedRow}
+        />
+        <div className="flex flex-col gap-1 sm:gap-1.5 pt-0.5" aria-label={language === "nl" ? "Voortgang tegenstander" : "Opponent progress"}>
+          {Array.from({ length: MAX_GUESSES }, (_, i) => {
+            const attempt = i + 1;
+            const correct = opponentProgress?.[attempt];
+            const has = typeof correct === "number";
+            return (
+              <div
+                key={i}
+                className={`h-9 sm:h-12 min-w-[2rem] px-1.5 flex items-center justify-center rounded-md text-xs font-extrabold border ${
+                  has
+                    ? "bg-tile-correct/15 border-tile-correct/40 text-tile-correct"
+                    : "bg-card/40 border-border/50 text-muted-foreground/40"
+                }`}
+                title={language === "nl" ? `Tegenstander poging ${attempt}` : `Opponent attempt ${attempt}`}
+              >
+                {has ? `🟩 ${correct}` : "·"}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {!gameOver && !submitted && !suggestionDialogOpen && (
         <>
