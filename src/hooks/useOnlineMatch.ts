@@ -330,26 +330,36 @@ export function useOnlineMatch(playerId: string | undefined) {
           .eq("id", match.id);
         await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
       } else {
-        const nextWord = await getRandomWordAsync(
-          match.language as Language,
-          match.word_length as WordLength
-        );
-        const nextRoundNum = match.current_round + 1;
+        setTimeout(async () => {
+          const nextWord = await getRandomWordAsync(
+            match.language as Language,
+            match.word_length as WordLength
+          );
+          const nextRoundNum = match.current_round + 1;
 
-        await supabase.from("match_rounds").insert({
-          match_id: match.id,
-          round_number: nextRoundNum,
-          word: nextWord,
-          status: "active",
-        });
+          await supabase.from("match_rounds").insert({
+            match_id: match.id,
+            round_number: nextRoundNum,
+            word: nextWord,
+            status: "active",
+          });
+
+          await supabase
+            .from("online_matches")
+            .update({
+              player1_wins: newP1Wins,
+              player2_wins: newP2Wins,
+              current_round: nextRoundNum,
+              current_word: nextWord,
+            })
+            .eq("id", match.id);
+        }, 3000);
 
         await supabase
           .from("online_matches")
           .update({
             player1_wins: newP1Wins,
             player2_wins: newP2Wins,
-            current_round: nextRoundNum,
-            current_word: nextWord,
           })
           .eq("id", match.id);
       }
