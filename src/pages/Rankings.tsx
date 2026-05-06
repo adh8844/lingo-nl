@@ -754,6 +754,26 @@ const Rankings = () => {
             )}
           </>
         )}
+
+        {tab === "badges" && (
+          <>
+            {badgesList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
+            ) : (
+              badgesList.map((e, i) => renderRow(e, i, "🏅"))
+            )}
+          </>
+        )}
+
+        {tab === "challenges" && (
+          <>
+            {challengesList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
+            ) : (
+              challengesList.map((e, i) => renderRow(e, i, "⚔️"))
+            )}
+          </>
+        )}
       </div>
 
       {challengeTarget && (
