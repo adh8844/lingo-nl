@@ -55,7 +55,7 @@ export function usePresence(playerId: string | undefined) {
         }))
       );
     }
-  }, [playerId]);
+  }, [playerId, onlineThresholdMs]);
 
   // Poll and subscribe to changes
   useEffect(() => {
@@ -65,7 +65,7 @@ export function usePresence(playerId: string | undefined) {
 
     heartbeatRef.current = setInterval(() => {
       loadOnlinePlayers();
-    }, HEARTBEAT_INTERVAL);
+    }, heartbeatIntervalMs);
 
     const channel = supabase
       .channel("presence-changes")
@@ -78,7 +78,7 @@ export function usePresence(playerId: string | undefined) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       supabase.removeChannel(channel);
     };
-  }, [playerId, loadOnlinePlayers]);
+  }, [playerId, loadOnlinePlayers, heartbeatIntervalMs]);
 
   return { onlinePlayers, loadOnlinePlayers };
 }
