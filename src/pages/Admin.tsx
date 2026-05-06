@@ -868,6 +868,10 @@ const Admin = () => {
             ))}
           </div>
         )}
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
       </div>
     </div>
   );
