@@ -273,8 +273,11 @@ const Rankings = () => {
         .range(from, from + pageSize - 1);
       if (error || !data || data.length === 0) break;
       data.forEach((m: any) => {
-        if ((m.player1_wins ?? 0) >= 5) counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
-        if ((m.player2_wins ?? 0) >= 5) counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+        const completed = (m.player1_wins ?? 0) >= 5 || (m.player2_wins ?? 0) >= 5;
+        if (completed) {
+          counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
+          counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+        }
       });
       if (data.length < pageSize) break;
       from += pageSize;

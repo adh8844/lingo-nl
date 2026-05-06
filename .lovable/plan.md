@@ -1,54 +1,53 @@
 ## Doel
 
-Op de Rankings-pagina ook **uitdagingsrondes** (online matches) meetellen in de lijsten **# Spellen totaal** en **# Spellen vandaag**, zodat de competitie eerlijker is voor spelers die veel online matches spelen.
-
-## Databron
-
-De data is volledig beschikbaar:
-
-- `match_rounds` bevat elke individuele ronde met `match_id`, `created_at`, `status`.
-- `online_matches` koppelt `match_id` aan `player1_id` + `player2_id`.
-
-Elke afgesloten ronde (`status = 'finished'`) telt mee voor **beide** spelers van de bijbehorende match. Een match van bv. 5 rondes = 5 spellen voor speler 1 én 5 spellen voor speler 2.
-
-In de DB staan momenteel ~403 finished rondes over 47 matches.
+Het Overzicht-tabblad op `/rankings` opnieuw indelen met paginabrede gecombineerde kaarten (met subtabs zoals Dagkanjers), meerdere telfouten oplossen en de Dagkanjers-styling aanpassen.
 
 ## Wijzigingen in `src/pages/Rankings.tsx`
 
-### 1. `loadGamesTotal` uitbreiden
+### 1. Nieuwe lay-out van het Overzicht-tab (volgorde van boven naar beneden)
 
-Naast het pagineren over `games`, ook ophalen:
-
-```ts
-const { data: rounds } = await supabase
-  .from("match_rounds")
-  .select("match_id, online_matches!inner(player1_id, player2_id)")
-  .eq("status", "finished");
+```text
+[Online kaart]               (alleen als er online spelers zijn)
+[Dagkanjers]                 (subtabs Vandaag / Gisteren — bestaand)
+[Aantal punten]              paginabreed, subtabs: Totaal | Vandaag
+[Aantal spellen]             paginabreed, subtabs: Totaal | Vandaag
+[Reeks]                      paginabreed, subtabs: Maximaal | Huidige
+[Badges] [Uitdagingen]       2 kolommen naast elkaar (huidige MiniCards)
 ```
 
-Per ronde +1 toevoegen aan `counts[player1_id]` en `counts[player2_id]`. Pagineren als er meer dan 1000 rondes zijn (zelfde patroon als bestaand).
+De zes losse MiniCards voor punten/spellen/reeks worden vervangen door drie nieuwe paginabrede `MergedCard`-componenten met dezelfde top-3 lay-out als de huidige MiniCard, maar met een interne subtab-keuze (zelfde stijl als Dagkanjers). De titel blijft klikbaar en navigeert naar de bijbehorende detail-tab met de juiste subselectie.
 
-### 2. `loadGamesToday` uitbreiden
+State toevoegen: `overviewPointsSub`, `overviewGamesSub`, `overviewStreakSub` (lokaal in Overzicht; hergebruik bestaande `pointsSub` / `gamesSub` mag ook).
 
-Zelfde join, maar gefilterd met `.gte("created_at", amsterdamStartOfTodayISO())`.
+### 2. Telling Uitdagingen corrigeren (tab + MiniCard + Dagkanjers)
 
-### 3. UI
+Op dit moment telt `loadChallenges` en `computeChampionsForRange` alleen spelers die zélf 5 ronde-wins hebben (winnaars). Een afgeronde uitdagingswedstrijd moet voor BEIDE deelnemers tellen (zowel uitdager als uitgedaagde, ongeacht winst/verlies).
 
-Geen visuele wijzigingen — de lijsten blijven hetzelfde, de tellingen worden alleen completer. Eventueel later een tooltip "incl. uitdagingsrondes" toevoegen, maar dat is niet nodig.
+Aanpassing in `loadChallenges` en in de challenges-sectie van `computeChampionsForRange`:
 
-## Alternatief overwogen
+```ts
+const completed = (m.player1_wins ?? 0) >= 5 || (m.player2_wins ?? 0) >= 5;
+if (completed) {
+  counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
+  counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+}
+```
 
-Per ronde een rij in `games` schrijven vanuit `OnlineGame.tsx` zou ook werken, maar:
+### 3. Dagkanjers — # Spellen telt ook uitdagingsrondes mee
 
-- vereist backend-wijziging
-- heeft risico op dubbele tellingen bij realtime sync
-- de huidige join-aanpak is volledig backwards-compatible
+In `computeChampionsForRange` ontbreekt `match_rounds`. Dezelfde logica als in `loadGamesToday` toevoegen zodat het Dagkanjer-aantal én de winnaar overeenkomen met de "# Spellen vandaag"-lijst (bv. Ellen 89 i.p.v. Horse lover 13). Filter op `created_at` binnen `[startISO, endISO)` en `status = 'finished'`, en tel +1 voor `player1_id` én `player2_id`.
 
-## Out of scope
+### 4. Dagkanjers — styling van de waarde
 
-- Punten uit uitdagingen worden al via `points_log` correct meegerekend in Punten-lijsten.
-- Reeksen-logica blijft ongewijzigd.
+Per item: naam blijft vetgedrukt; het getal wordt niet meer vetgedrukt en komt tussen haakjes achter de naam:
 
-## Challengers
+```text
+⭐ Dagscore   Ellen (245)
+🎮 # Spellen  Ellen (89)
+```
 
-- In het geval challengers ook nog niet meegenomen werden in het aantal gespeelde spellen op de rankingspagina, neem deze op dezelfde manier dan ook mee.
+Implementatie: vervang `<span className="font-extrabold">{value}</span>` door `<span className="text-muted-foreground font-normal">({value})</span>` direct na de naam.
+
+## Geen database-wijzigingen
+
+Alles kan client-side worden opgelost; bestaande tabellen `online_matches`, `match_rounds`, `games`, `points_log`, `player_badges` voldoen.
