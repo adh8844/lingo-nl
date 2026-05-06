@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
+import ChallengeDialog from "@/components/ChallengeDialog";
 
 type Tab = "overview" | "points" | "streak" | "games";
 type PointsSub = "total" | "today";
