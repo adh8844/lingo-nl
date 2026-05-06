@@ -42,7 +42,7 @@ const GlobalOnlineManager = () => {
     if (!playerId) return;
 
     const updatePresence = async () => {
-      const isActive = Date.now() - lastActivityRef.current < ACTIVITY_TIMEOUT;
+      const isActive = Date.now() - lastActivityRef.current < onlineThresholdMs;
       if (isActive) {
         await supabase
           .from("player_presence")
@@ -56,13 +56,13 @@ const GlobalOnlineManager = () => {
     };
 
     updatePresence();
-    heartbeatRef.current = setInterval(updatePresence, HEARTBEAT_INTERVAL);
+    heartbeatRef.current = setInterval(updatePresence, heartbeatIntervalMs);
 
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       supabase.from("player_presence").delete().eq("player_id", playerId);
     };
-  }, [getPlayerId, location.pathname]);
+  }, [getPlayerId, location.pathname, heartbeatIntervalMs, onlineThresholdMs]);
 
   // Challenge subscription
   useEffect(() => {
