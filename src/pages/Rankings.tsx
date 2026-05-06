@@ -404,6 +404,58 @@ const Rankings = () => {
 
       <div className="w-full max-w-lg flex flex-col gap-2">
         {tab === "overview" && (
+          <>
+          {(() => {
+            const onlineList = allPlayers.filter((p) => onlineIds.has(p.id));
+            if (onlineList.length === 0) return null;
+            return (
+              <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2 mb-1">
+                <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  <span>Online ({onlineList.length})</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {onlineList.map((p) => {
+                    const isMe = player?.id === p.id;
+                    const op = onlineMap.get(p.id);
+                    const canChallenge = !isMe && op?.status !== "in_game";
+                    return (
+                      <div
+                        key={p.id}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                          isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                          <span
+                            className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                            translate="no"
+                            onClick={() => navigate(`/profile/${p.id}`)}
+                          >
+                            {p.display_name}
+                            {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
+                          </span>
+                        </div>
+                        {canChallenge && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openChallenge(p.id, p.display_name);
+                            }}
+                            title="Uitdagen"
+                            className="ml-1 px-2 py-1 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:brightness-110"
+                          >
+                            ⚔️
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} onTitleClick={() => { setTab("points"); setPointsSub("total"); }} />
             <MiniCard title="Dagscore" icon="⭐" valueIcon="⭐" list={pointsToday} onTitleClick={() => { setTab("points"); setPointsSub("today"); }} />
