@@ -73,6 +73,7 @@ export function useOnlineMatch(playerId: string | undefined) {
   const [activeMatch, setActiveMatch] = useState<OnlineMatch | null>(null);
   const [currentRound, setCurrentRound] = useState<MatchRound | null>(null);
   const [roundStartTime, setRoundStartTime] = useState<number | null>(null);
+  const [opponentProgress, setOpponentProgress] = useState<Record<number, number>>({});
   const activeMatchRef = useRef<OnlineMatch | null>(null);
 
   useEffect(() => {
