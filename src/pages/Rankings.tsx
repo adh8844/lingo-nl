@@ -6,9 +6,10 @@ import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
 import ChallengeDialog from "@/components/ChallengeDialog";
 
-type Tab = "overview" | "points" | "streak" | "games";
+type Tab = "overview" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
 type GamesSub = "total" | "today";
+type DaySub = "today" | "yesterday";
 
 interface PlayerRow {
   id: string;
@@ -55,17 +56,42 @@ const amsterdamStartOfTodayISO = () => {
   return `${dateStr}T00:00:00${sign}${hh}:${mm}`;
 };
 
+// Returns [startISO, endISO] for yesterday in Europe/Amsterdam
+const amsterdamYesterdayRangeISO = () => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Amsterdam",
+    timeZoneName: "shortOffset",
+  }).formatToParts(new Date());
+  const tzName = parts.find((p) => p.type === "timeZoneName")?.value || "GMT+1";
+  const m = tzName.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/);
+  const hours = m ? parseInt(m[1], 10) : 1;
+  const mins = m && m[2] ? parseInt(m[2], 10) : 0;
+  const sign = hours >= 0 ? "+" : "-";
+  const hh = String(Math.abs(hours)).padStart(2, "0");
+  const mm = String(mins).padStart(2, "0");
+  const today = amsterdamTodayStr();
+  const d = new Date(today + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  const y = d.toISOString().slice(0, 10);
+  return [`${y}T00:00:00${sign}${hh}:${mm}`, `${today}T00:00:00${sign}${hh}:${mm}`];
+};
+
 const Rankings = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
   const [tab, setTab] = useState<Tab>("overview");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
+  const [daySub, setDaySub] = useState<DaySub>("today");
 
   const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
   const [pointsToday, setPointsToday] = useState<RankEntry[]>([]);
   const [gamesTotal, setGamesTotal] = useState<RankEntry[]>([]);
   const [gamesToday, setGamesToday] = useState<RankEntry[]>([]);
+  const [badgesList, setBadgesList] = useState<RankEntry[]>([]);
+  const [challengesList, setChallengesList] = useState<RankEntry[]>([]);
+  const [championsToday, setChampionsToday] = useState<{ label: string; entry: RankEntry | null; icon: string }[]>([]);
+  const [championsYesterday, setChampionsYesterday] = useState<{ label: string; entry: RankEntry | null; icon: string }[]>([]);
 
   const { onlinePlayers } = usePresence(player?.id);
   const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
@@ -204,13 +230,153 @@ const Rankings = () => {
     setGamesToday(list);
   }, []);
 
+  const loadBadges = useCallback(async () => {
+    const counts: Record<string, number> = {};
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("player_badges")
+        .select("player_id")
+        .range(from, from + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      data.forEach((b: any) => {
+        counts[b.player_id] = (counts[b.player_id] || 0) + 1;
+      });
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    const ids = Object.keys(counts);
+    if (ids.length === 0) {
+      setBadgesList([]);
+      return;
+    }
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: counts[p.id] || 0 }))
+      .sort((a, b) => b.value - a.value);
+    setBadgesList(list);
+  }, []);
+
+  const loadChallenges = useCallback(async () => {
+    // A "completed challenge match" = match where a player reached 5 wins.
+    const counts: Record<string, number> = {};
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("online_matches")
+        .select("player1_id, player2_id, player1_wins, player2_wins")
+        .range(from, from + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      data.forEach((m: any) => {
+        if ((m.player1_wins ?? 0) >= 5) counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
+        if ((m.player2_wins ?? 0) >= 5) counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+      });
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    const ids = Object.keys(counts);
+    if (ids.length === 0) {
+      setChallengesList([]);
+      return;
+    }
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: counts[p.id] || 0 }))
+      .sort((a, b) => b.value - a.value);
+    setChallengesList(list);
+  }, []);
+
+  const computeChampionsForRange = useCallback(async (startISO: string, endISO?: string): Promise<{ label: string; entry: RankEntry | null; icon: string }[]> => {
+    // Helper to fetch player names
+    const namesFor = async (ids: string[]) => {
+      if (ids.length === 0) return new Map<string, string>();
+      const { data } = await supabase.from("players").select("id, display_name").in("id", ids);
+      return new Map((data || []).map((p: any) => [p.id, p.display_name]));
+    };
+    const topFromCounts = async (counts: Record<string, number>, label: string, icon: string) => {
+      const ids = Object.keys(counts);
+      if (ids.length === 0) return { label, entry: null, icon };
+      const names = await namesFor(ids);
+      const list = ids
+        .map((id) => ({ id, display_name: names.get(id) || "?", value: counts[id] }))
+        .sort((a, b) => b.value - a.value);
+      return { label, entry: list[0], icon };
+    };
+
+    // Punten
+    let pointsQ = supabase.from("points_log").select("player_id, points").gte("created_at", startISO);
+    if (endISO) pointsQ = pointsQ.lt("created_at", endISO);
+    const { data: pts } = await pointsQ;
+    const pCounts: Record<string, number> = {};
+    (pts || []).forEach((l: any) => {
+      pCounts[l.player_id] = (pCounts[l.player_id] || 0) + (l.points || 0);
+    });
+
+    // Games
+    let gQ = supabase.from("games").select("player_id, played_at").gte("played_at", startISO);
+    if (endISO) gQ = gQ.lt("played_at", endISO);
+    const { data: games } = await gQ;
+    const gCounts: Record<string, number> = {};
+    (games || []).forEach((g: any) => {
+      gCounts[g.player_id] = (gCounts[g.player_id] || 0) + 1;
+    });
+
+    // Badges earned
+    let bQ = supabase.from("player_badges").select("player_id, earned_at").gte("earned_at", startISO);
+    if (endISO) bQ = bQ.lt("earned_at", endISO);
+    const { data: badges } = await bQ;
+    const bCounts: Record<string, number> = {};
+    (badges || []).forEach((b: any) => {
+      bCounts[b.player_id] = (bCounts[b.player_id] || 0) + 1;
+    });
+
+    // Challenges completed (matches updated/created in range with a 5-win player)
+    let cQ = supabase.from("online_matches").select("player1_id, player2_id, player1_wins, player2_wins, updated_at").gte("updated_at", startISO);
+    if (endISO) cQ = cQ.lt("updated_at", endISO);
+    const { data: matches } = await cQ;
+    const cCounts: Record<string, number> = {};
+    (matches || []).forEach((m: any) => {
+      if ((m.player1_wins ?? 0) >= 5) cCounts[m.player1_id] = (cCounts[m.player1_id] || 0) + 1;
+      if ((m.player2_wins ?? 0) >= 5) cCounts[m.player2_id] = (cCounts[m.player2_id] || 0) + 1;
+    });
+
+    return Promise.all([
+      topFromCounts(pCounts, "Dagscore", "⭐"),
+      topFromCounts(gCounts, "# Spellen", "🎮"),
+      topFromCounts(bCounts, "Badges", "🏅"),
+      topFromCounts(cCounts, "Uitdagingen", "⚔️"),
+    ]);
+  }, []);
+
+  const loadChampions = useCallback(async () => {
+    const todayStart = amsterdamStartOfTodayISO();
+    const [yStart, yEnd] = amsterdamYesterdayRangeISO();
+    const [today, yest] = await Promise.all([
+      computeChampionsForRange(todayStart),
+      computeChampionsForRange(yStart, yEnd),
+    ]);
+    setChampionsToday(today);
+    setChampionsYesterday(yest);
+  }, [computeChampionsForRange]);
+
   // Load everything on mount (Overzicht needs all)
   useEffect(() => {
     loadAllPlayers();
     loadPointsToday();
     loadGamesTotal();
     loadGamesToday();
-  }, [loadAllPlayers, loadPointsToday, loadGamesTotal, loadGamesToday]);
+    loadBadges();
+    loadChallenges();
+    loadChampions();
+  }, [loadAllPlayers, loadPointsToday, loadGamesTotal, loadGamesToday, loadBadges, loadChallenges, loadChampions]);
 
   // Derived lists
   const pointsTotalList: RankEntry[] = [...allPlayers]
@@ -369,6 +535,8 @@ const Rankings = () => {
     { key: "points", label: "⭐ Punten" },
     { key: "streak", label: "🔥 Reeks" },
     { key: "games", label: "🎮 # Spellen" },
+    { key: "badges", label: "🏅 Badges" },
+    { key: "challenges", label: "⚔️ Uitdagingen" },
   ];
 
   return (
@@ -456,13 +624,69 @@ const Rankings = () => {
               </div>
             );
           })()}
+          {(() => {
+            const champs = daySub === "today" ? championsToday : championsYesterday;
+            const hasAny = champs.some((c) => c.entry);
+            return (
+              <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-bold text-sm text-foreground">🌟 Dagkanjers</div>
+                  <div className="flex gap-1">
+                    {(["today", "yesterday"] as DaySub[]).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setDaySub(s)}
+                        className={`px-2 py-1 rounded font-bold text-xs transition-all ${
+                          daySub === s
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-secondary text-secondary-foreground hover:brightness-110"
+                        }`}
+                      >
+                        {s === "today" ? "Vandaag" : "Gisteren"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {!hasAny ? (
+                  <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {champs.map((c) => (
+                      <div
+                        key={c.label}
+                        className="flex items-center justify-between gap-2 px-2 py-1.5 rounded text-xs bg-secondary/40"
+                      >
+                        <span className="text-muted-foreground font-bold shrink-0">{c.icon} {c.label}</span>
+                        {c.entry ? (
+                          <span className="flex items-center gap-1 min-w-0">
+                            <span
+                              className="font-bold truncate cursor-pointer hover:underline text-foreground"
+                              translate="no"
+                              onClick={() => navigate(`/profile/${c.entry!.id}`)}
+                            >
+                              {c.entry.display_name}
+                            </span>
+                            <span className="font-extrabold shrink-0">{c.entry.value}</span>
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
+            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
             <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} onTitleClick={() => { setTab("points"); setPointsSub("total"); }} />
             <MiniCard title="Dagscore" icon="⭐" valueIcon="⭐" list={pointsToday} onTitleClick={() => { setTab("points"); setPointsSub("today"); }} />
             <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} onTitleClick={() => setTab("streak")} />
             <MiniCard title="Huidige reeks" icon="🔥" valueIcon="🔥" list={currentStreakList} onTitleClick={() => setTab("streak")} />
-            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
-            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
+            <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
+            <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
           </div>
           </>
         )}
@@ -527,6 +751,26 @@ const Rankings = () => {
               (gamesSub === "total" ? gamesTotal : gamesToday).map((e, i) =>
                 renderRow(e, i, "🎮"),
               )
+            )}
+          </>
+        )}
+
+        {tab === "badges" && (
+          <>
+            {badgesList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
+            ) : (
+              badgesList.map((e, i) => renderRow(e, i, "🏅"))
+            )}
+          </>
+        )}
+
+        {tab === "challenges" && (
+          <>
+            {challengesList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
+            ) : (
+              challengesList.map((e, i) => renderRow(e, i, "⚔️"))
             )}
           </>
         )}
