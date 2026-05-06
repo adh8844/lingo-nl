@@ -134,7 +134,33 @@ const Profile = () => {
 
         {/* Player info */}
         <div className="bg-card rounded-2xl border border-border p-5 mb-4">
-          <p className="text-2xl font-extrabold text-foreground mb-3" translate="no">{displayPlayer.display_name}</p>
+          {editingName && isOwnProfile ? (
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                maxLength={24}
+                autoFocus
+                className="flex-1 px-3 py-2 rounded-lg bg-secondary text-foreground font-bold text-lg border border-border focus:outline-none focus:border-primary"
+              />
+              <button onClick={saveName} disabled={savingName} className="p-2 rounded-lg bg-primary text-primary-foreground hover:brightness-110 disabled:opacity-50">
+                <Check className="w-5 h-5" />
+              </button>
+              <button onClick={() => setEditingName(false)} disabled={savingName} className="p-2 rounded-lg bg-secondary text-secondary-foreground hover:brightness-110">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-2xl font-extrabold text-foreground" translate="no">{displayPlayer.display_name}</p>
+              {isOwnProfile && (
+                <button onClick={startEditName} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Naam wijzigen">
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-primary" />
