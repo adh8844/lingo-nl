@@ -535,6 +535,8 @@ const Rankings = () => {
     { key: "points", label: "⭐ Punten" },
     { key: "streak", label: "🔥 Reeks" },
     { key: "games", label: "🎮 # Spellen" },
+    { key: "badges", label: "🏅 Badges" },
+    { key: "challenges", label: "⚔️ Uitdagingen" },
   ];
 
   return (
