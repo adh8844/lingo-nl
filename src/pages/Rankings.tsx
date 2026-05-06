@@ -9,6 +9,7 @@ import ChallengeDialog from "@/components/ChallengeDialog";
 type Tab = "overview" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
 type GamesSub = "total" | "today";
+type StreakSub = "max" | "current";
 type DaySub = "today" | "yesterday";
 
 interface PlayerRow {
@@ -82,6 +83,7 @@ const Rankings = () => {
   const [tab, setTab] = useState<Tab>("overview");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
+  const [streakSub, setStreakSub] = useState<StreakSub>("max");
   const [daySub, setDaySub] = useState<DaySub>("today");
 
   const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
@@ -273,8 +275,11 @@ const Rankings = () => {
         .range(from, from + pageSize - 1);
       if (error || !data || data.length === 0) break;
       data.forEach((m: any) => {
-        if ((m.player1_wins ?? 0) >= 5) counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
-        if ((m.player2_wins ?? 0) >= 5) counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+        const completed = (m.player1_wins ?? 0) >= 5 || (m.player2_wins ?? 0) >= 5;
+        if (completed) {
+          counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
+          counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+        }
       });
       if (data.length < pageSize) break;
       from += pageSize;
@@ -328,6 +333,20 @@ const Rankings = () => {
     (games || []).forEach((g: any) => {
       gCounts[g.player_id] = (gCounts[g.player_id] || 0) + 1;
     });
+    // Voeg uitdagingsrondes binnen tijdvenster toe
+    let rQ = supabase
+      .from("match_rounds")
+      .select("created_at, online_matches!inner(player1_id, player2_id)")
+      .eq("status", "finished")
+      .gte("created_at", startISO);
+    if (endISO) rQ = rQ.lt("created_at", endISO);
+    const { data: rounds } = await rQ;
+    (rounds || []).forEach((r: any) => {
+      const m = r.online_matches;
+      if (!m) return;
+      gCounts[m.player1_id] = (gCounts[m.player1_id] || 0) + 1;
+      gCounts[m.player2_id] = (gCounts[m.player2_id] || 0) + 1;
+    });
 
     // Badges earned
     let bQ = supabase.from("player_badges").select("player_id, earned_at").gte("earned_at", startISO);
@@ -338,14 +357,17 @@ const Rankings = () => {
       bCounts[b.player_id] = (bCounts[b.player_id] || 0) + 1;
     });
 
-    // Challenges completed (matches updated/created in range with a 5-win player)
+    // Uitdagingen voltooid: tel beide deelnemers wanneer match afgerond
     let cQ = supabase.from("online_matches").select("player1_id, player2_id, player1_wins, player2_wins, updated_at").gte("updated_at", startISO);
     if (endISO) cQ = cQ.lt("updated_at", endISO);
     const { data: matches } = await cQ;
     const cCounts: Record<string, number> = {};
     (matches || []).forEach((m: any) => {
-      if ((m.player1_wins ?? 0) >= 5) cCounts[m.player1_id] = (cCounts[m.player1_id] || 0) + 1;
-      if ((m.player2_wins ?? 0) >= 5) cCounts[m.player2_id] = (cCounts[m.player2_id] || 0) + 1;
+      const completed = (m.player1_wins ?? 0) >= 5 || (m.player2_wins ?? 0) >= 5;
+      if (completed) {
+        cCounts[m.player1_id] = (cCounts[m.player1_id] || 0) + 1;
+        cCounts[m.player2_id] = (cCounts[m.player2_id] || 0) + 1;
+      }
     });
 
     return Promise.all([
@@ -530,6 +552,106 @@ const Rankings = () => {
     </div>
   );
 
+  const MergedCard = ({
+    title,
+    icon,
+    valueIcon,
+    tabs: subTabs,
+    activeKey,
+    onTabChange,
+    list,
+    onTitleClick,
+  }: {
+    title: string;
+    icon: string;
+    valueIcon: string;
+    tabs: { key: string; label: string }[];
+    activeKey: string;
+    onTabChange: (key: string) => void;
+    list: RankEntry[];
+    onTitleClick?: () => void;
+  }) => (
+    <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={onTitleClick}
+          className="flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary hover:underline text-left"
+        >
+          <span>{icon}</span>
+          <span>{title}</span>
+        </button>
+        <div className="flex gap-1">
+          {subTabs.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => onTabChange(s.key)}
+              className={`px-2 py-1 rounded font-bold text-xs transition-all ${
+                activeKey === s.key
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-secondary text-secondary-foreground hover:brightness-110"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {list.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {list.slice(0, 3).map((e, i) => {
+            const isMe = player?.id === e.id;
+            const op = onlineMap.get(e.id);
+            const isOnline = !!op;
+            const canChallenge = isOnline && !isMe && op?.status !== "in_game";
+            return (
+              <div
+                key={e.id}
+                className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                  isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-5 text-right shrink-0">{medal(i)}</span>
+                  {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
+                  <span
+                    className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                    translate="no"
+                    onClick={() => navigate(`/profile/${e.id}`)}
+                  >
+                    {e.display_name}
+                  </span>
+                  {e.secondary && (
+                    <span className="text-xs text-muted-foreground shrink-0">({e.secondary})</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-extrabold shrink-0">
+                    {valueIcon} {e.value}
+                  </span>
+                  {canChallenge && (
+                    <button
+                      onClick={(ev) => {
+                        ev.stopPropagation();
+                        openChallenge(e.id, e.display_name);
+                      }}
+                      title="Uitdagen"
+                      className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-bold text-xs hover:brightness-110"
+                    >
+                      ⚔️
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "overview", label: "📊 Overzicht" },
     { key: "points", label: "⭐ Punten" },
@@ -666,7 +788,7 @@ const Rankings = () => {
                             >
                               {c.entry.display_name}
                             </span>
-                            <span className="font-extrabold shrink-0">{c.entry.value}</span>
+                            <span className="text-muted-foreground font-normal shrink-0">({c.entry.value})</span>
                           </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -678,13 +800,37 @@ const Rankings = () => {
               </div>
             );
           })()}
+          <MergedCard
+            title="Aantal punten"
+            icon="⭐"
+            valueIcon="⭐"
+            tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+            activeKey={pointsSub}
+            onTabChange={(k) => setPointsSub(k as PointsSub)}
+            list={pointsSub === "total" ? pointsTotalList : pointsToday}
+            onTitleClick={() => { setTab("points"); }}
+          />
+          <MergedCard
+            title="Aantal spellen"
+            icon="🎮"
+            valueIcon="🎮"
+            tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+            activeKey={gamesSub}
+            onTabChange={(k) => setGamesSub(k as GamesSub)}
+            list={gamesSub === "total" ? gamesTotal : gamesToday}
+            onTitleClick={() => { setTab("games"); }}
+          />
+          <MergedCard
+            title="Reeks"
+            icon="🔥"
+            valueIcon="🔥"
+            tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
+            activeKey={streakSub}
+            onTabChange={(k) => setStreakSub(k as StreakSub)}
+            list={streakSub === "max" ? maxStreakList : currentStreakList}
+            onTitleClick={() => setTab("streak")}
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
-            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
-            <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} onTitleClick={() => { setTab("points"); setPointsSub("total"); }} />
-            <MiniCard title="Dagscore" icon="⭐" valueIcon="⭐" list={pointsToday} onTitleClick={() => { setTab("points"); setPointsSub("today"); }} />
-            <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} onTitleClick={() => setTab("streak")} />
-            <MiniCard title="Huidige reeks" icon="🔥" valueIcon="🔥" list={currentStreakList} onTitleClick={() => setTab("streak")} />
             <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
             <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
           </div>
