@@ -9,6 +9,7 @@ import ChallengeDialog from "@/components/ChallengeDialog";
 type Tab = "overview" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
 type GamesSub = "total" | "today";
+type StreakSub = "max" | "current";
 type DaySub = "today" | "yesterday";
 
 interface PlayerRow {
