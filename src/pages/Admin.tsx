@@ -4,13 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Check, X, Plus, Search, ChevronLeft, ChevronRight, Pencil, Save } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Search, ChevronLeft, ChevronRight, Pencil, Save, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { usePresenceSettings, updatePresenceSetting } from "@/hooks/useAppSettings";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
@@ -71,6 +73,36 @@ const Admin = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<FullWord>>({});
   const PAGE_SIZE = 5;
+
+  // Presence settings (instelbaar)
+  const presence = usePresenceSettings();
+  const [heartbeatInput, setHeartbeatInput] = useState<string>("");
+  const [thresholdInput, setThresholdInput] = useState<string>("");
+  const [savingSetting, setSavingSetting] = useState<string | null>(null);
+  useEffect(() => {
+    setHeartbeatInput(String(presence.heartbeatIntervalMs));
+    setThresholdInput(String(presence.onlineThresholdMs));
+  }, [presence.heartbeatIntervalMs, presence.onlineThresholdMs]);
+
+  const savePresenceSetting = async (key: "heartbeat_interval_ms" | "online_threshold_ms", value: string) => {
+    const num = parseInt(value);
+    if (!num || num < 1000) { toast.error("Geef een waarde van minimaal 1000 ms"); return; }
+    setSavingSetting(key);
+    const err = await updatePresenceSetting(key, num);
+    setSavingSetting(null);
+    if (err) toast.error("Fout bij opslaan");
+    else toast.success("Instelling opgeslagen");
+  };
+
+  // Collapsible open state per card
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({
+    settings: false,
+    stats: true,
+    add: true,
+    search: true,
+    pending: true,
+  });
+  const toggleCard = (k: string) => setOpenCards(s => ({ ...s, [k]: !s[k] }));
 
   useEffect(() => {
     if (!authReady) return;
@@ -350,12 +382,84 @@ const Admin = () => {
           </h1>
         </div>
 
+        {/* Online presence settings */}
+        <Card className="mb-8">
+          <Collapsible open={openCards.settings} onOpenChange={() => toggleCard("settings")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Online-detectie instellingen
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.settings ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-xs">Heartbeat-interval (ms)</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Hoe vaak een speler een teken van leven naar de server stuurt.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={1000}
+                      step={500}
+                      value={heartbeatInput}
+                      onChange={(e) => setHeartbeatInput(e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => savePresenceSetting("heartbeat_interval_ms", heartbeatInput)}
+                      disabled={savingSetting === "heartbeat_interval_ms"}
+                    >
+                      <Save className="w-4 h-4 mr-1" /> Opslaan
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Online-threshold (ms)</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Een speler wordt als online getoond als zijn laatste activiteit korter geleden is dan deze waarde.
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min={1000}
+                      step={500}
+                      value={thresholdInput}
+                      onChange={(e) => setThresholdInput(e.target.value)}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => savePresenceSetting("online_threshold_ms", thresholdInput)}
+                      disabled={savingSetting === "online_threshold_ms"}
+                    >
+                      <Save className="w-4 h-4 mr-1" /> Opslaan
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Huidige waarden: heartbeat {presence.heartbeatIntervalMs} ms, threshold {presence.onlineThresholdMs} ms.
+                </p>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
         {/* Charts in tabs */}
         <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Statistieken</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Collapsible open={openCards.stats} onOpenChange={() => toggleCard("stats")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Statistieken
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.stats ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
             <Tabs defaultValue="length">
               <TabsList className="mb-4">
                 <TabsTrigger value="length">Per woordlengte</TabsTrigger>
@@ -419,14 +523,23 @@ const Admin = () => {
               </TabsContent>
             </Tabs>
           </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Add word section */}
         <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Woord toevoegen</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Collapsible open={openCards.add} onOpenChange={() => toggleCard("add")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Woord toevoegen
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.add ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
@@ -461,14 +574,23 @@ const Admin = () => {
               </Button>
             </div>
           </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Search section */}
         <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Woorden zoeken & bewerken</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Collapsible open={openCards.search} onOpenChange={() => toggleCard("search")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Woorden zoeken & bewerken
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.search ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
             <div className="flex gap-2 mb-4">
               <Input
                 placeholder="Zoek op woord..."
@@ -592,13 +714,27 @@ const Admin = () => {
               </div>
             )}
           </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Pending words section */}
+        <Card className="mb-8">
+          <Collapsible open={openCards.pending} onOpenChange={() => toggleCard("pending")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Te beoordelen woorden{!loadingWords && ` (${pendingWords.length})`}
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.pending ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
         {loadingWords ? (
           <p className="text-muted-foreground">Laden...</p>
         ) : pendingWords.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-6">
             <p className="text-muted-foreground text-lg">Geen woorden om te beoordelen</p>
           </div>
         ) : (
@@ -732,6 +868,10 @@ const Admin = () => {
             ))}
           </div>
         )}
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
       </div>
     </div>
   );

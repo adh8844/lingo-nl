@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePresenceSettings } from "./useAppSettings";
 
 export interface OnlinePlayer {
   player_id: string;
@@ -11,16 +12,14 @@ export interface OnlinePlayer {
   last_seen: string;
 }
 
-const HEARTBEAT_INTERVAL = 5000; // 5 seconds
-const ONLINE_THRESHOLD = 15000; // 15 seconds
-
 export function usePresence(playerId: string | undefined) {
   const [onlinePlayers, setOnlinePlayers] = useState<OnlinePlayer[]>([]);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { heartbeatIntervalMs, onlineThresholdMs } = usePresenceSettings();
 
   // Load online players
   const loadOnlinePlayers = useCallback(async () => {
-    const threshold = new Date(Date.now() - ONLINE_THRESHOLD).toISOString();
+    const threshold = new Date(Date.now() - onlineThresholdMs).toISOString();
     const { data } = await supabase
       .from("player_presence")
       .select("player_id, status, last_seen")
@@ -56,7 +55,7 @@ export function usePresence(playerId: string | undefined) {
         }))
       );
     }
-  }, [playerId]);
+  }, [playerId, onlineThresholdMs]);
 
   // Poll and subscribe to changes
   useEffect(() => {
@@ -66,7 +65,7 @@ export function usePresence(playerId: string | undefined) {
 
     heartbeatRef.current = setInterval(() => {
       loadOnlinePlayers();
-    }, HEARTBEAT_INTERVAL);
+    }, heartbeatIntervalMs);
 
     const channel = supabase
       .channel("presence-changes")
@@ -79,7 +78,7 @@ export function usePresence(playerId: string | undefined) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       supabase.removeChannel(channel);
     };
-  }, [playerId, loadOnlinePlayers]);
+  }, [playerId, loadOnlinePlayers, heartbeatIntervalMs]);
 
   return { onlinePlayers, loadOnlinePlayers };
 }
