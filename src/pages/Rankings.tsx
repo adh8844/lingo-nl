@@ -297,15 +297,25 @@ const Rankings = () => {
         <div className="flex flex-col gap-1">
           {list.slice(0, 3).map((e, i) => {
             const isMe = player?.id === e.id;
+            const op = onlineMap.get(e.id);
+            const isOnline = !!op;
+            const canChallenge = isOnline && !isMe && op?.status !== "in_game";
             return (
               <div
                 key={e.id}
+                onContextMenu={(ev) => {
+                  if (canChallenge) {
+                    ev.preventDefault();
+                    openChallenge(e.id, e.display_name);
+                  }
+                }}
                 className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
                   isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
                 }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
+                  {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
                   <span
                     className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
                     translate="no"
