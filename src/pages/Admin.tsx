@@ -4,13 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Check, X, Plus, Search, ChevronLeft, ChevronRight, Pencil, Save } from "lucide-react";
+import { ArrowLeft, Check, X, Plus, Search, ChevronLeft, ChevronRight, Pencil, Save, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { usePresenceSettings, updatePresenceSetting } from "@/hooks/useAppSettings";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
