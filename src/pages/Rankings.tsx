@@ -230,13 +230,153 @@ const Rankings = () => {
     setGamesToday(list);
   }, []);
 
+  const loadBadges = useCallback(async () => {
+    const counts: Record<string, number> = {};
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("player_badges")
+        .select("player_id")
+        .range(from, from + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      data.forEach((b: any) => {
+        counts[b.player_id] = (counts[b.player_id] || 0) + 1;
+      });
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    const ids = Object.keys(counts);
+    if (ids.length === 0) {
+      setBadgesList([]);
+      return;
+    }
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: counts[p.id] || 0 }))
+      .sort((a, b) => b.value - a.value);
+    setBadgesList(list);
+  }, []);
+
+  const loadChallenges = useCallback(async () => {
+    // A "completed challenge match" = match where a player reached 5 wins.
+    const counts: Record<string, number> = {};
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("online_matches")
+        .select("player1_id, player2_id, player1_wins, player2_wins")
+        .range(from, from + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      data.forEach((m: any) => {
+        if ((m.player1_wins ?? 0) >= 5) counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
+        if ((m.player2_wins ?? 0) >= 5) counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
+      });
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    const ids = Object.keys(counts);
+    if (ids.length === 0) {
+      setChallengesList([]);
+      return;
+    }
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: counts[p.id] || 0 }))
+      .sort((a, b) => b.value - a.value);
+    setChallengesList(list);
+  }, []);
+
+  const computeChampionsForRange = useCallback(async (startISO: string, endISO?: string): Promise<{ label: string; entry: RankEntry | null; icon: string }[]> => {
+    // Helper to fetch player names
+    const namesFor = async (ids: string[]) => {
+      if (ids.length === 0) return new Map<string, string>();
+      const { data } = await supabase.from("players").select("id, display_name").in("id", ids);
+      return new Map((data || []).map((p: any) => [p.id, p.display_name]));
+    };
+    const topFromCounts = async (counts: Record<string, number>, label: string, icon: string) => {
+      const ids = Object.keys(counts);
+      if (ids.length === 0) return { label, entry: null, icon };
+      const names = await namesFor(ids);
+      const list = ids
+        .map((id) => ({ id, display_name: names.get(id) || "?", value: counts[id] }))
+        .sort((a, b) => b.value - a.value);
+      return { label, entry: list[0], icon };
+    };
+
+    // Punten
+    let pointsQ = supabase.from("points_log").select("player_id, points").gte("created_at", startISO);
+    if (endISO) pointsQ = pointsQ.lt("created_at", endISO);
+    const { data: pts } = await pointsQ;
+    const pCounts: Record<string, number> = {};
+    (pts || []).forEach((l: any) => {
+      pCounts[l.player_id] = (pCounts[l.player_id] || 0) + (l.points || 0);
+    });
+
+    // Games
+    let gQ = supabase.from("games").select("player_id, played_at").gte("played_at", startISO);
+    if (endISO) gQ = gQ.lt("played_at", endISO);
+    const { data: games } = await gQ;
+    const gCounts: Record<string, number> = {};
+    (games || []).forEach((g: any) => {
+      gCounts[g.player_id] = (gCounts[g.player_id] || 0) + 1;
+    });
+
+    // Badges earned
+    let bQ = supabase.from("player_badges").select("player_id, earned_at").gte("earned_at", startISO);
+    if (endISO) bQ = bQ.lt("earned_at", endISO);
+    const { data: badges } = await bQ;
+    const bCounts: Record<string, number> = {};
+    (badges || []).forEach((b: any) => {
+      bCounts[b.player_id] = (bCounts[b.player_id] || 0) + 1;
+    });
+
+    // Challenges completed (matches updated/created in range with a 5-win player)
+    let cQ = supabase.from("online_matches").select("player1_id, player2_id, player1_wins, player2_wins, updated_at").gte("updated_at", startISO);
+    if (endISO) cQ = cQ.lt("updated_at", endISO);
+    const { data: matches } = await cQ;
+    const cCounts: Record<string, number> = {};
+    (matches || []).forEach((m: any) => {
+      if ((m.player1_wins ?? 0) >= 5) cCounts[m.player1_id] = (cCounts[m.player1_id] || 0) + 1;
+      if ((m.player2_wins ?? 0) >= 5) cCounts[m.player2_id] = (cCounts[m.player2_id] || 0) + 1;
+    });
+
+    return Promise.all([
+      topFromCounts(pCounts, "Dagscore", "⭐"),
+      topFromCounts(gCounts, "# Spellen", "🎮"),
+      topFromCounts(bCounts, "Badges", "🏅"),
+      topFromCounts(cCounts, "Uitdagingen", "⚔️"),
+    ]);
+  }, []);
+
+  const loadChampions = useCallback(async () => {
+    const todayStart = amsterdamStartOfTodayISO();
+    const [yStart, yEnd] = amsterdamYesterdayRangeISO();
+    const [today, yest] = await Promise.all([
+      computeChampionsForRange(todayStart),
+      computeChampionsForRange(yStart, yEnd),
+    ]);
+    setChampionsToday(today);
+    setChampionsYesterday(yest);
+  }, [computeChampionsForRange]);
+
   // Load everything on mount (Overzicht needs all)
   useEffect(() => {
     loadAllPlayers();
     loadPointsToday();
     loadGamesTotal();
     loadGamesToday();
-  }, [loadAllPlayers, loadPointsToday, loadGamesTotal, loadGamesToday]);
+    loadBadges();
+    loadChallenges();
+    loadChampions();
+  }, [loadAllPlayers, loadPointsToday, loadGamesTotal, loadGamesToday, loadBadges, loadChallenges, loadChampions]);
 
   // Derived lists
   const pointsTotalList: RankEntry[] = [...allPlayers]
