@@ -464,6 +464,7 @@ const Rankings = () => {
             <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
             <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
           </div>
+          </>
         )}
 
         {tab === "points" && (
