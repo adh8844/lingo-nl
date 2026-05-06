@@ -249,17 +249,23 @@ const Rankings = () => {
     icon,
     valueIcon,
     list,
+    onTitleClick,
   }: {
     title: string;
     icon: string;
     valueIcon: string;
     list: RankEntry[];
+    onTitleClick?: () => void;
   }) => (
     <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+      <button
+        type="button"
+        onClick={onTitleClick}
+        className="flex items-center gap-1.5 font-bold text-sm text-foreground hover:text-primary hover:underline text-left"
+      >
         <span>{icon}</span>
         <span>{title}</span>
-      </div>
+      </button>
       {list.length === 0 ? (
         <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
       ) : (
