@@ -800,13 +800,37 @@ const Rankings = () => {
               </div>
             );
           })()}
+          <MergedCard
+            title="Aantal punten"
+            icon="⭐"
+            valueIcon="⭐"
+            tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+            activeKey={pointsSub}
+            onTabChange={(k) => setPointsSub(k as PointsSub)}
+            list={pointsSub === "total" ? pointsTotalList : pointsToday}
+            onTitleClick={() => { setTab("points"); }}
+          />
+          <MergedCard
+            title="Aantal spellen"
+            icon="🎮"
+            valueIcon="🎮"
+            tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+            activeKey={gamesSub}
+            onTabChange={(k) => setGamesSub(k as GamesSub)}
+            list={gamesSub === "total" ? gamesTotal : gamesToday}
+            onTitleClick={() => { setTab("games"); }}
+          />
+          <MergedCard
+            title="Reeks"
+            icon="🔥"
+            valueIcon="🔥"
+            tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
+            activeKey={streakSub}
+            onTabChange={(k) => setStreakSub(k as StreakSub)}
+            list={streakSub === "max" ? maxStreakList : currentStreakList}
+            onTitleClick={() => setTab("streak")}
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
-            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
-            <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} onTitleClick={() => { setTab("points"); setPointsSub("total"); }} />
-            <MiniCard title="Dagscore" icon="⭐" valueIcon="⭐" list={pointsToday} onTitleClick={() => { setTab("points"); setPointsSub("today"); }} />
-            <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} onTitleClick={() => setTab("streak")} />
-            <MiniCard title="Huidige reeks" icon="🔥" valueIcon="🔥" list={currentStreakList} onTitleClick={() => setTab("streak")} />
             <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
             <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
           </div>
