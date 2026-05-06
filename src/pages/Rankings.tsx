@@ -2,239 +2,198 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
-import { usePresence, OnlinePlayer } from "@/hooks/usePresence";
+import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
-import { WordLength } from "@/data/words";
-import { toast } from "sonner";
 
-type Tab = "points" | "friends" | "groups";
+type Tab = "overview" | "points" | "streak" | "games";
+type PointsSub = "total" | "today";
+type GamesSub = "total" | "today";
 
-interface RankedPlayer {
+interface PlayerRow {
   id: string;
   display_name: string;
   player_code: string;
   current_streak: number;
   best_streak: number;
   points: number;
-  badgeCount?: number;
 }
 
-interface Group {
+interface RankEntry {
   id: string;
-  name: string;
-  invite_code: string;
-  created_by: string;
+  display_name: string;
+  value: number;
+  secondary?: string; // e.g. "(nu 4)"
 }
 
-const TIMER_OPTIONS = [30, 60, 90, 120];
+// Returns "YYYY-MM-DD" for today in Europe/Amsterdam
+const amsterdamTodayStr = () => {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return fmt.format(new Date()); // en-CA gives YYYY-MM-DD
+};
+
+// Returns ISO timestamp string for start-of-today in Europe/Amsterdam
+const amsterdamStartOfTodayISO = () => {
+  const dateStr = amsterdamTodayStr();
+  // Determine current Amsterdam offset (CET/CEST) by formatting with timeZoneName
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Amsterdam",
+    timeZoneName: "shortOffset",
+  }).formatToParts(new Date());
+  const tzName = parts.find((p) => p.type === "timeZoneName")?.value || "GMT+1";
+  const m = tzName.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/);
+  const hours = m ? parseInt(m[1], 10) : 1;
+  const mins = m && m[2] ? parseInt(m[2], 10) : 0;
+  const sign = hours >= 0 ? "+" : "-";
+  const hh = String(Math.abs(hours)).padStart(2, "0");
+  const mm = String(mins).padStart(2, "0");
+  return `${dateStr}T00:00:00${sign}${hh}:${mm}`;
+};
 
 const Rankings = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
-  const [tab, setTab] = useState<Tab>("points");
-  const [allPlayers, setAllPlayers] = useState<RankedPlayer[]>([]);
-  const [friends, setFriends] = useState<RankedPlayer[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [groupMembers, setGroupMembers] = useState<RankedPlayer[]>([]);
-  const [groupCode, setGroupCode] = useState("");
-  const [newGroupName, setNewGroupName] = useState("");
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [tab, setTab] = useState<Tab>("overview");
+  const [pointsSub, setPointsSub] = useState<PointsSub>("total");
+  const [gamesSub, setGamesSub] = useState<GamesSub>("total");
 
-  // Challenge UI state
-  const [challengingId, setChallengingId] = useState<string | null>(null);
-  const [challengeTimer, setChallengeTimer] = useState(60);
-  const [challengeWordLength, setChallengeWordLength] = useState<WordLength>(5);
-  const [sending, setSending] = useState(false);
+  const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
+  const [pointsToday, setPointsToday] = useState<RankEntry[]>([]);
+  const [gamesTotal, setGamesTotal] = useState<RankEntry[]>([]);
+  const [gamesToday, setGamesToday] = useState<RankEntry[]>([]);
 
   const { onlinePlayers } = usePresence(player?.id);
-  const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
-
-  // Create a set of online player IDs for quick lookup
-  const onlinePlayerIds = new Set(onlinePlayers.map(p => p.player_id));
+  const { activeMatch } = useOnlineMatch(player?.id);
+  const onlineIds = new Set(onlinePlayers.map((p) => p.player_id));
 
   useEffect(() => {
-    if (activeMatch) {
-      navigate("/online-match");
-    }
+    if (activeMatch) navigate("/online-match");
   }, [activeMatch, navigate]);
 
-  const loadPointsRanking = useCallback(async () => {
-    const { data } = await supabase
+  const loadAllPlayers = useCallback(async () => {
+    const { data } = await supabase.from("players").select("*").limit(500);
+    if (data) setAllPlayers(data.map((p) => ({ ...p, points: p.points ?? 0 })));
+  }, []);
+
+  const loadPointsToday = useCallback(async () => {
+    const start = amsterdamStartOfTodayISO();
+    const { data: logs } = await supabase
+      .from("points_log")
+      .select("player_id, points")
+      .gte("created_at", start);
+    if (!logs) return;
+    const sums: Record<string, number> = {};
+    logs.forEach((l: any) => {
+      sums[l.player_id] = (sums[l.player_id] || 0) + (l.points || 0);
+    });
+    const ids = Object.keys(sums);
+    if (ids.length === 0) {
+      setPointsToday([]);
+      return;
+    }
+    const { data: players } = await supabase
       .from("players")
-      .select("*")
-      .order("points", { ascending: false })
-      .limit(100);
-    if (!data) return;
-    const players = data.map(p => ({ ...p, points: p.points ?? 0 }));
-    
-    // Load badge counts for all players
-    const playerIds = players.map(p => p.id);
-    const { data: badges } = await supabase
-      .from("player_badges")
-      .select("player_id")
-      .in("player_id", playerIds);
-    
-    const badgeCounts: Record<string, number> = {};
-    if (badges) {
-      (badges as any[]).forEach((b: any) => {
-        badgeCounts[b.player_id] = (badgeCounts[b.player_id] || 0) + 1;
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: sums[p.id] || 0 }))
+      .filter((e) => e.value > 0)
+      .sort((a, b) => b.value - a.value);
+    setPointsToday(list);
+  }, []);
+
+  const loadGamesTotal = useCallback(async () => {
+    // Fetch all game player_ids — paginate to bypass 1000-row default
+    const counts: Record<string, number> = {};
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("games")
+        .select("player_id")
+        .range(from, from + pageSize - 1);
+      if (error || !data || data.length === 0) break;
+      data.forEach((g: any) => {
+        counts[g.player_id] = (counts[g.player_id] || 0) + 1;
       });
+      if (data.length < pageSize) break;
+      from += pageSize;
     }
-    
-    setAllPlayers(players.map(p => ({ ...p, badgeCount: badgeCounts[p.id] || 0 })));
+    const ids = Object.keys(counts);
+    if (ids.length === 0) {
+      setGamesTotal([]);
+      return;
+    }
+    const { data: players } = await supabase
+      .from("players")
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: counts[p.id] || 0 }))
+      .sort((a, b) => b.value - a.value);
+    setGamesTotal(list);
   }, []);
 
-  const loadFriends = useCallback(async () => {
-    if (!player) return;
-    const { data: friendLinks } = await supabase
-      .from("friends")
-      .select("friend_id")
-      .eq("player_id", player.id);
-
-    if (!friendLinks || friendLinks.length === 0) {
-      setFriends([]);
+  const loadGamesToday = useCallback(async () => {
+    const start = amsterdamStartOfTodayISO();
+    const { data } = await supabase
+      .from("games")
+      .select("player_id, played_at")
+      .gte("played_at", start);
+    if (!data) return;
+    const counts: Record<string, number> = {};
+    data.forEach((g: any) => {
+      counts[g.player_id] = (counts[g.player_id] || 0) + 1;
+    });
+    const ids = Object.keys(counts);
+    if (ids.length === 0) {
+      setGamesToday([]);
       return;
     }
-
-    const friendIds = friendLinks.map((f) => f.friend_id);
-    const { data } = await supabase
+    const { data: players } = await supabase
       .from("players")
-      .select("*")
-      .in("id", friendIds)
-      .order("points", { ascending: false });
-    if (data) setFriends(data.map(p => ({ ...p, points: p.points ?? 0 })));
-  }, [player]);
-
-  const loadGroups = useCallback(async () => {
-    if (!player) return;
-    const { data: memberships } = await supabase
-      .from("group_members")
-      .select("group_id")
-      .eq("player_id", player.id);
-
-    if (!memberships || memberships.length === 0) {
-      setGroups([]);
-      return;
-    }
-
-    const groupIds = memberships.map((m) => m.group_id);
-    const { data } = await supabase
-      .from("groups")
-      .select("*")
-      .in("id", groupIds);
-    if (data) setGroups(data);
-  }, [player]);
-
-  const loadGroupMembers = useCallback(async (groupId: string) => {
-    const { data: members } = await supabase
-      .from("group_members")
-      .select("player_id")
-      .eq("group_id", groupId);
-
-    if (!members || members.length === 0) {
-      setGroupMembers([]);
-      return;
-    }
-
-    const playerIds = members.map((m) => m.player_id);
-    const { data } = await supabase
-      .from("players")
-      .select("*")
-      .in("id", playerIds)
-      .order("points", { ascending: false });
-    if (data) setGroupMembers(data.map(p => ({ ...p, points: p.points ?? 0 })));
+      .select("id, display_name")
+      .in("id", ids);
+    const list: RankEntry[] = (players || [])
+      .map((p: any) => ({ id: p.id, display_name: p.display_name, value: counts[p.id] || 0 }))
+      .sort((a, b) => b.value - a.value);
+    setGamesToday(list);
   }, []);
 
+  // Load everything on mount (Overzicht needs all)
   useEffect(() => {
-    if (tab === "points") loadPointsRanking();
-    if (tab === "friends" && player) loadFriends();
-    if (tab === "groups" && player) loadGroups();
-  }, [tab, player, loadPointsRanking, loadFriends, loadGroups]);
+    loadAllPlayers();
+    loadPointsToday();
+    loadGamesTotal();
+    loadGamesToday();
+  }, [loadAllPlayers, loadPointsToday, loadGamesTotal, loadGamesToday]);
 
-  useEffect(() => {
-    if (selectedGroup) loadGroupMembers(selectedGroup);
-  }, [selectedGroup, loadGroupMembers]);
+  // Derived lists
+  const pointsTotalList: RankEntry[] = [...allPlayers]
+    .map((p) => ({ id: p.id, display_name: p.display_name, value: p.points }))
+    .sort((a, b) => b.value - a.value);
 
-  const createGroup = async () => {
-    if (!player || !newGroupName.trim()) return;
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "";
-    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  const maxStreakList: RankEntry[] = [...allPlayers]
+    .map((p) => {
+      const max = Math.max(p.best_streak || 0, p.current_streak || 0);
+      return {
+        id: p.id,
+        display_name: p.display_name,
+        value: max,
+        secondary: `nu ${p.current_streak || 0}`,
+      };
+    })
+    .filter((e) => e.value > 0)
+    .sort((a, b) => b.value - a.value);
 
-    const { data, error } = await supabase
-      .from("groups")
-      .insert({ name: newGroupName.trim(), invite_code: code, created_by: player.id })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error("Kon groep niet aanmaken");
-      return;
-    }
-
-    await supabase.from("group_members").insert({ group_id: data.id, player_id: player.id });
-    toast.success(`Groep "${data.name}" aangemaakt! Code: ${code}`);
-    setNewGroupName("");
-    setShowCreateGroup(false);
-    loadGroups();
-  };
-
-  const joinGroup = async () => {
-    if (!player) return;
-    const code = groupCode.trim().toUpperCase();
-    if (!code) return;
-
-    const { data: group } = await supabase
-      .from("groups")
-      .select("*")
-      .eq("invite_code", code)
-      .single();
-
-    if (!group) {
-      toast.error("Groep niet gevonden");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("group_members")
-      .insert({ group_id: group.id, player_id: player.id });
-
-    if (error?.code === "23505") {
-      toast.info("Je zit al in deze groep!");
-    } else if (error) {
-      toast.error("Fout bij deelname");
-    } else {
-      toast.success(`Lid geworden van "${group.name}"!`);
-    }
-
-    setGroupCode("");
-    loadGroups();
-  };
-
-  const leaveGroup = async (groupId: string) => {
-    if (!player) return;
-    await supabase
-      .from("group_members")
-      .delete()
-      .eq("group_id", groupId)
-      .eq("player_id", player.id);
-    setSelectedGroup(null);
-    loadGroups();
-    toast.success("Groep verlaten");
-  };
-
-  const handleSendChallenge = async (targetId: string) => {
-    setSending(true);
-    const result = await sendChallenge(targetId, challengeTimer, challengeWordLength, "nl");
-    setSending(false);
-    if (result) {
-      toast.success("Uitdaging verstuurd!");
-      setChallengingId(null);
-    } else {
-      toast.error("Kon uitdaging niet versturen");
-    }
-  };
+  const currentStreakList: RankEntry[] = [...allPlayers]
+    .map((p) => ({ id: p.id, display_name: p.display_name, value: p.current_streak || 0 }))
+    .filter((e) => e.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   if (loading) {
     return (
@@ -244,115 +203,102 @@ const Rankings = () => {
     );
   }
 
-  const renderChallengeSettings = (targetPlayerId: string) => {
-    if (challengingId !== targetPlayerId) return null;
-    return (
-      <div className="mt-2 p-3 rounded-lg bg-card border border-border flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium w-14">Timer:</span>
-          <div className="flex gap-1">
-            {TIMER_OPTIONS.map((t) => (
-              <button
-                key={t}
-                onClick={() => setChallengeTimer(t)}
-                className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
-                  challengeTimer === t
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {t}s
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium w-14">Letters:</span>
-          <div className="flex gap-1">
-            {([4, 5, 6] as WordLength[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => setChallengeWordLength(l)}
-                className={`w-8 h-8 rounded text-xs font-bold transition-all ${
-                  challengeWordLength === l
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground"
-                }`}
-              >
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button
-          onClick={() => handleSendChallenge(targetPlayerId)}
-          disabled={sending}
-          className="w-full px-4 py-2 rounded-lg bg-accent text-accent-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
-        >
-          {sending ? "..." : "⚔️ Verstuur uitdaging"}
-        </button>
-      </div>
-    );
-  };
+  const medal = (i: number) =>
+    i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
 
-  const renderRankRow = (entry: RankedPlayer, i: number) => {
+  const renderRow = (entry: RankEntry, i: number, icon: string) => {
     const isMe = player?.id === entry.id;
-    const isOnline = onlinePlayerIds.has(entry.id);
-    const canChallenge = isOnline && !isMe;
-
+    const isOnline = onlineIds.has(entry.id);
     return (
-      <div key={entry.id}>
-        <div
-          className={`flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-lg text-sm ${
-            isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"
-          }`}
-        >
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className="text-muted-foreground font-bold w-6 sm:w-8 text-right shrink-0">
-              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
+      <div
+        key={entry.id}
+        className={`flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-lg text-sm ${
+          isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"
+        }`}
+      >
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <span className="text-muted-foreground font-bold w-6 sm:w-8 text-right shrink-0">
+            {medal(i)}
+          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {isOnline && <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />}
+            <span
+              className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+              translate="no"
+              onClick={() => navigate(`/profile/${entry.id}`)}
+            >
+              {entry.display_name}
+              {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
             </span>
-            <div className="flex items-center gap-1.5 min-w-0">
-              {isOnline && (
-                <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-              )}
-              <span
-                className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
-                translate="no"
-                onClick={() => navigate(`/profile/${entry.id}`)}
-              >
-                {entry.display_name}
-                {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
-              </span>
-              {(entry.badgeCount ?? 0) > 0 && (
-                <span className="text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded-full shrink-0">
-                  🏅{entry.badgeCount}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <span className="font-extrabold">⭐ {entry.points}</span>
-            {canChallenge && (
-              <button
-                onClick={() => setChallengingId(challengingId === entry.id ? null : entry.id)}
-                className="px-2 py-1 rounded-lg bg-primary text-primary-foreground font-bold text-xs hover:brightness-110 transition-all"
-              >
-                ⚔️
-              </button>
-            )}
           </div>
         </div>
-        {renderChallengeSettings(entry.id)}
+        <div className="flex items-center gap-2 shrink-0">
+          {entry.secondary && (
+            <span className="text-xs text-muted-foreground">({entry.secondary})</span>
+          )}
+          <span className="font-extrabold">
+            {icon} {entry.value}
+          </span>
+        </div>
       </div>
     );
   };
 
-  const selectedGroupData = groups.find((g) => g.id === selectedGroup);
+  const MiniCard = ({
+    title,
+    icon,
+    valueIcon,
+    list,
+  }: {
+    title: string;
+    icon: string;
+    valueIcon: string;
+    list: RankEntry[];
+  }) => (
+    <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2">
+      <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+        <span>{icon}</span>
+        <span>{title}</span>
+      </div>
+      {list.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {list.slice(0, 3).map((e, i) => {
+            const isMe = player?.id === e.id;
+            return (
+              <div
+                key={e.id}
+                className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
+                  isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="w-5 text-right shrink-0">{medal(i)}</span>
+                  <span
+                    className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                    translate="no"
+                    onClick={() => navigate(`/profile/${e.id}`)}
+                  >
+                    {e.display_name}
+                  </span>
+                </div>
+                <span className="font-extrabold shrink-0">
+                  {valueIcon} {e.value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   const tabs: { key: Tab; label: string }[] = [
+    { key: "overview", label: "📊 Overzicht" },
     { key: "points", label: "⭐ Punten" },
-    { key: "friends", label: "👥 Vrienden" },
-    { key: "groups", label: "🏠 Groepen" },
+    { key: "streak", label: "🔥 Reeks" },
+    { key: "games", label: "🎮 # Spellen" },
   ];
 
   return (
@@ -370,11 +316,11 @@ const Rankings = () => {
         <div className="w-16" />
       </div>
 
-      <div className="flex gap-1 mb-4 sm:mb-6 w-full max-w-lg overflow-x-auto">
+      <div className="flex gap-1 mb-4 w-full max-w-lg overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => { setTab(t.key); setSelectedGroup(null); setChallengingId(null); }}
+            onClick={() => setTab(t.key)}
             className={`flex-shrink-0 px-2.5 py-2 rounded-lg font-bold text-xs transition-all ${
               tab === t.key
                 ? "bg-primary text-primary-foreground"
@@ -387,151 +333,77 @@ const Rankings = () => {
       </div>
 
       <div className="w-full max-w-lg flex flex-col gap-2">
-        {/* POINTS TAB */}
+        {tab === "overview" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} />
+            <MiniCard title="Dagscore" icon="📅" valueIcon="⭐" list={pointsToday} />
+            <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} />
+            <MiniCard title="Huidige reeks" icon="⚡" valueIcon="🔥" list={currentStreakList} />
+            <MiniCard title="# Spellen totaal" icon="🎮" valueIcon="🎮" list={gamesTotal} />
+            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} />
+          </div>
+        )}
+
         {tab === "points" && (
           <>
-            {allPlayers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nog geen spelers</p>
+            <div className="flex gap-1 mb-2">
+              {(["total", "today"] as PointsSub[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setPointsSub(s)}
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                    pointsSub === s
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-secondary text-secondary-foreground hover:brightness-110"
+                  }`}
+                >
+                  {s === "total" ? "Totaal" : "Vandaag"}
+                </button>
+              ))}
+            </div>
+            {(pointsSub === "total" ? pointsTotalList : pointsToday).length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
             ) : (
-              allPlayers.map((p, i) => renderRankRow(p, i))
+              (pointsSub === "total" ? pointsTotalList : pointsToday).map((e, i) =>
+                renderRow(e, i, "⭐"),
+              )
             )}
           </>
         )}
 
-        {/* FRIENDS TAB */}
-        {tab === "friends" && (
+        {tab === "streak" && (
           <>
-            {!player ? (
-              <p className="text-center text-muted-foreground py-8">Maak eerst een speler aan</p>
+            {maxStreakList.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
             ) : (
-              <>
-                {(() => {
-                  const combined = [
-                    { ...player, points: player.points ?? 0 },
-                    ...friends.filter((f) => f.id !== player.id),
-                  ].sort((a, b) => b.points - a.points);
-                  return combined.length === 1 && friends.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      Voeg vrienden toe vanuit het startscherm!
-                    </p>
-                  ) : (
-                    combined.map((p, i) => renderRankRow(p, i))
-                  );
-                })()}
-              </>
+              maxStreakList.map((e, i) => renderRow(e, i, "🔥"))
             )}
           </>
         )}
 
-        {/* GROUPS TAB */}
-        {tab === "groups" && (
+        {tab === "games" && (
           <>
-            {!player ? (
-              <p className="text-center text-muted-foreground py-8">Maak eerst een speler aan</p>
-            ) : selectedGroup && selectedGroupData ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => setSelectedGroup(null)}
-                    className="text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    ← Alle groepen
-                  </button>
-                  <button
-                    onClick={() => leaveGroup(selectedGroup)}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-destructive/20 text-destructive font-bold hover:bg-destructive/30 transition-colors"
-                  >
-                    Verlaten
-                  </button>
-                </div>
-                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-card">
-                  <span className="font-extrabold text-foreground">{selectedGroupData.name}</span>
-                  <span
-                    className="font-mono text-xs text-primary cursor-pointer"
-                    onClick={() => {
-                      navigator.clipboard.writeText(selectedGroupData.invite_code);
-                      toast.success("Code gekopieerd!");
-                    }}
-                  >
-                    Code: {selectedGroupData.invite_code}
-                  </span>
-                </div>
-                {groupMembers.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">Nog geen leden</p>
-                ) : (
-                  groupMembers.map((p, i) => renderRankRow(p, i))
-                )}
-              </div>
+            <div className="flex gap-1 mb-2">
+              {(["total", "today"] as GamesSub[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setGamesSub(s)}
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all ${
+                    gamesSub === s
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-secondary text-secondary-foreground hover:brightness-110"
+                  }`}
+                >
+                  {s === "total" ? "Totaal" : "Vandaag"}
+                </button>
+              ))}
+            </div>
+            {(gamesSub === "total" ? gamesTotal : gamesToday).length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nog geen data</p>
             ) : (
-              <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={groupCode}
-                    onChange={(e) => setGroupCode(e.target.value.toUpperCase())}
-                    placeholder="Groepscode"
-                    maxLength={6}
-                    className="flex-1 px-3 py-2 rounded-lg bg-muted text-foreground font-mono font-bold text-center text-sm tracking-widest border-2 border-transparent focus:border-primary focus:outline-none transition-colors uppercase"
-                  />
-                  <button
-                    onClick={joinGroup}
-                    disabled={groupCode.length < 6}
-                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
-                  >
-                    Deelnemen
-                  </button>
-                </div>
-
-                {showCreateGroup ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      placeholder="Groepsnaam"
-                      maxLength={30}
-                      className="flex-1 px-3 py-2 rounded-lg bg-muted text-foreground font-bold text-sm border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
-                    />
-                    <button
-                      onClick={createGroup}
-                      disabled={!newGroupName.trim()}
-                      className="px-4 py-2 rounded-lg bg-accent text-accent-foreground font-bold text-sm hover:brightness-110 transition-all disabled:opacity-50"
-                    >
-                       Aanmaken
-                    </button>
-                    <button
-                      onClick={() => { setShowCreateGroup(false); setNewGroupName(""); }}
-                      className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowCreateGroup(true)}
-                    className="w-full px-4 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all"
-                  >
-                    + Groep aanmaken
-                  </button>
-                )}
-
-                {groups.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-6">
-                    Maak of join een groep om te strijden!
-                  </p>
-                ) : (
-                  groups.map((g) => (
-                    <button
-                      key={g.id}
-                      onClick={() => setSelectedGroup(g.id)}
-                      className="flex items-center justify-between px-4 py-3 rounded-lg bg-card hover:brightness-110 transition-all text-left"
-                    >
-                      <span className="font-bold text-foreground">{g.name}</span>
-                      <span className="text-xs text-muted-foreground font-mono">{g.invite_code}</span>
-                    </button>
-                  ))
-                )}
-              </div>
+              (gamesSub === "total" ? gamesTotal : gamesToday).map((e, i) =>
+                renderRow(e, i, "🎮"),
+              )
             )}
           </>
         )}
