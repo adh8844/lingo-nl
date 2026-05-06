@@ -678,13 +678,16 @@ const Rankings = () => {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
+            aria-label={t.title}
+            title={t.title}
             className={`flex-shrink-0 px-2.5 py-2 rounded-lg font-bold text-xs transition-all ${
               tab === t.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:brightness-110"
             }`}
           >
-            {t.label}
+            <span>{t.icon}</span>
+            {t.key === "overview" && <span className="ml-1">Overzicht</span>}
           </button>
         ))}
       </div>
