@@ -48,13 +48,43 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
 const Profile = () => {
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId?: string }>();
-  const { player: currentPlayer, loading } = usePlayer();
+  const { player: currentPlayer, loading, refreshPlayer } = usePlayerContext();
   const [viewPlayer, setViewPlayer] = useState<Player | null>(null);
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<Set<string>>(new Set());
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const isOwnProfile = !playerId || playerId === currentPlayer?.id;
   const displayPlayer = isOwnProfile ? currentPlayer : viewPlayer;
+
+  const startEditName = () => {
+    setNameInput(displayPlayer?.display_name || "");
+    setEditingName(true);
+  };
+
+  const saveName = async () => {
+    if (!currentPlayer) return;
+    const trimmed = nameInput.trim();
+    if (trimmed.length < 2 || trimmed.length > 24) {
+      toast.error("Naam moet tussen 2 en 24 tekens zijn");
+      return;
+    }
+    setSavingName(true);
+    const { error } = await supabase
+      .from("players")
+      .update({ display_name: trimmed })
+      .eq("id", currentPlayer.id);
+    setSavingName(false);
+    if (error) {
+      toast.error("Kon naam niet opslaan");
+      return;
+    }
+    toast.success("Naam bijgewerkt");
+    setEditingName(false);
+    await refreshPlayer();
+  };
 
   const loadViewPlayer = useCallback(async () => {
     if (!playerId || isOwnProfile) return;
