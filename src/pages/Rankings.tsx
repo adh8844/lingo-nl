@@ -543,6 +543,11 @@ const Rankings = () => {
                   {valueIcon} {e.value}
                 </span>
               </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 
   const MergedCard = ({
@@ -639,11 +644,6 @@ const Rankings = () => {
                 </div>
               </div>
             );
-          })}
-        </div>
-      )}
-    </div>
-  );
           })}
         </div>
       )}
