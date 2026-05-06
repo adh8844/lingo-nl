@@ -714,6 +714,8 @@ const Admin = () => {
               </div>
             )}
           </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Pending words section */}
