@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
+import ChallengeDialog from "@/components/ChallengeDialog";
 
 type Tab = "overview" | "points" | "streak" | "games";
 type PointsSub = "total" | "today";
@@ -67,8 +68,18 @@ const Rankings = () => {
   const [gamesToday, setGamesToday] = useState<RankEntry[]>([]);
 
   const { onlinePlayers } = usePresence(player?.id);
-  const { activeMatch } = useOnlineMatch(player?.id);
+  const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
+  const onlineMap = new Map(onlinePlayers.map((p) => [p.player_id, p]));
   const onlineIds = new Set(onlinePlayers.map((p) => p.player_id));
+  const [challengeTarget, setChallengeTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const openChallenge = (id: string, name: string) => {
+    if (!player || id === player.id) return;
+    const op = onlineMap.get(id);
+    if (!op) return;
+    if (op.status === "in_game") return;
+    setChallengeTarget({ id, name });
+  };
 
   useEffect(() => {
     if (activeMatch) navigate("/online-match");
@@ -208,7 +219,9 @@ const Rankings = () => {
 
   const renderRow = (entry: RankEntry, i: number, icon: string) => {
     const isMe = player?.id === entry.id;
-    const isOnline = onlineIds.has(entry.id);
+    const op = onlineMap.get(entry.id);
+    const isOnline = !!op;
+    const canChallenge = isOnline && !isMe && op?.status !== "in_game";
     return (
       <div
         key={entry.id}
@@ -239,6 +252,18 @@ const Rankings = () => {
           <span className="font-extrabold">
             {icon} {entry.value}
           </span>
+          {canChallenge && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openChallenge(entry.id, entry.display_name);
+              }}
+              title="Uitdagen"
+              className="ml-1 px-2 py-1 rounded-md bg-primary text-primary-foreground font-bold text-xs hover:brightness-110"
+            >
+              ⚔️
+            </button>
+          )}
         </div>
       </div>
     );
@@ -272,15 +297,25 @@ const Rankings = () => {
         <div className="flex flex-col gap-1">
           {list.slice(0, 3).map((e, i) => {
             const isMe = player?.id === e.id;
+            const op = onlineMap.get(e.id);
+            const isOnline = !!op;
+            const canChallenge = isOnline && !isMe && op?.status !== "in_game";
             return (
               <div
                 key={e.id}
+                onContextMenu={(ev) => {
+                  if (canChallenge) {
+                    ev.preventDefault();
+                    openChallenge(e.id, e.display_name);
+                  }
+                }}
                 className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
                   isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
                 }`}
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
+                  {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
                   <span
                     className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
                     translate="no"
@@ -414,6 +449,15 @@ const Rankings = () => {
           </>
         )}
       </div>
+
+      {challengeTarget && (
+        <ChallengeDialog
+          targetId={challengeTarget.id}
+          targetName={challengeTarget.name}
+          onSend={sendChallenge}
+          onClose={() => setChallengeTarget(null)}
+        />
+      )}
     </div>
   );
 };
