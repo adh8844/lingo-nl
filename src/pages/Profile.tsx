@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
+import { usePlayerContext } from "@/hooks/usePlayerContext";
+import { toast } from "sonner";
 import type { Player } from "@/types/player";
-import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library } from "lucide-react";
+import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library, Pencil, Check, X } from "lucide-react";
 
 interface Badge {
   id: string;
