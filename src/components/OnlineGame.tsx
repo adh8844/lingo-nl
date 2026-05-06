@@ -417,21 +417,25 @@ const OnlineGame = ({
         <p className="text-lg font-bold text-muted-foreground">
           {match.player1_wins} - {match.player2_wins}
         </p>
-        {isWinner && (
-          <p className="text-sm text-accent font-bold">
-            +100 bonus ⭐ + {(isPlayer1 ? match.player1_wins : match.player2_wins) * 20} ronde punten
-          </p>
-        )}
-        {!isWinner && wasForfeit && (
-          <p className="text-sm text-muted-foreground font-bold">
-            {language === "nl" ? `${opponentName} ontvangt punten` : `${opponentName} receives points`}
-          </p>
-        )}
-        {isWinner && wasForfeit && !iForfeited && (
-          <p className="text-sm text-accent font-bold">
-            {language === "nl" ? "Tegenstander heeft opgegeven — jij ontvangt +100 bonus ⭐" : "Opponent forfeited — you receive +100 bonus ⭐"}
-          </p>
-        )}
+        {(() => {
+          const myRoundWins = isPlayer1 ? match.player1_wins : match.player2_wins;
+          const roundPts = myRoundWins * 20;
+          return (
+            <div className="flex flex-col items-center gap-1">
+              {isWinner && (
+                <p className="text-sm text-accent font-bold">+100 bonus ⭐</p>
+              )}
+              {roundPts > 0 && (
+                <p className="text-sm text-accent font-bold">+{roundPts} ronde punten</p>
+              )}
+              {isWinner && wasForfeit && !iForfeited && (
+                <p className="text-xs text-muted-foreground">
+                  {language === "nl" ? "(tegenstander heeft opgegeven)" : "(opponent forfeited)"}
+                </p>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="flex gap-3 mt-2">
           <button
