@@ -56,6 +56,26 @@ const amsterdamStartOfTodayISO = () => {
   return `${dateStr}T00:00:00${sign}${hh}:${mm}`;
 };
 
+// Returns [startISO, endISO] for yesterday in Europe/Amsterdam
+const amsterdamYesterdayRangeISO = () => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Amsterdam",
+    timeZoneName: "shortOffset",
+  }).formatToParts(new Date());
+  const tzName = parts.find((p) => p.type === "timeZoneName")?.value || "GMT+1";
+  const m = tzName.match(/GMT([+-]\d{1,2})(?::?(\d{2}))?/);
+  const hours = m ? parseInt(m[1], 10) : 1;
+  const mins = m && m[2] ? parseInt(m[2], 10) : 0;
+  const sign = hours >= 0 ? "+" : "-";
+  const hh = String(Math.abs(hours)).padStart(2, "0");
+  const mm = String(mins).padStart(2, "0");
+  const today = amsterdamTodayStr();
+  const d = new Date(today + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  const y = d.toISOString().slice(0, 10);
+  return [`${y}T00:00:00${sign}${hh}:${mm}`, `${today}T00:00:00${sign}${hh}:${mm}`];
+};
+
 const Rankings = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
