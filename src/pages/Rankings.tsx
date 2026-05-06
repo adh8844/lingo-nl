@@ -83,6 +83,7 @@ const Rankings = () => {
   const [tab, setTab] = useState<Tab>("overview");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
+  const [streakSub, setStreakSub] = useState<StreakSub>("max");
   const [daySub, setDaySub] = useState<DaySub>("today");
 
   const [allPlayers, setAllPlayers] = useState<PlayerRow[]>([]);
