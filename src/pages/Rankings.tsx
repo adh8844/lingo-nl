@@ -624,13 +624,69 @@ const Rankings = () => {
               </div>
             );
           })()}
+          {(() => {
+            const champs = daySub === "today" ? championsToday : championsYesterday;
+            const hasAny = champs.some((c) => c.entry);
+            return (
+              <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2 mb-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-bold text-sm text-foreground">🌟 Dagkanjers</div>
+                  <div className="flex gap-1">
+                    {(["today", "yesterday"] as DaySub[]).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setDaySub(s)}
+                        className={`px-2 py-1 rounded font-bold text-xs transition-all ${
+                          daySub === s
+                            ? "bg-accent text-accent-foreground"
+                            : "bg-secondary text-secondary-foreground hover:brightness-110"
+                        }`}
+                      >
+                        {s === "today" ? "Vandaag" : "Gisteren"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {!hasAny ? (
+                  <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {champs.map((c) => (
+                      <div
+                        key={c.label}
+                        className="flex items-center justify-between gap-2 px-2 py-1.5 rounded text-xs bg-secondary/40"
+                      >
+                        <span className="text-muted-foreground font-bold shrink-0">{c.icon} {c.label}</span>
+                        {c.entry ? (
+                          <span className="flex items-center gap-1 min-w-0">
+                            <span
+                              className="font-bold truncate cursor-pointer hover:underline text-foreground"
+                              translate="no"
+                              onClick={() => navigate(`/profile/${c.entry!.id}`)}
+                            >
+                              {c.entry.display_name}
+                            </span>
+                            <span className="font-extrabold shrink-0">{c.entry.value}</span>
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
+            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
             <MiniCard title="Punten totaal" icon="⭐" valueIcon="⭐" list={pointsTotalList} onTitleClick={() => { setTab("points"); setPointsSub("total"); }} />
             <MiniCard title="Dagscore" icon="⭐" valueIcon="⭐" list={pointsToday} onTitleClick={() => { setTab("points"); setPointsSub("today"); }} />
             <MiniCard title="Max. reeks" icon="🔥" valueIcon="🔥" list={maxStreakList} onTitleClick={() => setTab("streak")} />
             <MiniCard title="Huidige reeks" icon="🔥" valueIcon="🔥" list={currentStreakList} onTitleClick={() => setTab("streak")} />
-            <MiniCard title="# Spellen totaal" icon="🎯" valueIcon="🎮" list={gamesTotal} onTitleClick={() => { setTab("games"); setGamesSub("total"); }} />
-            <MiniCard title="# Spellen vandaag" icon="🎯" valueIcon="🎮" list={gamesToday} onTitleClick={() => { setTab("games"); setGamesSub("today"); }} />
+            <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
+            <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
           </div>
           </>
         )}
