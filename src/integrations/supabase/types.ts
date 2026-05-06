@@ -265,6 +265,36 @@ export type Database = {
           },
         ]
       }
+      match_round_progress: {
+        Row: {
+          attempt_number: number
+          correct_count: number
+          created_at: string
+          id: string
+          match_id: string
+          player_id: string
+          round_id: string
+        }
+        Insert: {
+          attempt_number: number
+          correct_count?: number
+          created_at?: string
+          id?: string
+          match_id: string
+          player_id: string
+          round_id: string
+        }
+        Update: {
+          attempt_number?: number
+          correct_count?: number
+          created_at?: string
+          id?: string
+          match_id?: string
+          player_id?: string
+          round_id?: string
+        }
+        Relationships: []
+      }
       match_rounds: {
         Row: {
           created_at: string
