@@ -11,8 +11,8 @@ export interface OnlinePlayer {
   last_seen: string;
 }
 
-const HEARTBEAT_INTERVAL = 15000; // 15 seconds
-const ONLINE_THRESHOLD = 180000; // 3 minutes
+const HEARTBEAT_INTERVAL = 5000; // 5 seconds
+const ONLINE_THRESHOLD = 15000; // 15 seconds
 
 export function usePresence(playerId: string | undefined) {
   const [onlinePlayers, setOnlinePlayers] = useState<OnlinePlayer[]>([]);
