@@ -526,9 +526,7 @@ const Rankings = () => {
                     openChallenge(e.id, e.display_name);
                   }
                 }}
-                className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
-                  isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
-                }`}
+                className="flex items-center justify-between px-2 py-1.5 rounded text-xs bg-secondary/40"
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
@@ -609,9 +607,7 @@ const Rankings = () => {
             return (
               <div
                 key={e.id}
-                className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
-                  isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
-                }`}
+                className="flex items-center justify-between px-2 py-1.5 rounded text-xs bg-secondary/40"
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
@@ -712,9 +708,7 @@ const Rankings = () => {
                     return (
                       <div
                         key={p.id}
-                        className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
-                          isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/40"
-                        }`}
+                        className="flex items-center justify-between px-2 py-1.5 rounded text-xs bg-secondary/40"
                       >
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
