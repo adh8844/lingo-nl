@@ -648,14 +648,15 @@ const Rankings = () => {
     </div>
   );
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "overview", label: "📊 Overzicht" },
-    { key: "points", label: "⭐ Punten" },
-    { key: "streak", label: "🔥 Reeks" },
-    { key: "games", label: "🎮 # Spellen" },
-    { key: "badges", label: "🏅 Badges" },
-    { key: "challenges", label: "⚔️ Uitdagingen" },
+  const tabs: { key: Tab; icon: string; title: string }[] = [
+    { key: "overview", icon: "📊", title: "Overzicht" },
+    { key: "points", icon: "⭐", title: "Punten" },
+    { key: "streak", icon: "🔥", title: "Reeks" },
+    { key: "games", icon: "🎮", title: "# Spellen" },
+    { key: "badges", icon: "🏅", title: "Badges" },
+    { key: "challenges", icon: "⚔️", title: "Uitdagingen" },
   ];
+  const currentTabTitle = tabs.find((t) => t.key === tab)?.title ?? "";
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
@@ -677,13 +678,16 @@ const Rankings = () => {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
+            aria-label={t.title}
+            title={t.title}
             className={`flex-shrink-0 px-2.5 py-2 rounded-lg font-bold text-xs transition-all ${
               tab === t.key
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:brightness-110"
             }`}
           >
-            {t.label}
+            <span>{t.icon}</span>
+            {t.key === "overview" && <span className="ml-1">Overzicht</span>}
           </button>
         ))}
       </div>
@@ -829,6 +833,12 @@ const Rankings = () => {
             <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
           </div>
           </>
+        )}
+
+        {tab !== "overview" && (
+          <h2 className="text-lg font-bold text-foreground px-1">
+            {tabs.find((t) => t.key === tab)?.icon} {currentTabTitle}
+          </h2>
         )}
 
         {tab === "points" && (
