@@ -68,8 +68,18 @@ const Rankings = () => {
   const [gamesToday, setGamesToday] = useState<RankEntry[]>([]);
 
   const { onlinePlayers } = usePresence(player?.id);
-  const { activeMatch } = useOnlineMatch(player?.id);
+  const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
+  const onlineMap = new Map(onlinePlayers.map((p) => [p.player_id, p]));
   const onlineIds = new Set(onlinePlayers.map((p) => p.player_id));
+  const [challengeTarget, setChallengeTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const openChallenge = (id: string, name: string) => {
+    if (!player || id === player.id) return;
+    const op = onlineMap.get(id);
+    if (!op) return;
+    if (op.status === "in_game") return;
+    setChallengeTarget({ id, name });
+  };
 
   useEffect(() => {
     if (activeMatch) navigate("/online-match");
