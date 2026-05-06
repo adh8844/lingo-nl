@@ -574,6 +574,8 @@ const Admin = () => {
               </Button>
             </div>
           </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Search section */}
