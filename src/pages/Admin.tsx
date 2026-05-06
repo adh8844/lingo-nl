@@ -719,10 +719,22 @@ const Admin = () => {
         </Card>
 
         {/* Pending words section */}
+        <Card className="mb-8">
+          <Collapsible open={openCards.pending} onOpenChange={() => toggleCard("pending")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Te beoordelen woorden{!loadingWords && ` (${pendingWords.length})`}
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.pending ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
         {loadingWords ? (
           <p className="text-muted-foreground">Laden...</p>
         ) : pendingWords.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-6">
             <p className="text-muted-foreground text-lg">Geen woorden om te beoordelen</p>
           </div>
         ) : (
