@@ -529,10 +529,17 @@ const Admin = () => {
 
         {/* Add word section */}
         <Card className="mb-8">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Woord toevoegen</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Collapsible open={openCards.add} onOpenChange={() => toggleCard("add")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Woord toevoegen
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.add ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <Input
