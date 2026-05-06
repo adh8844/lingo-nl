@@ -88,6 +88,7 @@ const OnlineGame = ({
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
+  const lossShownForRoundRef = useRef<string | null>(null);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
