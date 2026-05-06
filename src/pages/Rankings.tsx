@@ -835,6 +835,12 @@ const Rankings = () => {
           </>
         )}
 
+        {tab !== "overview" && (
+          <h2 className="text-lg font-bold text-foreground px-1">
+            {tabs.find((t) => t.key === tab)?.icon} {currentTabTitle}
+          </h2>
+        )}
+
         {tab === "points" && (
           <>
             <div className="flex gap-1 mb-2">
