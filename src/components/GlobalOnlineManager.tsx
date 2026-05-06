@@ -13,8 +13,8 @@ interface ChallengeNotif {
   language: string;
 }
 
-const HEARTBEAT_INTERVAL = 15000;
-const ACTIVITY_TIMEOUT = 180000; // 3 minutes
+const HEARTBEAT_INTERVAL = 5000;
+const ACTIVITY_TIMEOUT = 15000; // 15 seconds
 
 const GlobalOnlineManager = () => {
   const navigate = useNavigate();
