@@ -17,6 +17,18 @@ import SEO from "@/components/SEO";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
+const BULK_CHUNK_SIZE = 100;
+async function bulkUpdateWords(ids: string[], updates: Record<string, any>): Promise<{ ok: boolean; done: number }> {
+  let done = 0;
+  for (let i = 0; i < ids.length; i += BULK_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + BULK_CHUNK_SIZE);
+    const { error } = await supabase.from("dutch_words").update(updates as any).in("id", chunk);
+    if (error) { console.error("bulkUpdateWords error", error); return { ok: false, done }; }
+    done += chunk.length;
+  }
+  return { ok: true, done };
+}
+
 interface PendingWord {
   id: string;
   word: string;
