@@ -169,6 +169,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
+      <SEO
+        title="LINGO NL — Speel het woordspel online in het Nederlands"
+        description="Speel Lingo online in het Nederlands. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst in dit uitdagende woordspel."
+        path="/"
+      />
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
