@@ -4,6 +4,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
 import { supabase } from "@/integrations/supabase/client";
 import OnlineGame from "@/components/OnlineGame";
+import SEO from "@/components/SEO";
 
 const OnlineMatchPage = () => {
   const navigate = useNavigate();
