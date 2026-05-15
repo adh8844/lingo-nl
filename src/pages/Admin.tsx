@@ -17,6 +17,18 @@ import SEO from "@/components/SEO";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
+const BULK_CHUNK_SIZE = 100;
+async function bulkUpdateWords(ids: string[], updates: Record<string, any>): Promise<{ ok: boolean; done: number }> {
+  let done = 0;
+  for (let i = 0; i < ids.length; i += BULK_CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + BULK_CHUNK_SIZE);
+    const { error } = await supabase.from("dutch_words").update(updates as any).in("id", chunk);
+    if (error) { console.error("bulkUpdateWords error", error); return { ok: false, done }; }
+    done += chunk.length;
+  }
+  return { ok: true, done };
+}
+
 interface PendingWord {
   id: string;
   word: string;
@@ -749,18 +761,15 @@ const Admin = () => {
               <p className="text-sm text-muted-foreground">
                 {pendingWords.length} woord{pendingWords.length !== 1 ? "en" : ""} ter beoordeling
               </p>
-              <div className="flex gap-1">
+             <div className="flex gap-1">
                 <Button
                   size="sm"
                   variant="outline"
                   className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white text-xs"
                   onClick={async () => {
                     const ids = pendingWords.map(w => w.id);
-                    const { error } = await supabase
-                      .from("dutch_words")
-                      .update({ approved: true, appropriate: true } as any)
-                      .in("id", ids);
-                    if (error) { toast.error("Fout bij bulk goedkeuren"); return; }
+                    const res = await bulkUpdateWords(ids, { approved: true, appropriate: true });
+                    if (!res.ok) { toast.error(`Fout bij bulk goedkeuren (${res.done}/${ids.length} verwerkt)`); return; }
                     toast.success(`${ids.length} woorden goedgekeurd!`);
                     setPendingWords([]);
                   }}
@@ -774,11 +783,8 @@ const Admin = () => {
                   className="text-yellow-600 border-yellow-600 hover:bg-yellow-600 hover:text-white text-xs"
                   onClick={async () => {
                     const ids = pendingWords.map(w => w.id);
-                    const { error } = await supabase
-                      .from("dutch_words")
-                      .update({ approved: true, appropriate: false } as any)
-                      .in("id", ids);
-                    if (error) { toast.error("Fout bij bulk goedkeuren"); return; }
+                    const res = await bulkUpdateWords(ids, { approved: true, appropriate: false });
+                    if (!res.ok) { toast.error(`Fout bij bulk goedkeuren (${res.done}/${ids.length} verwerkt)`); return; }
                     toast.success(`${ids.length} woorden goedgekeurd als alleen correct.`);
                     setPendingWords([]);
                   }}
@@ -792,11 +798,8 @@ const Admin = () => {
                   className="text-red-600 border-red-600 hover:bg-red-600 hover:text-white text-xs"
                   onClick={async () => {
                     const ids = pendingWords.map(w => w.id);
-                    const { error } = await supabase
-                      .from("dutch_words")
-                      .update({ rejected: true, approved: false, appropriate: false } as any)
-                      .in("id", ids);
-                    if (error) { toast.error("Fout bij bulk afkeuren"); return; }
+                    const res = await bulkUpdateWords(ids, { rejected: true, approved: false, appropriate: false });
+                    if (!res.ok) { toast.error(`Fout bij bulk afkeuren (${res.done}/${ids.length} verwerkt)`); return; }
                     toast.error(`${ids.length} woorden afgekeurd.`);
                     setPendingWords([]);
                   }}
