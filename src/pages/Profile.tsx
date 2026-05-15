@@ -124,6 +124,11 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
+      <SEO
+        title={`${displayPlayer?.display_name ?? "Speler"} — Profiel · LINGO NL`}
+        description={`Bekijk het Lingo profiel van ${displayPlayer?.display_name ?? "deze speler"}: punten, badges, streaks en prestaties in het Nederlandse woordspel.`}
+        path={isOwnProfile ? "/profile" : `/profile/${playerId}`}
+      />
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
