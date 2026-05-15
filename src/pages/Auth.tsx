@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayer } from "@/hooks/usePlayer";
 import DingoMascot from "@/components/DingoMascot";
+import SEO from "@/components/SEO";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -77,6 +78,11 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <SEO
+        title={isLogin ? "Inloggen — LINGO NL" : "Account aanmaken — LINGO NL"}
+        description="Log in of maak een gratis account aan om Lingo in het Nederlands te spelen, badges te verdienen en je voortgang bij te houden."
+        path="/auth"
+      />
       <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-bounce-in">
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-7xl sm:text-8xl font-extrabold tracking-tighter text-primary flex items-end leading-none">

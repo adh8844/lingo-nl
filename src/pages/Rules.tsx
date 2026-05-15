@@ -1,11 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import SEO from "@/components/SEO";
 
 const Rules = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col items-center px-3 sm:px-4 py-6 sm:py-10">
+      <SEO
+        title="Spelregels — LINGO NL woordspel"
+        description="Lees de spelregels van Lingo NL: hoe je woorden raadt, punten verdient, badges ontgrendelt en niveaus van 4, 5 en 6 letters speelt."
+        path="/spelregels"
+      />
       <div className="w-full max-w-2xl">
         <button
           onClick={() => navigate("/")}

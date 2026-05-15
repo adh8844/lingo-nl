@@ -4,6 +4,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
 import { supabase } from "@/integrations/supabase/client";
 import OnlineGame from "@/components/OnlineGame";
+import SEO from "@/components/SEO";
 
 const OnlineMatchPage = () => {
   const navigate = useNavigate();
@@ -105,6 +106,11 @@ const OnlineMatchPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
+      <SEO
+        title={`Online wedstrijd vs ${opponentName} — LINGO NL`}
+        description="Speel een live Lingo wedstrijd tegen een andere speler in het Nederlands. Best-of-9 rondes, snelheid telt en de winnaar verdient extra punten."
+        path="/online-match"
+      />
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
         LINGO ⚔️
       </h1>

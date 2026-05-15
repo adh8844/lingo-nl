@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePresenceSettings, updatePresenceSetting } from "@/hooks/useAppSettings";
+import SEO from "@/components/SEO";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
@@ -372,6 +373,11 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-4">
+      <SEO
+        title="Beheer — LINGO NL"
+        description="Beheerpaneel voor LINGO NL: woorden goedkeuren, badges configureren en spelinstellingen aanpassen."
+        path="/admin"
+      />
       <div className="w-full max-w-2xl">
         <div className="flex items-center gap-3 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>

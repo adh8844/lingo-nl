@@ -5,6 +5,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
 import ChallengeDialog from "@/components/ChallengeDialog";
+import SEO from "@/components/SEO";
 
 type Tab = "overview" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
@@ -660,6 +661,11 @@ const Rankings = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
+      <SEO
+        title="Ranglijst — LINGO NL woordspel"
+        description="Bekijk de Lingo ranglijst: top spelers, dagelijkse punten, streaks, badges en uitdagingen. Klim mee in het Nederlandse woordspel."
+        path="/rankings"
+      />
       <div className="w-full max-w-lg flex items-center justify-between mb-4 sm:mb-6">
         <button
           onClick={() => navigate("/")}
