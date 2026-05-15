@@ -1,39 +1,25 @@
-# Nieuwe woorden importeren ter goedkeuring
+# Volledige import van ontbrekende woorden van lingowoorden.nl
 
-## Bron
+## Wat ging er mis
+De vorige fetch was afgekapt rond letter F/G. Door de pagina's nu volledig op te halen (via curl) krijg ik álle woorden t/m de Z.
 
-Vier categoriepagina's op lingowoorden.nl (5, 6, 10 en 12 letters). Woorden worden geëxtraheerd uit de href-pattern `/woord/{woord}/` zodat icoontjes (`<i class="fas ...">`) automatisch buiten beeld blijven.
+## Gevonden vs database
 
-## Aantallen na vergelijking met de database
+| Lengte | Op pagina | Al in DB | **Nieuw** |
+|---|---|---|---|
+| 5  | 1.127 | 1.537 | **361** |
+| 6  | 1.743 | 2.122 | **778** |
+| 10 | 1.685 | 459   | **1.355** |
+| 12 | 1.156 | 480   | **851** |
+| **Totaal** | | | **3.345** |
 
+(Woorden uit `/woord/{woord}/` href, dus icoontjes worden automatisch genegeerd. Vergelijking is case-insensitive op exacte match.)
 
-| Lengte     | Op pagina | Al in DB | **Nieuw toe te voegen** |
-| ---------- | --------- | -------- | ----------------------- |
-| 5          | 295       | 1381     | **156**                 |
-| 6          | 296       | 1912     | **210**                 |
-| 10         | 277       | 205      | **254**                 |
-| 12         | 293       | 198      | **282**                 |
-| **Totaal** | &nbsp;    | &nbsp;   | **902**                 |
+## Aanpak
 
+Alle 3.345 woorden in één keer via een bulk-INSERT uitvoeren. Dat past prima in één SQL-statement (Postgres heeft hier geen praktisch probleem mee — in de vorige import ging 902 in één keer goed; 3.345 ook).
 
-## Eerste 25 nieuwe woorden per lengte
-
-**5 letters (156 nieuw)**
-aldus, aftel, actie, apart, adres, airco, arena, ademt, alsof, alpen, armoe, admin, appen, alert, award, afnam, acuut, aruba, assen, atlas, aroma, alarm, boxen, beten, basis
-
-**6 letters (210 nieuw)**
-actief, afloop, agenda, afrond, afzien, achten, alleen, afdruk, aantal, andere, atlete, afrika, alsnog, artsen, advies, aanval, aanpak, absurd, afname, aanbod, alweer, acties, albert, alvast, afkeer
-
-**10 letters (254 nieuw)**
-anderhalve, afstamming, agrarische, achterhoek, activiteit, ambitieuze, abonnement, aanvallers, aanleiding, aangeraden, afgeleverd, aanmerking, aanvliegen, afmetingen, amerikanen, aangewezen, aangegeven, aangelegde, aanspoelen, autoritair, actiegroep, aangetoond, afgeblazen, autowassen, accupakket
-
-**12 letters (282 nieuw)**
-aangescherpt, actiegroepen, accepteerden, actievoerder, aanscherping, activiteiten, arbeidsmarkt, abonnementen, aankondiging, aanwezigheid, architectuur, automatische, aangespoelde, aanbiedingen, alcoholprijs, advertenties, afwisselende, achtertuinen, australische, aangetrokken, aangekondigd, afschrijving, automobilist, achilleshiel, achterwielen
-
-## Insert-aanpak
-
-Per nieuw woord wordt één rij toegevoegd aan `dutch_words`:
-
+Per nieuw woord wordt een rij toegevoegd met:
 - `word` (lowercase)
 - `length` (5/6/10/12)
 - `approved = false` ← admin moet nog goedkeuren
@@ -41,8 +27,17 @@ Per nieuw woord wordt één rij toegevoegd aan `dutch_words`:
 - `rejected = false`
 - `suggested_by = NULL`
 
-Door `approved=false` verschijnen ze niet in de actieve woordpool en zijn ze pas speelbaar nadat jij ze in het admin-paneel goedkeurt.
+Ze verschijnen dan in het admin-paneel onder "ter beoordeling". Met de bulk-knop (die ik net heb gefixt voor grote aantallen via chunks van 100) kun je per lengte snel alles goedkeuren of afwijzen.
 
-## Open vraag
+## Volgorde van uitvoer
 
-Wil je dat ik ze allemaal (902 woorden) in één keer importeer, of liever per lengte zodat je ze gefaseerd kunt reviewen in admin? Allemaal in 1x is prima.
+1. Insert van de 361 nieuwe 5-letter woorden
+2. Insert van de 778 nieuwe 6-letter woorden
+3. Insert van de 1.355 nieuwe 10-letter woorden
+4. Insert van de 851 nieuwe 12-letter woorden
+
+Als één van de inserts om welke reden dan ook faalt, val ik per lengte terug op chunks van ~500 woorden zodat de rest wel doorgaat.
+
+## Daarna
+
+Open `/admin` → tab "Woorden ter beoordeling" → filter per lengte → gebruik "Alles" / "Alleen correct" / "Afkeuren".
