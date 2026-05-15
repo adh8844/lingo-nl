@@ -106,6 +106,11 @@ const Statistics = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
+      <SEO
+        title={`Statistieken${playerName ? ` van ${playerName}` : ""} — LINGO NL`}
+        description="Bekijk gedetailleerde Lingo statistieken: gemiddelde pogingen, snelste tijden, winpercentage en puntenverloop per spelniveau."
+        path={playerId ? `/statistics/${playerId}` : "/statistics"}
+      />
       <div className="w-full max-w-lg">
         <div className="flex items-center justify-between mb-6">
           <button onClick={() => navigate(-1)} className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all">← Terug</button>
