@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePresenceSettings, updatePresenceSetting } from "@/hooks/useAppSettings";
+import SEO from "@/components/SEO";
 
 const ADMIN_EMAIL = "denheijera@icloud.com";
 
