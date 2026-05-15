@@ -1,53 +1,48 @@
-## Doel
+# Nieuwe woorden importeren ter goedkeuring
 
-Het Overzicht-tabblad op `/rankings` opnieuw indelen met paginabrede gecombineerde kaarten (met subtabs zoals Dagkanjers), meerdere telfouten oplossen en de Dagkanjers-styling aanpassen.
+## Bron
 
-## Wijzigingen in `src/pages/Rankings.tsx`
+Vier categoriepagina's op lingowoorden.nl (5, 6, 10 en 12 letters). Woorden worden geëxtraheerd uit de href-pattern `/woord/{woord}/` zodat icoontjes (`<i class="fas ...">`) automatisch buiten beeld blijven.
 
-### 1. Nieuwe lay-out van het Overzicht-tab (volgorde van boven naar beneden)
+## Aantallen na vergelijking met de database
 
-```text
-[Online kaart]               (alleen als er online spelers zijn)
-[Dagkanjers]                 (subtabs Vandaag / Gisteren — bestaand)
-[Aantal punten]              paginabreed, subtabs: Totaal | Vandaag
-[Aantal spellen]             paginabreed, subtabs: Totaal | Vandaag
-[Reeks]                      paginabreed, subtabs: Maximaal | Huidige
-[Badges] [Uitdagingen]       2 kolommen naast elkaar (huidige MiniCards)
-```
 
-De zes losse MiniCards voor punten/spellen/reeks worden vervangen door drie nieuwe paginabrede `MergedCard`-componenten met dezelfde top-3 lay-out als de huidige MiniCard, maar met een interne subtab-keuze (zelfde stijl als Dagkanjers). De titel blijft klikbaar en navigeert naar de bijbehorende detail-tab met de juiste subselectie.
+| Lengte     | Op pagina | Al in DB | **Nieuw toe te voegen** |
+| ---------- | --------- | -------- | ----------------------- |
+| 5          | 295       | 1381     | **156**                 |
+| 6          | 296       | 1912     | **210**                 |
+| 10         | 277       | 205      | **254**                 |
+| 12         | 293       | 198      | **282**                 |
+| **Totaal** | &nbsp;    | &nbsp;   | **902**                 |
 
-State toevoegen: `overviewPointsSub`, `overviewGamesSub`, `overviewStreakSub` (lokaal in Overzicht; hergebruik bestaande `pointsSub` / `gamesSub` mag ook).
 
-### 2. Telling Uitdagingen corrigeren (tab + MiniCard + Dagkanjers)
+## Eerste 25 nieuwe woorden per lengte
 
-Op dit moment telt `loadChallenges` en `computeChampionsForRange` alleen spelers die zélf 5 ronde-wins hebben (winnaars). Een afgeronde uitdagingswedstrijd moet voor BEIDE deelnemers tellen (zowel uitdager als uitgedaagde, ongeacht winst/verlies).
+**5 letters (156 nieuw)**
+aldus, aftel, actie, apart, adres, airco, arena, ademt, alsof, alpen, armoe, admin, appen, alert, award, afnam, acuut, aruba, assen, atlas, aroma, alarm, boxen, beten, basis
 
-Aanpassing in `loadChallenges` en in de challenges-sectie van `computeChampionsForRange`:
+**6 letters (210 nieuw)**
+actief, afloop, agenda, afrond, afzien, achten, alleen, afdruk, aantal, andere, atlete, afrika, alsnog, artsen, advies, aanval, aanpak, absurd, afname, aanbod, alweer, acties, albert, alvast, afkeer
 
-```ts
-const completed = (m.player1_wins ?? 0) >= 5 || (m.player2_wins ?? 0) >= 5;
-if (completed) {
-  counts[m.player1_id] = (counts[m.player1_id] || 0) + 1;
-  counts[m.player2_id] = (counts[m.player2_id] || 0) + 1;
-}
-```
+**10 letters (254 nieuw)**
+anderhalve, afstamming, agrarische, achterhoek, activiteit, ambitieuze, abonnement, aanvallers, aanleiding, aangeraden, afgeleverd, aanmerking, aanvliegen, afmetingen, amerikanen, aangewezen, aangegeven, aangelegde, aanspoelen, autoritair, actiegroep, aangetoond, afgeblazen, autowassen, accupakket
 
-### 3. Dagkanjers — # Spellen telt ook uitdagingsrondes mee
+**12 letters (282 nieuw)**
+aangescherpt, actiegroepen, accepteerden, actievoerder, aanscherping, activiteiten, arbeidsmarkt, abonnementen, aankondiging, aanwezigheid, architectuur, automatische, aangespoelde, aanbiedingen, alcoholprijs, advertenties, afwisselende, achtertuinen, australische, aangetrokken, aangekondigd, afschrijving, automobilist, achilleshiel, achterwielen
 
-In `computeChampionsForRange` ontbreekt `match_rounds`. Dezelfde logica als in `loadGamesToday` toevoegen zodat het Dagkanjer-aantal én de winnaar overeenkomen met de "# Spellen vandaag"-lijst (bv. Ellen 89 i.p.v. Horse lover 13). Filter op `created_at` binnen `[startISO, endISO)` en `status = 'finished'`, en tel +1 voor `player1_id` én `player2_id`.
+## Insert-aanpak
 
-### 4. Dagkanjers — styling van de waarde
+Per nieuw woord wordt één rij toegevoegd aan `dutch_words`:
 
-Per item: naam blijft vetgedrukt; het getal wordt niet meer vetgedrukt en komt tussen haakjes achter de naam:
+- `word` (lowercase)
+- `length` (5/6/10/12)
+- `approved = false` ← admin moet nog goedkeuren
+- `appropriate = false`
+- `rejected = false`
+- `suggested_by = NULL`
 
-```text
-⭐ Dagscore   Ellen (245)
-🎮 # Spellen  Ellen (89)
-```
+Door `approved=false` verschijnen ze niet in de actieve woordpool en zijn ze pas speelbaar nadat jij ze in het admin-paneel goedkeurt.
 
-Implementatie: vervang `<span className="font-extrabold">{value}</span>` door `<span className="text-muted-foreground font-normal">({value})</span>` direct na de naam.
+## Open vraag
 
-## Geen database-wijzigingen
-
-Alles kan client-side worden opgelost; bestaande tabellen `online_matches`, `match_rounds`, `games`, `points_log`, `player_badges` voldoen.
+Wil je dat ik ze allemaal (902 woorden) in één keer importeer, of liever per lengte zodat je ze gefaseerd kunt reviewen in admin? Allemaal in 1x is prima.
