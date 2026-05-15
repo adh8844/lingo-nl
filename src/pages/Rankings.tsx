@@ -5,6 +5,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
 import ChallengeDialog from "@/components/ChallengeDialog";
+import SEO from "@/components/SEO";
 
 type Tab = "overview" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
