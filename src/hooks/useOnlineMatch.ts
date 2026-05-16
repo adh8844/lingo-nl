@@ -6,25 +6,16 @@ const WINS_TO_WIN = 5;
 const POINTS_PER_ROUND_WIN = 20;
 const MATCH_WINNER_BONUS = 100;
 
-async function awardMatchPoints(match: OnlineMatch, p1Wins: number, p2Wins: number, winnerId: string) {
-  // Award round win points and sync total via RPC
-  const awardPoints = async (playerId: string, pts: number, reason: string) => {
-    await supabase.from("points_log").insert({ player_id: playerId, points: pts, reason });
-    // Sync players.points from the single source of truth
-    const { data: totalData } = await supabase.rpc("get_player_total_points", { p_id: playerId });
-    if (totalData !== null) {
-      await supabase.from("players").update({ points: Number(totalData) }).eq("id", playerId);
-    }
-  };
-
-  if (p1Wins > 0) {
-    await awardPoints(match.player1_id, p1Wins * POINTS_PER_ROUND_WIN, `Online match: ${p1Wins} ronde(s) gewonnen`);
+async function awardMatchPoints(match: OnlineMatch, _p1Wins: number, _p2Wins: number, _winnerId: string) {
+  // Points are awarded server-side by the award-match-points edge function
+  // (service role bypasses RLS; client cannot insert into points_log directly).
+  try {
+    await supabase.functions.invoke("award-match-points", {
+      body: { match_id: match.id },
+    });
+  } catch (e) {
+    console.error("Failed to award match points", e);
   }
-  if (p2Wins > 0) {
-    await awardPoints(match.player2_id, p2Wins * POINTS_PER_ROUND_WIN, `Online match: ${p2Wins} ronde(s) gewonnen`);
-  }
-  // Bonus for match winner
-  await awardPoints(winnerId, MATCH_WINNER_BONUS, "Online match gewonnen: bonus");
 }
 
 export interface OnlineChallenge {
