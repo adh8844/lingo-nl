@@ -98,6 +98,28 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Authenticate caller ---
+    const authHeader = req.headers.get('Authorization') || ''
+    if (!authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    const token = authHeader.replace('Bearer ', '')
+
+    const authClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    const { data: userData, error: userErr } = await authClient.auth.getUser(token)
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    const authUserId = userData.user.id
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -109,6 +131,15 @@ Deno.serve(async (req) => {
     if (!player_id || !validLevels.includes(level) || !word || typeof solved !== 'boolean') {
       return new Response(JSON.stringify({ error: 'Ongeldige invoer' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Verify the caller owns the player record
+    const { data: ownerCheck } = await supabase
+      .from('players').select('user_id').eq('id', player_id).single()
+    if (!ownerCheck || ownerCheck.user_id !== authUserId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
