@@ -664,6 +664,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_player_id: { Args: never; Returns: string }
       get_player_daily_points: {
         Args: { from_date: string; p_id: string; to_date: string }
         Returns: {
@@ -672,6 +673,8 @@ export type Database = {
         }[]
       }
       get_player_total_points: { Args: { p_id: string }; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
+      is_match_participant: { Args: { p_match_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
