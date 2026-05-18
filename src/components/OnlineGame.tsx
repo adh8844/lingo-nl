@@ -238,9 +238,11 @@ const OnlineGame = ({
       stopTimer();
       setGameOver(true);
       setSubmitted(true);
+      setRevealWord(word);
       onSubmitFailed();
     }
-  }, [timeLeft, gameOver, submitted, onSubmitFailed, stopTimer]);
+  }, [timeLeft, gameOver, submitted, onSubmitFailed, stopTimer, word]);
+
 
   // Check match finished
   useEffect(() => {
