@@ -656,13 +656,20 @@ const OnlineGame = ({
         {language === "nl" ? `Ronde ${match.current_round}` : `Round ${match.current_round}`} · {wordLength} {language === "nl" ? "letters" : "letters"}
       </div>
 
-      {gameOver && submitted && (
-        <div className="px-4 py-2 rounded-lg bg-tile-correct/10 border border-tile-correct/20 text-tile-correct font-bold text-sm">
-          {won
-            ? language === "nl" ? "✓ Geraden! Volgende ronde..." : "✓ Guessed! Next round..."
-            : language === "nl" ? `Het woord was: ${word.toUpperCase()}` : `The word was: ${word.toUpperCase()}`}
-        </div>
-      )}
+      {gameOver && submitted && (() => {
+        // Always show the word that was actually played in this round — never
+        // fall back to `word` (which can already be the next round's word
+        // once realtime delivers the next match_rounds INSERT).
+        const shown = (revealWord || currentRound?.word || "").toUpperCase();
+        return (
+          <div className="px-4 py-2 rounded-lg bg-tile-correct/10 border border-tile-correct/20 text-tile-correct font-bold text-sm">
+            {won
+              ? language === "nl" ? "✓ Geraden! Volgende ronde..." : "✓ Guessed! Next round..."
+              : language === "nl" ? `Het woord was: ${shown}` : `The word was: ${shown}`}
+          </div>
+        );
+      })()}
+
 
       <div className="flex items-start gap-2 sm:gap-3">
         <LingoBoard
