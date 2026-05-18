@@ -307,7 +307,9 @@ const OnlineGame = ({
       stopTimer();
       setGameOver(true);
       setSubmitted(true);
+      setRevealWord(word);
       onSubmitFailed();
+
     } else {
       setCurrentGuess(word[0]);
     }
