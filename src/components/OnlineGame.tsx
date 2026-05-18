@@ -466,7 +466,8 @@ const OnlineGame = ({
         <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
           <p className="text-2xl font-extrabold">{isWinner ? "🏆🎉" : "😔"}</p>
           <p className="text-xl font-extrabold text-foreground">
-            {match.player1_wins} - {match.player2_wins}
+            {myWins} - {oppWins}
+
           </p>
           <div className="flex flex-col items-center">
             {isWinner && <p className="text-sm text-accent font-bold">+100 bonus ⭐</p>}
