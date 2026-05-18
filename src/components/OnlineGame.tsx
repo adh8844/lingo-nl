@@ -114,12 +114,35 @@ const OnlineGame = ({
   }, []);
 
 
+  // Recompute timeLeft from the server-anchored start. Tick frequently so the
+  // displayed value stays accurate even after a visibilitychange (browser
+  // throttling) — the truth is always (timer_seconds - elapsed_since_start).
+  const recomputeTimeLeft = useCallback(() => {
+    if (!roundServerStart) return;
+    const elapsed = Math.floor((Date.now() - roundServerStart) / 1000);
+    const remaining = Math.max(0, match.timer_seconds - elapsed);
+    setTimeLeft(remaining);
+  }, [roundServerStart, match.timer_seconds]);
+
   const resumeTimer = useCallback(() => {
     if (timerRef.current) return;
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
-    }, 1000);
-  }, []);
+    recomputeTimeLeft();
+    timerRef.current = setInterval(recomputeTimeLeft, 500);
+  }, [recomputeTimeLeft]);
+
+  // Re-sync on tab visibility change so timer doesn't appear to "reset" when
+  // returning to the tab after browser interval throttling.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") recomputeTimeLeft();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+    };
+  }, [recomputeTimeLeft]);
 
   // Detect that the current round has finished and we did NOT win → show loss message immediately
   // (so it appears at the same time as the winner's message, not 3s later when next round inserts).
@@ -132,6 +155,7 @@ const OnlineGame = ({
     stopTimer();
     setGameOver(true);
     setSubmitted(true);
+    setRevealWord(currentRound.word);
     const msg = language === "nl"
       ? `${opponentName} was sneller! Het woord was: ${currentRound.word.toUpperCase()}`
       : `${opponentName} was faster! The word was: ${currentRound.word.toUpperCase()}`;
@@ -158,6 +182,7 @@ const OnlineGame = ({
     // show the previous word now.
     if (!roundTransition && lossShownForRoundRef.current !== prevRoundRef.current) {
       const prevWord = prevWordRef.current;
+      setRevealWord(prevWord);
       const msg = language === "nl"
         ? `Het woord was: ${prevWord.toUpperCase()}`
         : `The word was: ${prevWord.toUpperCase()}`;
@@ -186,16 +211,23 @@ const OnlineGame = ({
     setShaking(false);
     setRevealedRow(null);
     setLetterStatuses({});
-    setTimeLeft(match.timer_seconds);
+    setRevealWord("");
     setSubmitted(false);
     setSuggestionDialogOpen(false);
     setPendingWord("");
 
     stopTimer();
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
-    }, 1000);
+    // Anchor timer to the round's server-side created_at so it survives
+    // tab hidden / network re-subscribe.
+    const startMs = round.created_at ? new Date(round.created_at).getTime() : Date.now();
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startMs) / 1000);
+      setTimeLeft(Math.max(0, match.timer_seconds - elapsed));
+    };
+    tick();
+    timerRef.current = setInterval(tick, 500);
   }, [match.timer_seconds, stopTimer]);
+
 
   useEffect(() => {
     return () => stopTimer();
