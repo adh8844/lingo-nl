@@ -86,6 +86,9 @@ const OnlineGame = ({
   const [roundTransition, setRoundTransition] = useState<string | null>(null);
   const [rematchRequested, setRematchRequested] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
+  // Snapshot of the just-played round's word, so the reveal banner never leaks
+  // the next round's word once `currentRound` updates via realtime.
+  const [revealWord, setRevealWord] = useState<string>("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
   const prevWordRef = useRef<string>("");
@@ -96,17 +99,50 @@ const OnlineGame = ({
   const [pendingWord, setPendingWord] = useState("");
 
   const isPlayer1 = playerId === match.player1_id;
+  // Always show local player's score first ("you - opponent")
+  const myWins = isPlayer1 ? match.player1_wins : match.player2_wins;
+  const oppWins = isPlayer1 ? match.player2_wins : match.player1_wins;
+
+  // Server-anchored start time: prefer the round's DB created_at so the timer
+  // survives tab visibility changes / late realtime subscription.
+  const roundServerStart = currentRound?.created_at
+    ? new Date(currentRound.created_at).getTime()
+    : (roundStartTime ?? null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }, []);
 
+
+  // Recompute timeLeft from the server-anchored start. Tick frequently so the
+  // displayed value stays accurate even after a visibilitychange (browser
+  // throttling) — the truth is always (timer_seconds - elapsed_since_start).
+  const recomputeTimeLeft = useCallback(() => {
+    if (!roundServerStart) return;
+    const elapsed = Math.floor((Date.now() - roundServerStart) / 1000);
+    const remaining = Math.max(0, match.timer_seconds - elapsed);
+    setTimeLeft(remaining);
+  }, [roundServerStart, match.timer_seconds]);
+
   const resumeTimer = useCallback(() => {
     if (timerRef.current) return;
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
-    }, 1000);
-  }, []);
+    recomputeTimeLeft();
+    timerRef.current = setInterval(recomputeTimeLeft, 500);
+  }, [recomputeTimeLeft]);
+
+  // Re-sync on tab visibility change so timer doesn't appear to "reset" when
+  // returning to the tab after browser interval throttling.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") recomputeTimeLeft();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+    };
+  }, [recomputeTimeLeft]);
 
   // Detect that the current round has finished and we did NOT win → show loss message immediately
   // (so it appears at the same time as the winner's message, not 3s later when next round inserts).
@@ -119,6 +155,7 @@ const OnlineGame = ({
     stopTimer();
     setGameOver(true);
     setSubmitted(true);
+    setRevealWord(currentRound.word);
     const msg = language === "nl"
       ? `${opponentName} was sneller! Het woord was: ${currentRound.word.toUpperCase()}`
       : `${opponentName} was faster! The word was: ${currentRound.word.toUpperCase()}`;
@@ -145,6 +182,7 @@ const OnlineGame = ({
     // show the previous word now.
     if (!roundTransition && lossShownForRoundRef.current !== prevRoundRef.current) {
       const prevWord = prevWordRef.current;
+      setRevealWord(prevWord);
       const msg = language === "nl"
         ? `Het woord was: ${prevWord.toUpperCase()}`
         : `The word was: ${prevWord.toUpperCase()}`;
@@ -173,16 +211,23 @@ const OnlineGame = ({
     setShaking(false);
     setRevealedRow(null);
     setLetterStatuses({});
-    setTimeLeft(match.timer_seconds);
+    setRevealWord("");
     setSubmitted(false);
     setSuggestionDialogOpen(false);
     setPendingWord("");
 
     stopTimer();
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
-    }, 1000);
+    // Anchor timer to the round's server-side created_at so it survives
+    // tab hidden / network re-subscribe.
+    const startMs = round.created_at ? new Date(round.created_at).getTime() : Date.now();
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startMs) / 1000);
+      setTimeLeft(Math.max(0, match.timer_seconds - elapsed));
+    };
+    tick();
+    timerRef.current = setInterval(tick, 500);
   }, [match.timer_seconds, stopTimer]);
+
 
   useEffect(() => {
     return () => stopTimer();
@@ -193,9 +238,11 @@ const OnlineGame = ({
       stopTimer();
       setGameOver(true);
       setSubmitted(true);
+      setRevealWord(word);
       onSubmitFailed();
     }
-  }, [timeLeft, gameOver, submitted, onSubmitFailed, stopTimer]);
+  }, [timeLeft, gameOver, submitted, onSubmitFailed, stopTimer, word]);
+
 
   // Check match finished
   useEffect(() => {
@@ -247,6 +294,7 @@ const OnlineGame = ({
       setGameOver(true);
       setWon(true);
       setSubmitted(true);
+      setRevealWord(word);
       playRoundWinSound();
       const guessTimeMs = roundStartTime ? Date.now() - roundStartTime : 0;
       onSubmitGuessTime(guessTimeMs);
@@ -256,11 +304,14 @@ const OnlineGame = ({
         : `You won this round! 🎉 The word was: ${word.toUpperCase()}`;
       setRoundTransition(msg);
       setTimeout(() => setRoundTransition(null), 3000);
+
     } else if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
       setGameOver(true);
       setSubmitted(true);
+      setRevealWord(word);
       onSubmitFailed();
+
     } else {
       setCurrentGuess(word[0]);
     }
@@ -281,7 +332,9 @@ const OnlineGame = ({
       stopTimer();
       setGameOver(true);
       setSubmitted(true);
+      setRevealWord(word);
       onSubmitFailed();
+
     } else {
       setCurrentGuess(word[0]);
     }
@@ -413,7 +466,8 @@ const OnlineGame = ({
         <div className="flex flex-col items-center gap-4 py-8 animate-bounce-in">
           <p className="text-2xl font-extrabold">{isWinner ? "🏆🎉" : "😔"}</p>
           <p className="text-xl font-extrabold text-foreground">
-            {match.player1_wins} - {match.player2_wins}
+            {myWins} - {oppWins}
+
           </p>
           <div className="flex flex-col items-center">
             {isWinner && <p className="text-sm text-accent font-bold">+100 bonus ⭐</p>}
@@ -454,7 +508,8 @@ const OnlineGame = ({
               : language === "nl" ? `${opponentName} wint!` : `${opponentName} wins!`}
         </p>
         <p className="text-lg font-bold text-muted-foreground">
-          {match.player1_wins} - {match.player2_wins}
+          {myWins} - {oppWins}
+
         </p>
         {(() => {
           const myRoundWins = isPlayer1 ? match.player1_wins : match.player2_wins;
@@ -588,7 +643,7 @@ const OnlineGame = ({
           <div className="text-sm font-bold text-primary">
             vs {opponentName}
             <span className="ml-2 text-muted-foreground font-medium">
-              {match.player1_wins} - {match.player2_wins}
+              {myWins} - {oppWins}
             </span>
           </div>
           <div className={`text-lg font-extrabold tabular-nums ${timeLeft <= 10 ? "text-accent animate-pulse" : "text-foreground"}`}>
@@ -601,13 +656,20 @@ const OnlineGame = ({
         {language === "nl" ? `Ronde ${match.current_round}` : `Round ${match.current_round}`} · {wordLength} {language === "nl" ? "letters" : "letters"}
       </div>
 
-      {gameOver && submitted && (
-        <div className="px-4 py-2 rounded-lg bg-tile-correct/10 border border-tile-correct/20 text-tile-correct font-bold text-sm">
-          {won
-            ? language === "nl" ? "✓ Geraden! Volgende ronde..." : "✓ Guessed! Next round..."
-            : language === "nl" ? `Het woord was: ${word.toUpperCase()}` : `The word was: ${word.toUpperCase()}`}
-        </div>
-      )}
+      {gameOver && submitted && (() => {
+        // Always show the word that was actually played in this round — never
+        // fall back to `word` (which can already be the next round's word
+        // once realtime delivers the next match_rounds INSERT).
+        const shown = (revealWord || currentRound?.word || "").toUpperCase();
+        return (
+          <div className="px-4 py-2 rounded-lg bg-tile-correct/10 border border-tile-correct/20 text-tile-correct font-bold text-sm">
+            {won
+              ? language === "nl" ? "✓ Geraden! Volgende ronde..." : "✓ Guessed! Next round..."
+              : language === "nl" ? `Het woord was: ${shown}` : `The word was: ${shown}`}
+          </div>
+        );
+      })()}
+
 
       <div className="flex items-start gap-2 sm:gap-3">
         <LingoBoard

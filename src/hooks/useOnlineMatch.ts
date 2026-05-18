@@ -57,6 +57,7 @@ export interface MatchRound {
   player2_guess_time_ms: number | null;
   winner_id: string | null;
   status: string;
+  created_at?: string;
 }
 
 export function useOnlineMatch(playerId: string | undefined) {
