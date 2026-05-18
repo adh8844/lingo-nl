@@ -694,6 +694,50 @@ const Rankings = () => {
     </div>
   );
 
+  const CollapsibleSection = ({
+    title,
+    isOpen,
+    isLoading,
+    onToggle,
+    children,
+  }: {
+    title: string;
+    isOpen: boolean;
+    isLoading: boolean;
+    onToggle: () => void;
+    children: ReactNode;
+  }) => (
+    <div className="rounded-lg bg-card/60 border border-border overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2.5 font-bold text-sm text-foreground hover:bg-secondary/30 transition-colors"
+      >
+        <span>{title}</span>
+        <span className="text-xs text-muted-foreground">{isOpen ? "▲" : "▼"}</span>
+      </button>
+      <div
+        className={`grid transition-all duration-200 ease-out ${
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="p-2">
+            {isLoading ? (
+              <div className="flex flex-col gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-7 rounded bg-secondary/40 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              children
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const tabs: { key: Tab; icon: string; title: string }[] = [
     { key: "overview", icon: "📊", title: "Overzicht" },
     { key: "points", icon: "⭐", title: "Aantal punten" },
