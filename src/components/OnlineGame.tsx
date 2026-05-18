@@ -292,6 +292,7 @@ const OnlineGame = ({
       setGameOver(true);
       setWon(true);
       setSubmitted(true);
+      setRevealWord(word);
       playRoundWinSound();
       const guessTimeMs = roundStartTime ? Date.now() - roundStartTime : 0;
       onSubmitGuessTime(guessTimeMs);
@@ -301,6 +302,7 @@ const OnlineGame = ({
         : `You won this round! 🎉 The word was: ${word.toUpperCase()}`;
       setRoundTransition(msg);
       setTimeout(() => setRoundTransition(null), 3000);
+
     } else if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
       setGameOver(true);
