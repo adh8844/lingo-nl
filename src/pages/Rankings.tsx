@@ -1008,17 +1008,15 @@ const Rankings = () => {
                 ensureLoaded("pointsToday", loadPointsToday),
               ]);
             })}
+            headerExtra={
+              <SubTabs
+                tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+                activeKey={pointsSub}
+                onTabChange={(k) => setPointsSub(k as PointsSub)}
+              />
+            }
           >
-            <MergedCard
-              title="Aantal punten"
-              icon="⭐"
-              valueIcon="⭐"
-              tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
-              activeKey={pointsSub}
-              onTabChange={(k) => setPointsSub(k as PointsSub)}
-              list={pointsSub === "total" ? pointsTotalList : pointsToday}
-              onTitleClick={() => { setTab("points"); }}
-            />
+            {renderMiniList(pointsSub === "total" ? pointsTotalList : pointsToday, "⭐")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -1031,17 +1029,15 @@ const Rankings = () => {
                 ensureLoaded("gamesToday", loadGamesToday),
               ]);
             })}
+            headerExtra={
+              <SubTabs
+                tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+                activeKey={gamesSub}
+                onTabChange={(k) => setGamesSub(k as GamesSub)}
+              />
+            }
           >
-            <MergedCard
-              title="Aantal spellen"
-              icon="🎯"
-              valueIcon="🎮"
-              tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
-              activeKey={gamesSub}
-              onTabChange={(k) => setGamesSub(k as GamesSub)}
-              list={gamesSub === "total" ? gamesTotal : gamesToday}
-              onTitleClick={() => { setTab("games"); }}
-            />
+            {renderMiniList(gamesSub === "total" ? gamesTotal : gamesToday, "🎮")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -1049,17 +1045,15 @@ const Rankings = () => {
             isOpen={!!expanded["streak"]}
             isLoading={!!loadingSection["players"]}
             onToggle={() => toggleExpand("streak", () => ensureLoaded("players", loadAllPlayers))}
+            headerExtra={
+              <SubTabs
+                tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
+                activeKey={streakSub}
+                onTabChange={(k) => setStreakSub(k as StreakSub)}
+              />
+            }
           >
-            <MergedCard
-              title="Reeks"
-              icon="🔥"
-              valueIcon="🔥"
-              tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
-              activeKey={streakSub}
-              onTabChange={(k) => setStreakSub(k as StreakSub)}
-              list={streakSub === "max" ? maxStreakList : currentStreakList}
-              onTitleClick={() => setTab("streak")}
-            />
+            {renderMiniList(streakSub === "max" ? maxStreakList : currentStreakList, "🔥")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -1068,7 +1062,7 @@ const Rankings = () => {
             isLoading={!!loadingSection["badges"]}
             onToggle={() => toggleExpand("badges", () => ensureLoaded("badges", loadBadges))}
           >
-            <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
+            {renderMiniList(badgesList, "🏅")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -1077,7 +1071,7 @@ const Rankings = () => {
             isLoading={!!loadingSection["challenges"]}
             onToggle={() => toggleExpand("challenges", () => ensureLoaded("challenges", loadChallenges))}
           >
-            <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
+            {renderMiniList(challengesList, "⚔️")}
           </CollapsibleSection>
           </>
         )}
