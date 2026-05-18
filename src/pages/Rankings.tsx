@@ -699,30 +699,39 @@ const Rankings = () => {
     isOpen,
     isLoading,
     onToggle,
+    headerExtra,
     children,
   }: {
     title: string;
     isOpen: boolean;
     isLoading: boolean;
     onToggle: () => void;
+    headerExtra?: ReactNode;
     children: ReactNode;
   }) => (
     <div className="rounded-lg bg-card/60 border border-border overflow-hidden">
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 font-bold text-sm text-foreground hover:bg-secondary/30 transition-colors"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 font-bold text-sm text-foreground hover:bg-secondary/30 transition-colors text-left cursor-pointer select-none"
       >
-        <span>{title}</span>
+        <span className="flex-1">{title}</span>
+        {isOpen && headerExtra && (
+          <span onClick={(e) => e.stopPropagation()} className="flex items-center">
+            {headerExtra}
+          </span>
+        )}
         <span className="text-xs text-muted-foreground">{isOpen ? "▲" : "▼"}</span>
-      </button>
+      </div>
       <div
         className={`grid transition-all duration-200 ease-out ${
           isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="overflow-hidden">
-          <div className="p-2">
+          <div className="px-3 pb-3">
             {isLoading ? (
               <div className="flex flex-col gap-1.5">
                 {[0, 1, 2].map((i) => (
@@ -737,6 +746,89 @@ const Rankings = () => {
       </div>
     </div>
   );
+
+  const SubTabs = ({
+    tabs: subTabs,
+    activeKey,
+    onTabChange,
+  }: {
+    tabs: { key: string; label: string }[];
+    activeKey: string;
+    onTabChange: (key: string) => void;
+  }) => (
+    <div className="flex gap-1">
+      {subTabs.map((s) => (
+        <button
+          key={s.key}
+          onClick={(e) => {
+            e.stopPropagation();
+            onTabChange(s.key);
+          }}
+          className={`px-2 py-1 rounded font-bold text-xs transition-all ${
+            activeKey === s.key
+              ? "bg-accent text-accent-foreground"
+              : "bg-secondary text-secondary-foreground hover:brightness-110"
+          }`}
+        >
+          {s.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderMiniList = (list: RankEntry[], valueIcon: string) => {
+    if (list.length === 0) {
+      return <p className="text-xs text-muted-foreground py-1">Nog geen data</p>;
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        {list.slice(0, 3).map((e, i) => {
+          const isMe = player?.id === e.id;
+          const op = onlineMap.get(e.id);
+          const isOnline = !!op;
+          const canChallenge = isOnline && !isMe && op?.status !== "in_game";
+          return (
+            <div
+              key={e.id}
+              className="flex items-center justify-between px-2 py-1.5 rounded text-xs bg-secondary/40"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-5 text-right shrink-0">{medal(i)}</span>
+                {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
+                <span
+                  className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                  translate="no"
+                  onClick={(ev) => { ev.stopPropagation(); navigate(`/profile/${e.id}`); }}
+                >
+                  {e.display_name}
+                </span>
+                {e.secondary && (
+                  <span className="text-xs text-muted-foreground shrink-0">({e.secondary})</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="font-extrabold shrink-0">
+                  {valueIcon} {e.value}
+                </span>
+                {canChallenge && (
+                  <button
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      openChallenge(e.id, e.display_name);
+                    }}
+                    title="Uitdagen"
+                    className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-bold text-xs hover:brightness-110"
+                  >
+                    ⚔️
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   const tabs: { key: Tab; icon: string; title: string }[] = [
     { key: "overview", icon: "📊", title: "Overzicht" },
@@ -916,17 +1008,15 @@ const Rankings = () => {
                 ensureLoaded("pointsToday", loadPointsToday),
               ]);
             })}
+            headerExtra={
+              <SubTabs
+                tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+                activeKey={pointsSub}
+                onTabChange={(k) => setPointsSub(k as PointsSub)}
+              />
+            }
           >
-            <MergedCard
-              title="Aantal punten"
-              icon="⭐"
-              valueIcon="⭐"
-              tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
-              activeKey={pointsSub}
-              onTabChange={(k) => setPointsSub(k as PointsSub)}
-              list={pointsSub === "total" ? pointsTotalList : pointsToday}
-              onTitleClick={() => { setTab("points"); }}
-            />
+            {renderMiniList(pointsSub === "total" ? pointsTotalList : pointsToday, "⭐")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -939,17 +1029,15 @@ const Rankings = () => {
                 ensureLoaded("gamesToday", loadGamesToday),
               ]);
             })}
+            headerExtra={
+              <SubTabs
+                tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+                activeKey={gamesSub}
+                onTabChange={(k) => setGamesSub(k as GamesSub)}
+              />
+            }
           >
-            <MergedCard
-              title="Aantal spellen"
-              icon="🎯"
-              valueIcon="🎮"
-              tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
-              activeKey={gamesSub}
-              onTabChange={(k) => setGamesSub(k as GamesSub)}
-              list={gamesSub === "total" ? gamesTotal : gamesToday}
-              onTitleClick={() => { setTab("games"); }}
-            />
+            {renderMiniList(gamesSub === "total" ? gamesTotal : gamesToday, "🎮")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -957,17 +1045,15 @@ const Rankings = () => {
             isOpen={!!expanded["streak"]}
             isLoading={!!loadingSection["players"]}
             onToggle={() => toggleExpand("streak", () => ensureLoaded("players", loadAllPlayers))}
+            headerExtra={
+              <SubTabs
+                tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
+                activeKey={streakSub}
+                onTabChange={(k) => setStreakSub(k as StreakSub)}
+              />
+            }
           >
-            <MergedCard
-              title="Reeks"
-              icon="🔥"
-              valueIcon="🔥"
-              tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
-              activeKey={streakSub}
-              onTabChange={(k) => setStreakSub(k as StreakSub)}
-              list={streakSub === "max" ? maxStreakList : currentStreakList}
-              onTitleClick={() => setTab("streak")}
-            />
+            {renderMiniList(streakSub === "max" ? maxStreakList : currentStreakList, "🔥")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -976,7 +1062,7 @@ const Rankings = () => {
             isLoading={!!loadingSection["badges"]}
             onToggle={() => toggleExpand("badges", () => ensureLoaded("badges", loadBadges))}
           >
-            <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
+            {renderMiniList(badgesList, "🏅")}
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -985,7 +1071,7 @@ const Rankings = () => {
             isLoading={!!loadingSection["challenges"]}
             onToggle={() => toggleExpand("challenges", () => ensureLoaded("challenges", loadChallenges))}
           >
-            <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
+            {renderMiniList(challengesList, "⚔️")}
           </CollapsibleSection>
           </>
         )}
