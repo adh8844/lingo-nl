@@ -643,7 +643,7 @@ const OnlineGame = ({
           <div className="text-sm font-bold text-primary">
             vs {opponentName}
             <span className="ml-2 text-muted-foreground font-medium">
-              {match.player1_wins} - {match.player2_wins}
+              {myWins} - {oppWins}
             </span>
           </div>
           <div className={`text-lg font-extrabold tabular-nums ${timeLeft <= 10 ? "text-accent animate-pulse" : "text-foreground"}`}>
