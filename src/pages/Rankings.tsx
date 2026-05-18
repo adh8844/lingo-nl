@@ -390,16 +390,61 @@ const Rankings = () => {
     setChampionsYesterday(yest);
   }, [computeChampionsForRange]);
 
-  // Load everything on mount (Overzicht needs all)
+  // Track which sections have been loaded and which are expanded
+  const [loaded, setLoaded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loadingSection, setLoadingSection] = useState<Record<string, boolean>>({});
+
+  const ensureLoaded = useCallback(
+    async (key: string, loader: () => Promise<void>) => {
+      if (loaded[key] || loadingSection[key]) return;
+      setLoadingSection((s) => ({ ...s, [key]: true }));
+      try {
+        await loader();
+        setLoaded((s) => ({ ...s, [key]: true }));
+      } finally {
+        setLoadingSection((s) => ({ ...s, [key]: false }));
+      }
+    },
+    [loaded, loadingSection]
+  );
+
+  const toggleExpand = useCallback(
+    (key: string, loader: () => Promise<void>) => {
+      setExpanded((s) => {
+        const next = !s[key];
+        if (next) void ensureLoaded(key, loader);
+        return { ...s, [key]: next };
+      });
+    },
+    [ensureLoaded]
+  );
+
+  // Immediate loads: players (for online list) + champions (Dagkanjers)
   useEffect(() => {
-    loadAllPlayers();
-    loadPointsToday();
-    loadGamesTotal();
-    loadGamesToday();
-    loadBadges();
-    loadChallenges();
-    loadChampions();
-  }, [loadAllPlayers, loadPointsToday, loadGamesTotal, loadGamesToday, loadBadges, loadChallenges, loadChampions]);
+    void ensureLoaded("players", loadAllPlayers);
+    void ensureLoaded("champions", loadChampions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When user opens a non-overview tab, ensure its data is loaded
+  useEffect(() => {
+    if (tab === "points") {
+      void ensureLoaded("players", loadAllPlayers);
+      void ensureLoaded("pointsToday", loadPointsToday);
+    } else if (tab === "streak") {
+      void ensureLoaded("players", loadAllPlayers);
+    } else if (tab === "games") {
+      void ensureLoaded("gamesTotal", loadGamesTotal);
+      void ensureLoaded("gamesToday", loadGamesToday);
+    } else if (tab === "badges") {
+      void ensureLoaded("badges", loadBadges);
+    } else if (tab === "challenges") {
+      void ensureLoaded("challenges", loadChallenges);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
 
   // Derived lists
   const pointsTotalList: RankEntry[] = [...allPlayers]
