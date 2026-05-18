@@ -710,22 +710,21 @@ const Rankings = () => {
     children: ReactNode;
   }) => (
     <div className="rounded-lg bg-card/60 border border-border overflow-hidden">
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 font-bold text-sm text-foreground hover:bg-secondary/30 transition-colors text-left"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 font-bold text-sm text-foreground hover:bg-secondary/30 transition-colors text-left cursor-pointer select-none"
       >
         <span className="flex-1">{title}</span>
-        {isOpen && (
-          <span
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center"
-          >
+        {isOpen && headerExtra && (
+          <span onClick={(e) => e.stopPropagation()} className="flex items-center">
             {headerExtra}
           </span>
         )}
         <span className="text-xs text-muted-foreground">{isOpen ? "▲" : "▼"}</span>
-      </button>
+      </div>
       <div
         className={`grid transition-all duration-200 ease-out ${
           isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
