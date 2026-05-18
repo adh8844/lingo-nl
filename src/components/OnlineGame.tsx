@@ -86,6 +86,9 @@ const OnlineGame = ({
   const [roundTransition, setRoundTransition] = useState<string | null>(null);
   const [rematchRequested, setRematchRequested] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
+  // Snapshot of the just-played round's word, so the reveal banner never leaks
+  // the next round's word once `currentRound` updates via realtime.
+  const [revealWord, setRevealWord] = useState<string>("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
   const prevWordRef = useRef<string>("");
@@ -96,10 +99,20 @@ const OnlineGame = ({
   const [pendingWord, setPendingWord] = useState("");
 
   const isPlayer1 = playerId === match.player1_id;
+  // Always show local player's score first ("you - opponent")
+  const myWins = isPlayer1 ? match.player1_wins : match.player2_wins;
+  const oppWins = isPlayer1 ? match.player2_wins : match.player1_wins;
+
+  // Server-anchored start time: prefer the round's DB created_at so the timer
+  // survives tab visibility changes / late realtime subscription.
+  const roundServerStart = currentRound?.created_at
+    ? new Date(currentRound.created_at).getTime()
+    : (roundStartTime ?? null);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }, []);
+
 
   const resumeTimer = useCallback(() => {
     if (timerRef.current) return;
