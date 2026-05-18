@@ -748,13 +748,17 @@ const Rankings = () => {
           <>
           {(() => {
             const onlineList = allPlayers.filter((p) => onlineIds.has(p.id));
-            if (onlineList.length === 0) return null;
             return (
               <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2 mb-1">
                 <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
                   <span className="w-2 h-2 rounded-full bg-green-500" />
                   <span>Online ({onlineList.length})</span>
                 </div>
+                {onlineList.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-1">
+                    Er is op dit moment niemand online.
+                  </p>
+                ) : (
                 <div className="flex flex-col gap-1">
                   {onlineList.map((p) => {
                     const isMe = player?.id === p.id;
@@ -792,12 +796,14 @@ const Rankings = () => {
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })()}
           {(() => {
             const champs = daySub === "today" ? championsToday : championsYesterday;
             const hasAny = champs.some((c) => c.entry);
+            const isLoading = loadingSection["champions"] && !loaded["champions"];
             return (
               <div className="rounded-lg bg-card/60 border border-border p-3 flex flex-col gap-2 mb-1">
                 <div className="flex items-center justify-between gap-2">
@@ -818,7 +824,13 @@ const Rankings = () => {
                     ))}
                   </div>
                 </div>
-                {!hasAny ? (
+                {isLoading ? (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[0,1,2,3].map((i) => (
+                      <div key={i} className="h-7 rounded bg-secondary/40 animate-pulse" />
+                    ))}
+                  </div>
+                ) : !hasAny ? (
                   <p className="text-xs text-muted-foreground py-1">Nog geen data</p>
                 ) : (
                   <div className="grid grid-cols-2 gap-1.5">
@@ -849,40 +861,88 @@ const Rankings = () => {
               </div>
             );
           })()}
-          <MergedCard
-            title="Aantal punten"
-            icon="⭐"
-            valueIcon="⭐"
-            tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
-            activeKey={pointsSub}
-            onTabChange={(k) => setPointsSub(k as PointsSub)}
-            list={pointsSub === "total" ? pointsTotalList : pointsToday}
-            onTitleClick={() => { setTab("points"); }}
-          />
-          <MergedCard
-            title="Aantal spellen"
-            icon="🎯"
-            valueIcon="🎮"
-            tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
-            activeKey={gamesSub}
-            onTabChange={(k) => setGamesSub(k as GamesSub)}
-            list={gamesSub === "total" ? gamesTotal : gamesToday}
-            onTitleClick={() => { setTab("games"); }}
-          />
-          <MergedCard
-            title="Reeks"
-            icon="🔥"
-            valueIcon="🔥"
-            tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
-            activeKey={streakSub}
-            onTabChange={(k) => setStreakSub(k as StreakSub)}
-            list={streakSub === "max" ? maxStreakList : currentStreakList}
-            onTitleClick={() => setTab("streak")}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <CollapsibleSection
+            title="⭐ Aantal punten"
+            isOpen={!!expanded["points"]}
+            isLoading={!!loadingSection["pointsToday"] || !!loadingSection["players"]}
+            onToggle={() => toggleExpand("points", async () => {
+              await Promise.all([
+                ensureLoaded("players", loadAllPlayers),
+                ensureLoaded("pointsToday", loadPointsToday),
+              ]);
+            })}
+          >
+            <MergedCard
+              title="Aantal punten"
+              icon="⭐"
+              valueIcon="⭐"
+              tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+              activeKey={pointsSub}
+              onTabChange={(k) => setPointsSub(k as PointsSub)}
+              list={pointsSub === "total" ? pointsTotalList : pointsToday}
+              onTitleClick={() => { setTab("points"); }}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="🎯 Aantal spellen"
+            isOpen={!!expanded["games"]}
+            isLoading={!!loadingSection["gamesTotal"] || !!loadingSection["gamesToday"]}
+            onToggle={() => toggleExpand("games", async () => {
+              await Promise.all([
+                ensureLoaded("gamesTotal", loadGamesTotal),
+                ensureLoaded("gamesToday", loadGamesToday),
+              ]);
+            })}
+          >
+            <MergedCard
+              title="Aantal spellen"
+              icon="🎯"
+              valueIcon="🎮"
+              tabs={[{ key: "total", label: "Totaal" }, { key: "today", label: "Vandaag" }]}
+              activeKey={gamesSub}
+              onTabChange={(k) => setGamesSub(k as GamesSub)}
+              list={gamesSub === "total" ? gamesTotal : gamesToday}
+              onTitleClick={() => { setTab("games"); }}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="🔥 Reeks"
+            isOpen={!!expanded["streak"]}
+            isLoading={!!loadingSection["players"]}
+            onToggle={() => toggleExpand("streak", () => ensureLoaded("players", loadAllPlayers))}
+          >
+            <MergedCard
+              title="Reeks"
+              icon="🔥"
+              valueIcon="🔥"
+              tabs={[{ key: "max", label: "Maximaal" }, { key: "current", label: "Huidige" }]}
+              activeKey={streakSub}
+              onTabChange={(k) => setStreakSub(k as StreakSub)}
+              list={streakSub === "max" ? maxStreakList : currentStreakList}
+              onTitleClick={() => setTab("streak")}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="🏅 Badges"
+            isOpen={!!expanded["badges"]}
+            isLoading={!!loadingSection["badges"]}
+            onToggle={() => toggleExpand("badges", () => ensureLoaded("badges", loadBadges))}
+          >
             <MiniCard title="Badges" icon="🏅" valueIcon="🏅" list={badgesList} onTitleClick={() => setTab("badges")} />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="⚔️ Uitdagingen"
+            isOpen={!!expanded["challenges"]}
+            isLoading={!!loadingSection["challenges"]}
+            onToggle={() => toggleExpand("challenges", () => ensureLoaded("challenges", loadChallenges))}
+          >
             <MiniCard title="Uitdagingen" icon="⚔️" valueIcon="⚔️" list={challengesList} onTitleClick={() => setTab("challenges")} />
-          </div>
+          </CollapsibleSection>
           </>
         )}
 
