@@ -32,43 +32,33 @@ const Index = () => {
 
   const loadUnlockProgress = useCallback(async () => {
     if (!player) return;
-    const { data: fg } = await supabase
-      .from("games" as any)
-      .select("points_earned")
-      .eq("player_id", player.id)
-      .eq("level", 4);
-    const fourLetterPoints = (fg || []).reduce((s: number, g: any) => s + (g.points_earned || 0), 0);
+    // Skip heavy queries when both levels are already unlocked — progress UI not shown.
+    if (player.unlocked_5letter && player.unlocked_6letter) return;
 
-    const { data: badges } = await supabase
-      .from("player_badges" as any)
-      .select("badge_id")
-      .eq("player_id", player.id);
-    const badgeIds = new Set((badges || []).map((b: any) => b.badge_id));
+    const [fgRes, badgesRes, defsRes, faRes] = await Promise.all([
+      supabase.from("games" as any).select("points_earned").eq("player_id", player.id).eq("level", 4),
+      supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id),
+      supabase.from("badges" as any).select("id, category, is_rare"),
+      supabase.from("games" as any).select("id", { count: "exact", head: true }).eq("player_id", player.id).eq("solved", true).eq("attempts", 1),
+    ]);
 
-    const { data: defs } = await supabase.from("badges" as any).select("id, category, is_rare");
+    const fourLetterPoints = (fgRes.data || []).reduce((s: number, g: any) => s + (g.points_earned || 0), 0);
+    const badgeIds = new Set((badgesRes.data || []).map((b: any) => b.badge_id));
     const cats = new Set<string>();
-    let rare = 0,
-      normal = 0;
-    (defs || []).forEach((b: any) => {
+    let rare = 0, normal = 0;
+    (defsRes.data || []).forEach((b: any) => {
       if (badgeIds.has(b.id)) {
         cats.add(b.category);
-        if (b.is_rare) rare++;
-        else normal++;
+        if (b.is_rare) rare++; else normal++;
       }
     });
-
-    const { data: fa } = await supabase
-      .from("games" as any)
-      .select("id")
-      .eq("player_id", player.id)
-      .eq("solved", true)
-      .eq("attempts", 1);
 
     setUnlockProgress({
       fourLetterPoints,
       badgeCount: badgeIds.size,
       badgeCategories: cats.size,
-      firstAttemptWins: (fa || []).length,
+      firstAttemptWins: faRes.count || 0,
+
       totalPoints: player.points || 0,
       rareBadgeCount: rare,
       normalBadgeCount: normal,
