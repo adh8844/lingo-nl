@@ -508,7 +508,8 @@ const OnlineGame = ({
               : language === "nl" ? `${opponentName} wint!` : `${opponentName} wins!`}
         </p>
         <p className="text-lg font-bold text-muted-foreground">
-          {match.player1_wins} - {match.player2_wins}
+          {myWins} - {oppWins}
+
         </p>
         {(() => {
           const myRoundWins = isPlayer1 ? match.player1_wins : match.player2_wins;
