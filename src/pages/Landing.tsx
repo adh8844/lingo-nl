@@ -138,28 +138,28 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
           Nederlands woordspel · gratis · geen reclame
         </motion.div>
 
-        <h1 className="font-extrabold tracking-tighter text-primary leading-[0.85] text-7xl sm:text-8xl md:text-9xl flex items-end justify-center">
+        <h1 className="font-extrabold tracking-tighter text-primary leading-[0.85] text-5xl sm:text-7xl md:text-9xl flex items-end justify-center">
           <motion.span
             initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.1 }}
           >
-            L
+            Ding
           </motion.span>
           <motion.span
             initial={{ scale: 0, rotate: -45 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 180, damping: 12, delay: 0.4 }}
-            className="inline-block mx-[-6px] mb-[2px]"
+            className="inline-block mx-[-4px] sm:mx-[-6px] mb-[2px]"
           >
-            <DingoMascot size={120} className="md:!w-[140px] md:!h-[140px]" />
+            <DingoMascot size={56} className="sm:!w-[100px] sm:!h-[100px] md:!w-[140px] md:!h-[140px]" />
           </motion.span>
           <motion.span
             initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            NGO
+            Lingo
           </motion.span>
         </h1>
 
