@@ -186,7 +186,7 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
         >
           Raad het woord.{" "}
           <span className="text-primary">Beklim</span> de ranglijst.{" "}
-          <span className="text-accent">Word</span> de scherpste taalkop van Nederland.
+          <span className="text-accent">Word</span> de scherpste talenknobbel van Nederland.
         </motion.p>
 
         <motion.p
