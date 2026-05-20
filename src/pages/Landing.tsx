@@ -19,6 +19,7 @@ import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import dingoConfetti from "@/assets/dingo-confetti.png";
+import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -161,7 +162,11 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
             transition={{ type: "spring", stiffness: 180, damping: 12, delay: 0.4 }}
             className="inline-block mx-[-3px] mb-[2px]"
           >
-            <DingoMascot size={45} className="sm:!w-[80px] sm:!h-[80px] md:!w-[112px] md:!h-[112px]" />
+            <img
+              src={dingoLogo}
+              alt="Dingo mascotte"
+              className="h-[45px] w-auto sm:h-[80px] md:h-[112px] object-contain block"
+            />
           </motion.span>
           <motion.span
             initial={{ y: 60, opacity: 0 }}
