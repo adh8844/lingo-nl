@@ -143,7 +143,7 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
             initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-accent"
+            className="text-primary"
           >
             Dingo
           </motion.span>

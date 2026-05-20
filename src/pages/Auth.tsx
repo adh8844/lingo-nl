@@ -110,7 +110,7 @@ const Auth = () => {
       <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-bounce-in">
         <div className="flex flex-col items-center gap-2">
           <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tighter flex items-end leading-none">
-            <span className="text-accent">Dingo</span>
+            <span className="text-primary">Dingo</span>
             <span className="text-primary ml-2 sm:ml-3">L</span>
             <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
             <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block" />
