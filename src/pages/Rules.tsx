@@ -19,7 +19,7 @@ const Rules = () => {
     <div className="min-h-screen flex flex-col items-center px-3 sm:px-4 py-6 sm:py-10">
       <SEO
         title="Spelregels — DingoLingo woordspel"
-        description="Lees de spelregels van Lingo NL: hoe je woorden raadt, punten verdient, badges ontgrendelt en niveaus van 4, 5 en 6 letters speelt."
+        description="Lees de spelregels van DingoLingo: hoe je woorden raadt, punten verdient, badges ontgrendelt en niveaus van 4, 5 en 6 letters speelt."
         path="/spelregels"
       />
       <div className="w-full max-w-3xl">
