@@ -64,16 +64,16 @@ const Landing = () => {
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg"
+        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
       >
-        <div className="flex items-center gap-1 pl-2 pr-3">
-          <span className="text-lg font-extrabold text-primary leading-none">L</span>
-          <DingoMascot size={22} className="-mx-0.5" />
-          <span className="text-lg font-extrabold text-primary leading-none">NGO</span>
+        <div className="flex items-center gap-1 pl-1 sm:pl-2 pr-2 sm:pr-3">
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">L</span>
+          <DingoMascot size={20} className="-mx-0.5 sm:size-[22px]" />
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">NGO</span>
         </div>
         <button
           onClick={() => navigate("/auth")}
-          className="text-xs font-bold px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground transition-colors"
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap"
         >
           Inloggen
         </button>
@@ -81,7 +81,7 @@ const Landing = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate(ctaTarget)}
-          className="text-xs font-extrabold px-3 py-1.5 rounded-full bg-primary text-primary-foreground"
+          className="text-[11px] sm:text-xs font-extrabold px-2 sm:px-3 py-1.5 rounded-full bg-primary text-primary-foreground whitespace-nowrap"
         >
           {session ? "Spelen" : "Start gratis"}
         </motion.button>
