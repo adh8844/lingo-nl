@@ -143,17 +143,21 @@ Deno.serve(async (req) => {
 
     // Validate the word exists in the approved Dutch word list to prevent
     // arbitrary strings being injected into the public games/leaderboard.
-    const { data: wordCheck } = await supabase
-      .from('dutch_words')
-      .select('id')
-      .eq('word', word.toLowerCase())
-      .eq('approved', true)
-      .eq('appropriate', true)
-      .maybeSingle()
-    if (!wordCheck) {
-      return new Response(JSON.stringify({ error: 'Ongeldig woord' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    // Only enforced for normal modes (4/5/6); challenger modes use long words
+    // sourced through different flows.
+    if ([4, 5, 6].includes(level)) {
+      const { data: wordCheck } = await supabase
+        .from('dutch_words')
+        .select('id')
+        .eq('word', word.toLowerCase())
+        .eq('approved', true)
+        .eq('appropriate', true)
+        .maybeSingle()
+      if (!wordCheck) {
+        return new Response(JSON.stringify({ error: 'Ongeldig woord' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
     }
 
     // Verify the caller owns the player record
