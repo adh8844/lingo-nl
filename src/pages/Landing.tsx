@@ -400,7 +400,7 @@ const FeatureGrid = () => {
   return (
     <section className="py-24 px-4 bg-gradient-to-b from-transparent via-card/30 to-transparent">
       <SectionHeader kicker="Wat je krijgt" title="Niet zomaar een woordspel." />
-      <div className="max-w-6xl mx-auto mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="max-w-5xl mx-auto mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {features.map((f, i) => (
           <motion.div
             key={f.title}
@@ -408,14 +408,16 @@ const FeatureGrid = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.5, delay: (i % 3) * 0.08 }}
-            whileHover={{ scale: 1.03, borderColor: "hsl(var(--primary))" }}
-            className="p-6 rounded-2xl bg-card border border-border cursor-default"
+            whileHover={{ scale: 1.02, borderColor: "hsl(var(--primary))" }}
+            className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border cursor-default"
           >
-            <div className="w-16 h-16 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-4">
+            <div className="shrink-0 w-14 h-14 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
               {f.icon}
             </div>
-            <h4 className="font-extrabold text-lg mb-1">{f.title}</h4>
-            <p className="text-sm text-muted-foreground">{f.body}</p>
+            <div className="min-w- 0">
+              <h4 className="font-extrabold text-base leading-tight">{f.title}</h4>
+              <p className="text-sm text-muted-foreground mt-0.5">{f.body}</p>
+            </div>
           </motion.div>
         ))}
       </div>
