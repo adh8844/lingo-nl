@@ -549,10 +549,14 @@ const BoardShowcase = () => {
 /* ------------------------ Badges section ------------------------ */
 const BadgesSection = () => {
   const badges = [
-    { img: dingoTrophy, name: "Kampioen", rare: true },
-    { img: dingoSunglasses, name: "Cool onder druk", rare: false },
-    { img: dingoConfetti, name: "Feestbeest", rare: false },
-    { img: dingoDancing, name: "Op dreef", rare: true },
+    { icon: <Flame className="w-7 h-7" />, name: "Op dreef", desc: "5 dagen op rij gespeeld", points: 50, rare: false },
+    { icon: <Zap className="w-7 h-7" />, name: "Supersnel", desc: "Geraden binnen 20 seconden", points: 30, rare: false },
+    { icon: <Target className="w-7 h-7" />, name: "Vlekkeloos", desc: "Geraden in 1 poging", points: 75, rare: true },
+    { icon: <Crown className="w-7 h-7" />, name: "Maandmaster", desc: "Een maand lang elke dag gespeeld", points: 200, rare: true },
+    { icon: <Trophy className="w-7 h-7" />, name: "Meesterspeler", desc: "1000 spellen gewonnen", points: 250, rare: true },
+    { icon: <Users className="w-7 h-7" />, name: "Werver", desc: "5 vrienden uitgenodigd", points: 100, rare: false },
+    { icon: <Brain className="w-7 h-7" />, name: "Onvermoeibaar", desc: "50 spellen in één dag", points: 80, rare: false },
+    { icon: <Star className="w-7 h-7" />, name: "Legend", desc: "Top 10 van Nederland", points: 500, rare: true },
   ];
   return (
     <section className="py-28 px-4 relative overflow-hidden">
@@ -560,24 +564,36 @@ const BadgesSection = () => {
         kicker="Verzamel ze allemaal"
         title="Badges die laten zien hoe jij speelt."
       />
-      <div className="max-w-5xl mx-auto mt-14 grid grid-cols-2 md:grid-cols-4 gap-5">
+      <div className="max-w-5xl mx-auto mt-14 grid grid-cols-2 md:grid-cols-4 gap-3">
         {badges.map((b, i) => (
           <motion.div
             key={b.name}
-            initial={{ opacity: 0, y: 30, rotate: -6 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: i * 0.1, type: "spring" }}
-            whileHover={{ y: -8, rotate: [0, -4, 4, 0], transition: { rotate: { duration: 0.5 } } }}
-            className="relative aspect-square p-5 rounded-3xl bg-card border border-border flex flex-col items-center justify-center text-center"
+            transition={{ duration: 0.5, delay: (i % 4) * 0.08, type: "spring" }}
+            whileHover={{ y: -4 }}
+            className={`relative rounded-xl border p-4 ${
+              b.rare
+                ? "bg-accent/10 border-accent/30"
+                : "bg-primary/10 border-primary/30"
+            }`}
           >
-            {b.rare && (
-              <span className="absolute top-2 right-2 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-accent text-accent-foreground">
-                ZELDZAAM
-              </span>
-            )}
-            <img src={b.img} alt={b.name} className="w-24 h-24 object-contain mb-2 drop-shadow-xl" />
-            <div className="text-sm font-extrabold">{b.name}</div>
+            <div className="flex items-start gap-3">
+              <div className={`shrink-0 mt-0.5 ${b.rare ? "text-accent" : "text-primary"}`}>
+                {b.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-bold text-foreground">
+                    {b.name}
+                    {b.rare && " ★"}
+                  </p>
+                  <span className="text-[10px] font-bold text-primary shrink-0">+{b.points}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{b.desc}</p>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
