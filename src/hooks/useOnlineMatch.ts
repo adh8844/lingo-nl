@@ -1,17 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getRandomWordAsync, Language, WordLength } from "@/data/words";
 
 const WINS_TO_WIN = 5;
-const POINTS_PER_ROUND_WIN = 20;
-const MATCH_WINNER_BONUS = 100;
 
-async function awardMatchPoints(match: OnlineMatch, _p1Wins: number, _p2Wins: number, _winnerId: string) {
-  // Points are awarded server-side by the award-match-points edge function
-  // (service role bypasses RLS; client cannot insert into points_log directly).
+async function callMatchAction(action: string, body: Record<string, unknown> = {}) {
+  const { data, error } = await supabase.functions.invoke("match-action", {
+    body: { action, ...body },
+  });
+  if (error) {
+    console.error(`match-action ${action} error`, error);
+    return null;
+  }
+  return data;
+}
+
+async function awardMatchPoints(matchId: string) {
   try {
     await supabase.functions.invoke("award-match-points", {
-      body: { match_id: match.id },
+      body: { match_id: matchId },
     });
   } catch (e) {
     console.error("Failed to award match points", e);
@@ -67,6 +73,8 @@ export function useOnlineMatch(playerId: string | undefined) {
   const [roundStartTime, setRoundStartTime] = useState<number | null>(null);
   const [opponentProgress, setOpponentProgress] = useState<Record<number, number>>({});
   const activeMatchRef = useRef<OnlineMatch | null>(null);
+  const awardedRef = useRef<Set<string>>(new Set());
+  const nextRoundScheduledRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     activeMatchRef.current = activeMatch;
@@ -122,43 +130,11 @@ export function useOnlineMatch(playerId: string | undefined) {
 
   const acceptChallenge = useCallback(async (challenge: OnlineChallenge) => {
     if (!playerId) return null;
-
-    await supabase
-      .from("online_challenges")
-      .update({ status: "accepted" })
-      .eq("id", challenge.id);
-
-    const word = await getRandomWordAsync(
-      challenge.language as Language,
-      challenge.word_length as WordLength
-    );
-
-    const { data: match } = await supabase
-      .from("online_matches")
-      .insert({
-        player1_id: challenge.challenger_id,
-        player2_id: playerId,
-        timer_seconds: challenge.timer_seconds,
-        word_length: challenge.word_length,
-        language: challenge.language,
-        current_word: word,
-        status: "active",
-      })
-      .select()
-      .single();
-
-    if (match) {
-      await supabase.from("match_rounds").insert({
-        match_id: match.id,
-        round_number: 1,
-        word,
-        status: "active",
-      });
-
-      setActiveMatch(match as OnlineMatch);
-      return match;
-    }
-    return null;
+    const res = await callMatchAction("accept_challenge", { challenge_id: challenge.id });
+    if (!res?.match_id) return null;
+    // Match will be picked up by loadActiveMatch / realtime
+    await new Promise(r => setTimeout(r, 200));
+    return { id: res.match_id };
   }, [playerId]);
 
   const declineChallenge = useCallback(async (challengeId: string) => {
@@ -172,217 +148,42 @@ export function useOnlineMatch(playerId: string | undefined) {
   const forfeitMatch = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !playerId) return;
-
-    const opponentId = playerId === match.player1_id ? match.player2_id : match.player1_id;
-
-    await supabase
-      .from("online_matches")
-      .update({
-        status: "finished",
-        winner_id: opponentId,
-        forfeited_by: playerId,
-      } as any)
-      .eq("id", match.id);
-
-    // Award match points on forfeit too
-    const p1Wins = match.player1_wins;
-    const p2Wins = match.player2_wins;
-    await awardMatchPoints(match, p1Wins, p2Wins, opponentId);
+    await callMatchAction("forfeit", { match_id: match.id });
+    if (!awardedRef.current.has(match.id)) {
+      awardedRef.current.add(match.id);
+      await awardMatchPoints(match.id);
+    }
   }, [playerId]);
 
   const submitGuessTime = useCallback(async (guessTimeMs: number) => {
     const match = activeMatchRef.current;
     if (!match || !currentRound || !playerId) return;
-
-    const isPlayer1 = playerId === match.player1_id;
-    const updateField = isPlayer1 ? "player1_guess_time_ms" : "player2_guess_time_ms";
-
-    const { data: updatedRound } = await supabase
-      .from("match_rounds")
-      .update({
-        [updateField]: guessTimeMs,
-        winner_id: playerId,
-        status: "finished",
-      })
-      .eq("id", currentRound.id)
-      .eq("status", "active")
-      .select()
-      .single();
-
-    if (!updatedRound) return;
-
-    const newP1Wins = match.player1_wins + (isPlayer1 ? 1 : 0);
-    const newP2Wins = match.player2_wins + (!isPlayer1 ? 1 : 0);
-
-    if (newP1Wins >= WINS_TO_WIN || newP2Wins >= WINS_TO_WIN) {
-      const matchWinner = newP1Wins >= WINS_TO_WIN ? match.player1_id : match.player2_id;
-      await supabase
-        .from("online_matches")
-        .update({
-          player1_wins: newP1Wins,
-          player2_wins: newP2Wins,
-          status: "finished",
-          winner_id: matchWinner,
-        })
-        .eq("id", match.id);
-      await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
-    } else {
-      // Delay next round so both players can see what the word was
-      setTimeout(async () => {
-        const nextWord = await getRandomWordAsync(
-          match.language as Language,
-          match.word_length as WordLength
-        );
-        const nextRoundNum = match.current_round + 1;
-
-        await supabase.from("match_rounds").insert({
-          match_id: match.id,
-          round_number: nextRoundNum,
-          word: nextWord,
-          status: "active",
-        });
-
-        await supabase
-          .from("online_matches")
-          .update({
-            player1_wins: newP1Wins,
-            player2_wins: newP2Wins,
-            current_round: nextRoundNum,
-            current_word: nextWord,
-          })
-          .eq("id", match.id);
-      }, 3000);
-
-      // Update wins immediately so both clients see new score
-      await supabase
-        .from("online_matches")
-        .update({
-          player1_wins: newP1Wins,
-          player2_wins: newP2Wins,
-        })
-        .eq("id", match.id);
-    }
+    await callMatchAction("submit_guess", {
+      match_id: match.id,
+      round_id: currentRound.id,
+      guess_time_ms: Math.max(0, Math.round(guessTimeMs)),
+    });
   }, [currentRound, playerId]);
 
   const submitFailed = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !currentRound || !playerId) return;
-
-    const isPlayer1 = playerId === match.player1_id;
-    const updateField = isPlayer1 ? "player1_guess_time_ms" : "player2_guess_time_ms";
-
-    await supabase
-      .from("match_rounds")
-      .update({ [updateField]: -1 })
-      .eq("id", currentRound.id);
-
-    const { data: round } = await supabase
-      .from("match_rounds")
-      .select("*")
-      .eq("id", currentRound.id)
-      .single();
-
-    if (round && round.player1_guess_time_ms !== null && round.player2_guess_time_ms !== null && round.status === "active") {
-      const p1 = round.player1_guess_time_ms;
-      const p2 = round.player2_guess_time_ms;
-
-      let winnerId: string | null = null;
-      if (p1 === -1 && p2 === -1) {
-        winnerId = null;
-      } else if (p1 === -1) {
-        winnerId = match.player2_id;
-      } else if (p2 === -1) {
-        winnerId = match.player1_id;
-      } else {
-        winnerId = p1 <= p2 ? match.player1_id : match.player2_id;
-      }
-
-      const { data: resolved } = await supabase
-        .from("match_rounds")
-        .update({ winner_id: winnerId, status: "finished" })
-        .eq("id", round.id)
-        .eq("status", "active")
-        .select()
-        .single();
-
-      if (!resolved) return;
-
-      const newP1Wins = match.player1_wins + (winnerId === match.player1_id ? 1 : 0);
-      const newP2Wins = match.player2_wins + (winnerId === match.player2_id ? 1 : 0);
-
-      if (newP1Wins >= WINS_TO_WIN || newP2Wins >= WINS_TO_WIN) {
-        const matchWinner = newP1Wins >= WINS_TO_WIN ? match.player1_id : match.player2_id;
-        await supabase
-          .from("online_matches")
-          .update({
-            player1_wins: newP1Wins,
-            player2_wins: newP2Wins,
-            status: "finished",
-            winner_id: matchWinner,
-          })
-          .eq("id", match.id);
-        await awardMatchPoints(match, newP1Wins, newP2Wins, matchWinner);
-      } else {
-        setTimeout(async () => {
-          const nextWord = await getRandomWordAsync(
-            match.language as Language,
-            match.word_length as WordLength
-          );
-          const nextRoundNum = match.current_round + 1;
-
-          await supabase.from("match_rounds").insert({
-            match_id: match.id,
-            round_number: nextRoundNum,
-            word: nextWord,
-            status: "active",
-          });
-
-          await supabase
-            .from("online_matches")
-            .update({
-              player1_wins: newP1Wins,
-              player2_wins: newP2Wins,
-              current_round: nextRoundNum,
-              current_word: nextWord,
-            })
-            .eq("id", match.id);
-        }, 3000);
-
-        await supabase
-          .from("online_matches")
-          .update({
-            player1_wins: newP1Wins,
-            player2_wins: newP2Wins,
-          })
-          .eq("id", match.id);
-      }
-    }
+    await callMatchAction("submit_failed", {
+      match_id: match.id,
+      round_id: currentRound.id,
+    });
   }, [currentRound, playerId]);
 
   const requestRematch = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !playerId) return;
-
-    const isPlayer1 = playerId === match.player1_id;
-    const field = isPlayer1 ? "rematch_player1" : "rematch_player2";
-
-    await supabase
-      .from("online_matches")
-      .update({ [field]: true } as any)
-      .eq("id", match.id);
+    await callMatchAction("rematch_request", { match_id: match.id });
   }, [playerId]);
 
   const declineRematch = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !playerId) return;
-
-    const isPlayer1 = playerId === match.player1_id;
-    const field = isPlayer1 ? "rematch_player1" : "rematch_player2";
-
-    await supabase
-      .from("online_matches")
-      .update({ [field]: false } as any)
-      .eq("id", match.id);
+    await callMatchAction("rematch_decline", { match_id: match.id });
   }, [playerId]);
 
   const loadActiveMatch = useCallback(async () => {
@@ -472,8 +273,6 @@ export function useOnlineMatch(playerId: string | undefined) {
       }, (payload) => {
         const row = payload.new as { player_id: string; attempt_number: number; correct_count: number; round_id: string };
         if (!playerId || row.player_id === playerId) return;
-        const cur = activeMatchRef.current;
-        // Map by attempt number for the current round only
         setOpponentProgress(prev => ({ ...prev, [row.attempt_number]: row.correct_count }));
       })
       .on("postgres_changes", {
@@ -506,44 +305,44 @@ export function useOnlineMatch(playerId: string | undefined) {
     return () => {
       supabase.removeChannel(matchChannel);
     };
-  }, [activeMatch?.id]);
+  }, [activeMatch?.id, playerId]);
 
-  // Handle rematch: both agreed -> player1 creates new match
+  // Schedule next round on server 3s after a round finishes (so both clients can see the word)
+  useEffect(() => {
+    if (!activeMatch || activeMatch.status !== "active" || !playerId) return;
+    // Only P1 schedules to avoid duplicate calls; server is idempotent anyway.
+    if (playerId !== activeMatch.player1_id) return;
+    if (!currentRound || currentRound.status !== "finished") return;
+    if (currentRound.round_number !== activeMatch.current_round) return;
+
+    const key = `${activeMatch.id}:${currentRound.round_number}`;
+    if (nextRoundScheduledRef.current.has(key)) return;
+    nextRoundScheduledRef.current.add(key);
+
+    const t = setTimeout(() => {
+      callMatchAction("next_round", { match_id: activeMatch.id });
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [activeMatch, currentRound, playerId]);
+
+  // Award match points once when match is finished
+  useEffect(() => {
+    if (!activeMatch || activeMatch.status !== "finished") return;
+    if (awardedRef.current.has(activeMatch.id)) return;
+    awardedRef.current.add(activeMatch.id);
+    awardMatchPoints(activeMatch.id);
+  }, [activeMatch?.id, activeMatch?.status]);
+
+  // Handle rematch: both agreed -> server creates new match (P1 triggers)
   useEffect(() => {
     if (!activeMatch || activeMatch.status !== "finished" || !playerId) return;
-
     const m = activeMatch as any;
-    const isPlayer1 = playerId === activeMatch.player1_id;
-
-    if (m.rematch_player1 === true && m.rematch_player2 === true && isPlayer1) {
+    if (m.rematch_player1 === true && m.rematch_player2 === true && playerId === activeMatch.player1_id) {
       (async () => {
-        const word = await getRandomWordAsync(
-          activeMatch.language as Language,
-          activeMatch.word_length as WordLength
-        );
-
-        const { data: newMatch } = await supabase
-          .from("online_matches")
-          .insert({
-            player1_id: activeMatch.player1_id,
-            player2_id: activeMatch.player2_id,
-            timer_seconds: activeMatch.timer_seconds,
-            word_length: activeMatch.word_length,
-            language: activeMatch.language,
-            current_word: word,
-            status: "active",
-          })
-          .select()
-          .single();
-
-        if (newMatch) {
-          await supabase.from("match_rounds").insert({
-            match_id: newMatch.id,
-            round_number: 1,
-            word,
-            status: "active",
-          });
-          setActiveMatch(newMatch as OnlineMatch);
+        const res = await callMatchAction("create_rematch", { match_id: activeMatch.id });
+        if (res?.match_id) {
+          await new Promise(r => setTimeout(r, 200));
+          loadActiveMatch();
         }
       })();
     }
@@ -553,16 +352,15 @@ export function useOnlineMatch(playerId: string | undefined) {
     (activeMatch as any)?.rematch_player2,
     playerId,
     activeMatch?.player1_id,
+    activeMatch?.id,
+    loadActiveMatch,
   ]);
 
-  // Player2: detect new active match after rematch
+  // Player2: poll for new active match after rematch agreed
   useEffect(() => {
     if (!activeMatch || activeMatch.status !== "finished" || !playerId) return;
-
     const m = activeMatch as any;
-    const isPlayer2 = playerId === activeMatch.player2_id;
-
-    if (m.rematch_player1 === true && m.rematch_player2 === true && isPlayer2) {
+    if (m.rematch_player1 === true && m.rematch_player2 === true && playerId === activeMatch.player2_id) {
       const interval = setInterval(async () => {
         const { data } = await supabase
           .from("online_matches")
