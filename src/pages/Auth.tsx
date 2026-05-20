@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
@@ -11,8 +11,10 @@ import SEO from "@/components/SEO";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [forgotMode, setForgotMode] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const { session, loading: authLoading, authReady } = usePlayer();
@@ -66,6 +68,25 @@ const Auth = () => {
     }
   };
 
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading || !email) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast({ title: "E-mail verstuurd", description: "Check je inbox voor de resetlink." });
+      setForgotMode(false);
+    } catch (err: any) {
+      toast({ title: "Fout", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth(provider, {
@@ -77,7 +98,7 @@ const Auth = () => {
     }
   };
 
-   if (!authReady || authLoading) {
+  if (!authReady || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
@@ -121,73 +142,125 @@ const Auth = () => {
             <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block" />
             <span className="text-primary">ngo</span>
           </h1>
-          <p className="text-muted-foreground">{isLogin ? "Inloggen" : "Account aanmaken"}</p>
+          <p className="text-muted-foreground">
+            {forgotMode ? "Wachtwoord vergeten" : isLogin ? "Inloggen" : "Account aanmaken"}
+          </p>
         </div>
 
-        <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 w-full">
-          {!isLogin && (
+        {forgotMode ? (
+          <form onSubmit={handleForgot} className="flex flex-col gap-3 w-full">
             <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Jouw naam"
-              maxLength={20}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="E-mailadres"
+              required
               className="w-full px-4 py-3 rounded-lg bg-secondary text-secondary-foreground font-bold text-center border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
             />
-          )}
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-mailadres"
-            className="w-full px-4 py-3 rounded-lg bg-secondary text-secondary-foreground font-bold text-center border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Wachtwoord"
-            minLength={6}
-            className="w-full px-4 py-3 rounded-lg bg-secondary text-secondary-foreground font-bold text-center border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-6 py-3 bg-primary text-primary-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
-          >
-            {loading ? "..." : isLogin ? "Inloggen" : "Registreren"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading || !email}
+              className="w-full px-6 py-3 bg-primary text-primary-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loading ? "..." : "Verstuur resetlink"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setForgotMode(false)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors text-center"
+            >
+              Terug naar inloggen
+            </button>
+          </form>
+        ) : (
+          <>
+            <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 w-full">
+              {!isLogin && (
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Jouw naam"
+                  maxLength={20}
+                  className="w-full px-4 py-3 rounded-lg bg-secondary text-secondary-foreground font-bold text-center border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
+                />
+              )}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-mailadres"
+                className="w-full px-4 py-3 rounded-lg bg-secondary text-secondary-foreground font-bold text-center border-2 border-transparent focus:border-primary focus:outline-none transition-colors"
+              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Wachtwoord"
+                  minLength={6}
+                  className="w-full px-4 py-3 rounded-lg bg-secondary text-secondary-foreground font-bold text-center border-2 border-transparent focus:border-primary focus:outline-none transition-colors pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {isLogin && (
+                <div className="flex justify-end -mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setForgotMode(true)}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Wachtwoord vergeten?
+                  </button>
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full px-6 py-3 bg-primary text-primary-foreground font-extrabold text-lg rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {loading ? "..." : isLogin ? "Inloggen" : "Registreren"}
+              </button>
+            </form>
 
-        <div className="flex items-center gap-3 w-full">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground">of</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
+            <div className="flex items-center gap-3 w-full">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">of</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
 
-        <div className="flex flex-col gap-2 w-full">
-          <button
-            onClick={() => handleOAuth("google")}
-            disabled={loading}
-            className="w-full px-6 py-3 bg-secondary text-secondary-foreground font-bold rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
-          >
-            Doorgaan met Google
-          </button>
-          <button
-            onClick={() => handleOAuth("apple")}
-            disabled={loading}
-            className="w-full px-6 py-3 bg-secondary text-secondary-foreground font-bold rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
-          >
-            Doorgaan met Apple
-          </button>
-        </div>
+            <div className="flex flex-col gap-2 w-full">
+              <button
+                onClick={() => handleOAuth("google")}
+                disabled={loading}
+                className="w-full px-6 py-3 bg-secondary text-secondary-foreground font-bold rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+              >
+                Doorgaan met Google
+              </button>
+              <button
+                onClick={() => handleOAuth("apple")}
+                disabled={loading}
+                className="w-full px-6 py-3 bg-secondary text-secondary-foreground font-bold rounded-xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+              >
+                Doorgaan met Apple
+              </button>
+            </div>
 
-        <button
-          onClick={() => setIsLogin(!isLogin)}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {isLogin ? "Nog geen account? Registreer hier" : "Al een account? Log hier in"}
-        </button>
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isLogin ? "Nog geen account? Registreer hier" : "Al een account? Log hier in"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
