@@ -15,7 +15,7 @@ import {
   Crown,
   ChevronDown,
 } from "lucide-react";
-import DingoMascot from "@/components/DingoMascot";
+
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import dingoConfetti from "@/assets/dingo-confetti.png";
