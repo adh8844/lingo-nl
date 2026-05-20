@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
 import { usePlayer } from "@/hooks/usePlayer";
+import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 
 const Auth = () => {
