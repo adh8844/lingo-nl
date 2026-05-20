@@ -72,7 +72,7 @@ const ResetPassword = () => {
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tighter flex items-end leading-none">
             <span className="text-primary">Nieuw wachtwoord</span>
           </h1>
-        </di>
+        </div>
 
         {success ? (
           <div className="flex flex-col items-center gap-4 w-full">
