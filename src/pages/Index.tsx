@@ -93,8 +93,8 @@ const Index = () => {
   if (gameStarted) {
     return (
       <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
-          DingoLingo
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 sm:mb-6">
+          <span className="text-accent">Dingo</span><span className="text-primary">Lingo</span>
         </h1>
         <LingoGame wordLength={selectedLevel} onBack={handleBack} />
       </div>
