@@ -652,7 +652,7 @@ const FinalCTA = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string
 const Footer = () => (
   <footer className="py-10 px-4 border-t border-border text-center text-xs text-muted-foreground">
     <p>
-      © {new Date().getFullYear()} LINGO NL — Gemaakt met ♥ in Nederland
+      © {new Date().getFullYear()} DingoLingo — Gemaakt met ♥ in Nederland
     </p>
   </footer>
 );
