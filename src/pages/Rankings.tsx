@@ -670,7 +670,7 @@ const Rankings = () => {
       />
       <div className="w-full max-w-lg flex items-center justify-between mb-4 sm:mb-6">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/spelen")}
           className="px-3 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold text-sm hover:brightness-110 transition-all"
         >
           ← Terug
