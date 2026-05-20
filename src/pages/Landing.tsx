@@ -356,7 +356,7 @@ const HowItWorks = () => {
               {s.n}
             </div>
             <div className="relative flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-primary/15 text-primary flex items-center justify-center">
                 {s.icon}
               </div>
               <span className="text-xs font-bold text-muted-foreground">{s.n}</span>
