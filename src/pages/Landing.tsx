@@ -19,6 +19,7 @@ import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import dingoConfetti from "@/assets/dingo-confetti.png";
+import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
 const Landing = () => {
   const navigate = useNavigate();
