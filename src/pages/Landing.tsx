@@ -151,7 +151,7 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
             initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="text-primary ml-3 sm:ml-5 md:ml-7"
+            className="text-primary"
           >
             L
           </motion.span>
@@ -159,9 +159,9 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
             initial={{ scale: 0, rotate: -45 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 180, damping: 12, delay: 0.4 }}
-            className="inline-block mx-[-4px] sm:mx-[-6px] mb-[2px]"
+            className="inline-block mx-[-3px] mb-[2px]"
           >
-            <DingoMascot size={56} className="sm:!w-[100px] sm:!h-[100px] md:!w-[140px] md:!h-[140px]" />
+            <DingoMascot size={45} className="sm:!w-[80px] sm:!h-[80px] md:!w-[112px] md:!h-[112px]" />
           </motion.span>
           <motion.span
             initial={{ y: 60, opacity: 0 }}
