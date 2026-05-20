@@ -98,6 +98,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "dutch_words_suggested_by_fkey"
+            columns: ["suggested_by"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       friends: {
@@ -128,10 +135,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "friends_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "friends_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friends_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -161,6 +182,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_completions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -213,6 +241,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_games_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       group_members: {
@@ -249,6 +284,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "group_members_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       groups: {
@@ -279,6 +321,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -356,10 +405,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_rounds_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "online_matches_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_rounds_winner_id_fkey"
             columns: ["winner_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_rounds_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -404,10 +467,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "online_challenges_challenged_id_fkey"
+            columns: ["challenged_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "online_challenges_challenger_id_fkey"
             columns: ["challenger_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_challenges_challenger_id_fkey"
+            columns: ["challenger_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -479,10 +556,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "online_matches_forfeited_by_fkey"
+            columns: ["forfeited_by"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "online_matches_player1_id_fkey"
             columns: ["player1_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
           {
@@ -493,10 +584,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "online_matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "online_matches_winner_id_fkey"
             columns: ["winner_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -535,6 +640,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_pbadges_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       player_presence: {
@@ -559,6 +671,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: true
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_presence_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players_public"
             referencedColumns: ["id"]
           },
         ]
@@ -657,14 +776,298 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_points_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      match_rounds_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          match_id: string | null
+          player1_guess_time_ms: number | null
+          player2_guess_time_ms: number | null
+          round_number: number | null
+          status: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          match_id?: string | null
+          player1_guess_time_ms?: number | null
+          player2_guess_time_ms?: number | null
+          round_number?: number | null
+          status?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          match_id?: string | null
+          player1_guess_time_ms?: number | null
+          player2_guess_time_ms?: number | null
+          round_number?: number | null
+          status?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_rounds_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "online_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_rounds_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "online_matches_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_rounds_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_rounds_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_matches_public: {
+        Row: {
+          created_at: string | null
+          current_round: number | null
+          forfeited_by: string | null
+          id: string | null
+          language: string | null
+          player1_id: string | null
+          player1_wins: number | null
+          player2_id: string | null
+          player2_wins: number | null
+          rematch_player1: boolean | null
+          rematch_player2: boolean | null
+          status: string | null
+          timer_seconds: number | null
+          updated_at: string | null
+          winner_id: string | null
+          word_length: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_round?: number | null
+          forfeited_by?: string | null
+          id?: string | null
+          language?: string | null
+          player1_id?: string | null
+          player1_wins?: number | null
+          player2_id?: string | null
+          player2_wins?: number | null
+          rematch_player1?: boolean | null
+          rematch_player2?: boolean | null
+          status?: string | null
+          timer_seconds?: number | null
+          updated_at?: string | null
+          winner_id?: string | null
+          word_length?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_round?: number | null
+          forfeited_by?: string | null
+          id?: string | null
+          language?: string | null
+          player1_id?: string | null
+          player1_wins?: number | null
+          player2_id?: string | null
+          player2_wins?: number | null
+          rematch_player1?: boolean | null
+          rematch_player2?: boolean | null
+          status?: string | null
+          timer_seconds?: number | null
+          updated_at?: string | null
+          winner_id?: string | null
+          word_length?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_matches_forfeited_by_fkey"
+            columns: ["forfeited_by"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_forfeited_by_fkey"
+            columns: ["forfeited_by"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_player1_id_fkey"
+            columns: ["player1_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_player2_id_fkey"
+            columns: ["player2_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_matches_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players_public: {
+        Row: {
+          best_streak: number | null
+          created_at: string | null
+          current_streak: number | null
+          display_name: string | null
+          id: string | null
+          last_played_date: string | null
+          player_code: string | null
+          points: number | null
+          total_games_played: number | null
+          total_hours_played: number | null
+          unlocked_5letter: boolean | null
+          unlocked_6letter: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          best_streak?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          display_name?: string | null
+          id?: string | null
+          last_played_date?: string | null
+          player_code?: string | null
+          points?: number | null
+          total_games_played?: number | null
+          total_hours_played?: number | null
+          unlocked_5letter?: boolean | null
+          unlocked_6letter?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          best_streak?: number | null
+          created_at?: string | null
+          current_streak?: number | null
+          display_name?: string | null
+          id?: string | null
+          last_played_date?: string | null
+          player_code?: string | null
+          points?: number | null
+          total_games_played?: number | null
+          total_hours_played?: number | null
+          unlocked_5letter?: boolean | null
+          unlocked_6letter?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       current_player_id: { Args: never; Returns: string }
+      get_badges_count_in_range: {
+        Args: { p_end?: string; p_start: string }
+        Returns: {
+          badges_count: number
+          player_id: string
+        }[]
+      }
+      get_badges_count_total: {
+        Args: never
+        Returns: {
+          badges_count: number
+          player_id: string
+        }[]
+      }
+      get_completed_matches_count_in_range: {
+        Args: { p_end?: string; p_start: string }
+        Returns: {
+          matches_count: number
+          player_id: string
+        }[]
+      }
+      get_completed_matches_count_total: {
+        Args: never
+        Returns: {
+          matches_count: number
+          player_id: string
+        }[]
+      }
+      get_games_count_in_range: {
+        Args: { p_end?: string; p_start: string }
+        Returns: {
+          games_count: number
+          player_id: string
+        }[]
+      }
+      get_games_count_total: {
+        Args: never
+        Returns: {
+          games_count: number
+          player_id: string
+        }[]
+      }
+      get_own_games: {
+        Args: { p_player_id: string }
+        Returns: {
+          attempts: number
+          duration_seconds: number
+          first_green_attempt: number
+          level: number
+          played_at: string
+          points_earned: number
+          solved: boolean
+        }[]
+      }
       get_player_daily_points: {
         Args: { from_date: string; p_id: string; to_date: string }
         Returns: {
@@ -673,6 +1076,13 @@ export type Database = {
         }[]
       }
       get_player_total_points: { Args: { p_id: string }; Returns: number }
+      get_points_in_range: {
+        Args: { p_end?: string; p_start: string }
+        Returns: {
+          player_id: string
+          total_points: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_match_participant: { Args: { p_match_id: string }; Returns: boolean }
     }

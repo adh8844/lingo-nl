@@ -1,43 +1,106 @@
-# Volledige import van ontbrekende woorden van lingowoorden.nl
+## 5 Hoog-risico Refactors — Beveiligingsplan
 
-## Wat ging er mis
-De vorige fetch was afgekapt rond letter F/G. Door de pagina's nu volledig op te halen (via curl) krijg ik álle woorden t/m de Z.
+Deze refactors verplaatsen veel game-logica van client naar server (Edge Functions + RPC's). De game zelf blijft hetzelfde, maar onder de motorkap verandert er veel.
 
-## Gevonden vs database
+---
 
-| Lengte | Op pagina | Al in DB | **Nieuw** |
-|---|---|---|---|
-| 5  | 1.127 | 1.537 | **361** |
-| 6  | 1.743 | 2.122 | **778** |
-| 10 | 1.685 | 459   | **1.355** |
-| 12 | 1.156 | 480   | **851** |
-| **Totaal** | | | **3.345** |
+### 1. `games` & `points_log` privé maken (Rankings via RPC)
 
-(Woorden uit `/woord/{woord}/` href, dus icoontjes worden automatisch genegeerd. Vergelijking is case-insensitive op exacte match.)
+**Probleem:** iedereen kan alle gamehistorie + puntenlog van iedereen lezen.
 
-## Aanpak
+**Aanpak:**
+- Nieuwe SECURITY DEFINER RPC's die alleen **geaggregeerde** data teruggeven:
+  - `get_leaderboard(period text)` → `[{player_id, display_name, total_points, games_played, ...}]`
+  - `get_player_stats(p_id uuid)` → eigen detaildata (alleen voor eigenaar of admin)
+  - `get_recent_games(p_id uuid, limit int)` → eigen recente games
+- RLS op `games` en `points_log` SELECT inperken:
+  - `games`: alleen eigenaar + admin
+  - `points_log`: alleen eigenaar + admin
+- Rankings/Statistics/Profile pagina's omschrijven naar RPC's i.p.v. directe `select("*")`.
 
-Alle 3.345 woorden in één keer via een bulk-INSERT uitvoeren. Dat past prima in één SQL-statement (Postgres heeft hier geen praktisch probleem mee — in de vorige import ging 902 in één keer goed; 3.345 ook).
+**Impact:** Rankings.tsx, Statistics.tsx, Profile.tsx, usePoints.ts, useStreaks.ts, Leaderboard.tsx, Admin.tsx aanpassen.
 
-Per nieuw woord wordt een rij toegevoegd met:
-- `word` (lowercase)
-- `length` (5/6/10/12)
-- `approved = false` ← admin moet nog goedkeuren
-- `appropriate = false`
-- `rejected = false`
-- `suggested_by = NULL`
+---
 
-Ze verschijnen dan in het admin-paneel onder "ter beoordeling". Met de bulk-knop (die ik net heb gefixt voor grote aantallen via chunks van 100) kun je per lengte snel alles goedkeuren of afwijzen.
+### 2. `players.user_id` verbergen
 
-## Volgorde van uitvoer
+**Probleem:** `user_id` (auth UUID) is publiek.
 
-1. Insert van de 361 nieuwe 5-letter woorden
-2. Insert van de 778 nieuwe 6-letter woorden
-3. Insert van de 1.355 nieuwe 10-letter woorden
-4. Insert van de 851 nieuwe 12-letter woorden
+**Aanpak:**
+- Een database **view** `public.players_public` maken zonder `user_id` en `birthdate`.
+- RLS op `players` SELECT inperken: alleen eigen rij + admin krijgen `user_id` te zien (via kolom-restrictie is lastig in Postgres, dus we gebruiken een view).
+- Frontend queries op `players` → `players_public` waar `user_id` niet nodig is.
+- Plekken die `user_id` nodig hebben (Auth-flow, eigen profile) blijven op `players` querien.
 
-Als één van de inserts om welke reden dan ook faalt, val ik per lengte terug op chunks van ~500 woorden zodat de rest wel doorgaat.
+**Impact:** alle `from("players").select(...)` plekken nalopen.
 
-## Daarna
+---
 
-Open `/admin` → tab "Woorden ter beoordeling" → filter per lengte → gebruik "Alles" / "Alleen correct" / "Afkeuren".
+### 3. Match-uitkomst server-side (`match_outcome_manipulation`)
+
+**Probleem:** spelers kunnen `winner_id`, `player1_wins`, `status` zelf zetten.
+
+**Aanpak:**
+- Nieuwe edge function **`resolve-match-round`**:
+  - Input: `{ match_id, round_id, action: "guess_correct" | "guess_failed", guess_time_ms? }`
+  - Server haalt huidige round op, valideert dat caller deelnemer is, en bepaalt winnaar op basis van **timestamps in de DB** (server-side berekend).
+  - Update `match_rounds` + `online_matches` + start volgende ronde of finished match (allemaal service_role).
+  - Roept intern `award-match-points` aan bij finish.
+- RLS op `online_matches` en `match_rounds` UPDATE: alleen service_role (alleen INSERT van eerste match/round blijft toegestaan voor `acceptChallenge`, of we verplaatsen die ook).
+- `useOnlineMatch.ts`: `submitGuessTime`, `submitFailed`, en next-round-logica vervangen door één `functions.invoke("resolve-match-round")` call.
+
+**Impact:** useOnlineMatch.ts grondig herschrijven. Realtime subscriptions blijven werken (server-side updates triggeren ze).
+
+---
+
+### 4. Wedstrijdwoorden afschermen (`word_exposure_matches`)
+
+**Probleem:** `current_word` en `match_rounds.word` zijn publiek leesbaar → cheaten mogelijk.
+
+**Aanpak:**
+- RLS SELECT op `online_matches` en `match_rounds` inperken tot deelnemers (`is_match_participant`).
+- Voor presence/lobby/leaderboard queries: gebruik `online_matches_public` view zonder `current_word` (en evt. zonder andere gevoelige velden), of pas Lobby aan om alleen eigen matches te lezen.
+
+**Impact:** OnlineLobby, GlobalOnlineManager nalopen.
+
+---
+
+### 5. Replay-protectie (`game_replay_no_dedup`)
+
+**Probleem:** dezelfde game kan oneindig vaak ingediend worden voor punten.
+
+**Aanpak in `process-game-result`:**
+- **Minimum duration guard**: `duration_seconds >= 3` (anders weiger).
+- **Per-session dedup**: één game per `(player_id, word, session_id)` per dag. Als er al een bestaat → 200 OK zonder punten toekennen.
+- **Rate limit**: max 1 submit per speler per 5s (check laatste `played_at` in `games`).
+
+**Impact:** alleen `process-game-result/index.ts`.
+
+---
+
+### Volgorde van uitvoering
+
+```text
+Stap 1: Migration A — RPC's voor leaderboard/stats + view players_public + view online_matches_public
+Stap 2: Frontend aanpassen op nieuwe RPC's/views (Rankings, Statistics, Profile, Leaderboard, Lobby)
+Stap 3: Edge function resolve-match-round + useOnlineMatch refactor
+Stap 4: Migration B — RLS tighten (games/points_log SELECT, players user_id, matches UPDATE + words)
+Stap 5: process-game-result replay protection
+Stap 6: Mark findings as fixed
+```
+
+### Risico's
+
+- **Breaking changes** in live matches tijdens deploy (lopende matches kunnen vastlopen).
+- Realtime-subscriptions kunnen breken als RLS te streng wordt → moet getest.
+- Rankings/Statistics performance: RPC's moeten geïndexeerd zijn.
+
+### Wat blijft buiten scope
+
+- `realtime_open_channel_access` (kan niet aangepast worden — reserved schema).
+- Leaked password protection (handmatig in Cloud → Auth settings).
+- SECURITY DEFINER linter warnings (acceptabel — door RLS afgeschermd).
+
+---
+
+**Bevestig je dat ik dit volledig mag uitvoeren?** Reken op meerdere migraties + edge function deploys + grote frontend refactor.

@@ -141,6 +141,15 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Replay protection: minimum plausible duration for a solved game.
+    // Anything below this is treated as automated/replayed and rejected.
+    const dur = Number(duration_seconds)
+    if (solved && Number.isFinite(dur) && dur > 0 && dur < 3) {
+      return new Response(JSON.stringify({ error: 'Ongeldige duur' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     // Validate the word exists in the approved Dutch word list to prevent
     // arbitrary strings being injected into the public games/leaderboard.
     // Only enforced for normal modes (4/5/6); challenger modes use long words
@@ -169,6 +178,41 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Rate limit: max one submission per 2 seconds per player to prevent farming
+    const { data: lastGame } = await supabase
+      .from('games')
+      .select('played_at')
+      .eq('player_id', player_id)
+      .order('played_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (lastGame?.played_at) {
+      const sinceMs = Date.now() - new Date(lastGame.played_at).getTime()
+      if (sinceMs < 2000) {
+        return new Response(JSON.stringify({ error: 'Te snel achter elkaar ingediend' }), {
+          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+    }
+
+    // Session-based deduplication: same player + same word + same session_id can only
+    // count once per day. Subsequent calls succeed but award zero points.
+    let dedupBlocked = false
+    if (session_id && typeof session_id === 'string') {
+      const todayStart = new Date()
+      todayStart.setUTCHours(0, 0, 0, 0)
+      const { data: existingGame } = await supabase
+        .from('games')
+        .select('id')
+        .eq('player_id', player_id)
+        .eq('word', word)
+        .eq('session_id', session_id)
+        .gte('played_at', todayStart.toISOString())
+        .limit(1)
+        .maybeSingle()
+      if (existingGame) dedupBlocked = true
+    }
+
     const pts: { points: number; reason: string }[] = []
     const newBadges: any[] = []
 
@@ -183,6 +227,18 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Kon spel niet opslaan' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
+    }
+
+    // Replay detected: record the game (so badges/streaks reflect activity)
+    // but skip all point awarding logic.
+    if (dedupBlocked) {
+      return new Response(JSON.stringify({
+        game_id: game.id,
+        points_earned: 0,
+        points_breakdown: [],
+        badges_earned: [],
+        duplicate: true,
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     // 2. Get player
