@@ -160,18 +160,18 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <SEO
-        title="LINGO NL — Speel het woordspel online in het Nederlands"
-        description="Speel Lingo online in het Nederlands. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst in dit uitdagende woordspel."
+        title="DingoLingo — Speel het woordspel online in het Nederlands"
+        description="Speel DingoLingo online in het Nederlands. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst in dit uitdagende woordspel."
         path="/"
       />
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
-            <span>L</span>
-            <DingoMascot size={128} className="mx-[-4px] mb-[2px] hidden md:block" />
-            <DingoMascot size={96} className="mx-[-4px] mb-[2px] hidden sm:block md:hidden" />
-            <DingoMascot size={72} className="mx-[-4px] mb-[2px] block sm:hidden" />
-            <span>NGO</span>
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
+            <span>Ding</span>
+            <DingoMascot size={72} className="mx-[-3px] mb-[2px] hidden md:block" />
+            <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block md:hidden" />
+            <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
+            <span>Lingo</span>
           </h1>
           <p className="text-muted-foreground text-lg">Raad het woord</p>
         </div>
