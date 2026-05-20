@@ -1,0 +1,1 @@
+CREATE POLICY "Admin can insert dutch_words" ON public.dutch_words FOR INSERT TO authenticated WITH CHECK (is_admin());
