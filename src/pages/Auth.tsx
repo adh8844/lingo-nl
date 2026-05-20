@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +20,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (authReady && session) {
-      navTo("/spelen", { replace: true });
+      navTo("/", { replace: true });
     }
   }, [authReady, session, navTo]);
 
@@ -70,51 +68,28 @@ const Auth = () => {
     }
   };
 
-   if (!authReady || authLoading) {
+  if (!authReady || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
+        <div className="text-2xl font-extrabold text-primary animate-pulse">DingoLingo</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <motion.header
-        initial={{ y: -40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
-      >
-        <div className="flex items-center gap-0.5 pl-1 sm:pl-2 pr-2 sm:pr-3">
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Ding</span>
-          <DingoMascot size={20} className="-mx-0.5 sm:size-[22px]" />
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Lingo</span>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navTo("/")}
-          className="flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap"
-        >
-          <ArrowLeft className="w-3 h-3" />
-          Terug
-        </motion.button>
-      </motion.header>
-
       <SEO
         title={isLogin ? "Inloggen — DingoLingo" : "Account aanmaken — DingoLingo"}
-        description="Log in of maak een gratis account aan om DingoLingo in het Nederlands te spelen, badges te verdienen en je voortgang bij te houden."
+        description="Log in of maak een gratis account aan om Lingo in het Nederlands te spelen, badges te verdienen en je voortgang bij te houden."
         path="/auth"
       />
       <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-bounce-in">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tighter flex items-end leading-none">
-            <span className="text-primary">Dingo</span>
-            <span className="text-primary ml-2 sm:ml-3">L</span>
-            <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
-            <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block" />
-            <span className="text-primary">ngo</span>
+          <h1 className="text-7xl sm:text-8xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
+            <span>L</span>
+            <DingoMascot size={96} className="mx-[-4px] mb-[2px] hidden sm:block" />
+            <DingoMascot size={72} className="mx-[-4px] mb-[2px] block sm:hidden" />
+            <span>NGO</span>
           </h1>
           <p className="text-muted-foreground">{isLogin ? "Inloggen" : "Account aanmaken"}</p>
         </div>
