@@ -64,7 +64,7 @@ const Landing = () => {
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg text-center"
+        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg"
       >
         <div className="flex items-center gap-1 pl-2 pr-3">
           <span className="text-lg font-extrabold text-primary leading-none">L</span>
