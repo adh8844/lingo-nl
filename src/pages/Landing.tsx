@@ -15,7 +15,7 @@ import {
   Crown,
   ChevronDown,
 } from "lucide-react";
-import DingoMascot from "@/components/DingoMascot";
+
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import dingoConfetti from "@/assets/dingo-confetti.png";
@@ -43,8 +43,9 @@ const Landing = () => {
   const { scrollYProgress } = useScroll();
   const progressX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
-  const ctaTarget = session ? "/spelen" : "/auth";
+  const ctaTarget = session ? "/spelen" : "/auth?mode=register";
   const ctaLabel = session ? "Doorspelen" : "Maak een account";
+  const loginTarget = "/auth";
 
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
@@ -68,9 +69,7 @@ const Landing = () => {
         className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
       >
         <div className="flex items-center gap-0.5 pl-1 sm:pl-2 pr-2 sm:pr-3">
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Ding</span>
-          <DingoMascot size={20} className="-mx-0.5 sm:size-[22px]" />
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Lingo</span>
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">DingoLingo</span>
         </div>
         <button
           onClick={() => navigate("/auth")}
@@ -637,7 +636,7 @@ const FinalCTA = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string
         transition={{ duration: 0.7 }}
         className="relative max-w-3xl mx-auto text-center"
       >
-        <DingoMascot size={120} className="mx-auto mb-6" />
+        <img src={dingoLogo} alt="Dingo mascotte" className="mx-auto mb-6 h-[120px] w-auto object-contain" />
         <h2 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight">
           Klaar om de <span className="text-primary">scherpste</span> talenknobbel te worden?
         </h2>
