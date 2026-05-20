@@ -18,10 +18,7 @@ import {
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
-import dingoTrophy from "@/assets/dingo-trophy.png";
-import dingoSunglasses from "@/assets/dingo-sunglasses.png";
 import dingoConfetti from "@/assets/dingo-confetti.png";
-import dingoDancing from "@/assets/dingo-dancing.png";
 
 const Landing = () => {
   const navigate = useNavigate();
