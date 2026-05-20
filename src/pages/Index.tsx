@@ -78,7 +78,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !session) {
-      navigate("/auth", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [loading, session, navigate]);
 

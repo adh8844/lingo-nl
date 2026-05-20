@@ -20,7 +20,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (authReady && session) {
-      navTo("/", { replace: true });
+      navTo("/spelen", { replace: true });
     }
   }, [authReady, session, navTo]);
 
