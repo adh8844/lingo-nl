@@ -414,7 +414,7 @@ const FeatureGrid = () => {
             <div className="shrink-0 w-14 h-14 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
               {f.icon}
             </div>
-            <div className="min-w-1">
+            <div className="min-w-0">
               <h4 className="font-extrabold text-base leading-tight">{f.title}</h4>
               <p className="text-sm text-muted-foreground mt-0.5">{f.body}</p>
             </div>
