@@ -414,7 +414,7 @@ const FeatureGrid = () => {
             whileHover={{ scale: 1.03, borderColor: "hsl(var(--primary))" }}
             className="p-6 rounded-2xl bg-card border border-border cursor-default"
           >
-            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-3">
+            <div className="w-16 h-16 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-4">
               {f.icon}
             </div>
             <h4 className="font-extrabold text-lg mb-1">{f.title}</h4>
