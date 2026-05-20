@@ -326,7 +326,7 @@ const HowItWorks = () => {
       n: "02",
       title: "Raad in 5 pogingen",
       body: "Groen = juist. Geel = juiste letter, foute plek. Grijs = nope. De klok tikt — 90 seconden.",
-      icon: <Brain className="w-6 h-6" />,
+      icon: <Brain className="w-12 h-12" />,
     },
     {
       n: "03",
