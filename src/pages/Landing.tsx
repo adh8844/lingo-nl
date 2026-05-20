@@ -186,7 +186,7 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
         >
           Raad het woord.{" "}
           <span className="text-primary">Beklim</span> de ranglijst.{" "}
-          <span className="text-accent">Word</span> de scherpste taalkop van Nederland.
+          <span className="text-accent">Word</span> de scherpste talenknobbel van Nederland.
         </motion.p>
 
         <motion.p
@@ -639,7 +639,7 @@ const FinalCTA = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string
       >
         <DingoMascot size={120} className="mx-auto mb-6" />
         <h2 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight">
-          Klaar om de <span className="text-primary">scherpste</span> taalkop te worden?
+          Klaar om de <span className="text-primary">scherpste</span> talenknobbel te worden?
         </h2>
         <p className="mt-5 text-lg text-muted-foreground">
           Gratis. Geen reclame. Geen onzin. Eén klik en je raadt je eerste woord.
