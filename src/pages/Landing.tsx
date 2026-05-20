@@ -43,8 +43,9 @@ const Landing = () => {
   const { scrollYProgress } = useScroll();
   const progressX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
 
-  const ctaTarget = session ? "/spelen" : "/auth";
+  const ctaTarget = session ? "/spelen" : "/auth?mode=register";
   const ctaLabel = session ? "Doorspelen" : "Maak een account";
+  const loginTarget = "/auth";
 
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
