@@ -80,6 +80,28 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <motion.header
+        initial={{ y: -40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
+      >
+        <div className="flex items-center gap-1 pl-1 sm:pl-2 pr-2 sm:pr-3">
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">L</span>
+          <DingoMascot size={20} className="-mx-0.5 sm:size-[22px]" />
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">NGO</span>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navTo("/")}
+          className="flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          <ArrowLeft className="w-3 h-3" />
+          Terug
+        </motion.button>
+      </motion.header>
+
       <SEO
         title={isLogin ? "Inloggen — LINGO NL" : "Account aanmaken — LINGO NL"}
         description="Log in of maak een gratis account aan om Lingo in het Nederlands te spelen, badges te verdienen en je voortgang bij te houden."
