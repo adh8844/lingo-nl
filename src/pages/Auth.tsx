@@ -19,6 +19,13 @@ const Auth = () => {
   const { toast } = useToast();
 
   const navTo = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("mode") === "register") {
+      setIsLogin(false);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (authReady && session) {
