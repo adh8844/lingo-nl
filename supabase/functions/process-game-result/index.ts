@@ -555,7 +555,8 @@ Deno.serve(async (req) => {
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('process-game-result error:', err)
+    return new Response(JSON.stringify({ error: 'Er is een fout opgetreden bij het verwerken van het spel.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
