@@ -78,7 +78,7 @@ const OnlineMatchPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
+        <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
       </div>
     );
   }
@@ -107,12 +107,12 @@ const OnlineMatchPage = () => {
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
       <SEO
-        title={`Online wedstrijd vs ${opponentName} — LINGO NL`}
+        title={`Online wedstrijd vs ${opponentName} — DingoLingo`}
         description="Speel een live Lingo wedstrijd tegen een andere speler in het Nederlands. Best-of-9 rondes, snelheid telt en de winnaar verdient extra punten."
         path="/online-match"
       />
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
-        LINGO ⚔️
+        DingoLingo ⚔️
       </h1>
       <OnlineGame
         match={activeMatch}

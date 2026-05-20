@@ -18,7 +18,7 @@ const Rules = () => {
   return (
     <div className="min-h-screen flex flex-col items-center px-3 sm:px-4 py-6 sm:py-10">
       <SEO
-        title="Spelregels — LINGO NL woordspel"
+        title="Spelregels — DingoLingo woordspel"
         description="Lees de spelregels van Lingo NL: hoe je woorden raadt, punten verdient, badges ontgrendelt en niveaus van 4, 5 en 6 letters speelt."
         path="/spelregels"
       />

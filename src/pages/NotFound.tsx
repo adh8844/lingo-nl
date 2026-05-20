@@ -12,7 +12,7 @@ const NotFound = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
       <SEO
-        title="Pagina niet gevonden — LINGO NL"
+        title="Pagina niet gevonden — DingoLingo"
         description="Deze pagina bestaat niet. Ga terug naar de Lingo NL homepagina om het Nederlandse woordspel te spelen."
         path={location.pathname}
       />
