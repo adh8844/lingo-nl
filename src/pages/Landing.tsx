@@ -320,7 +320,7 @@ const HowItWorks = () => {
       n: "01",
       title: "Kies je niveau",
       body: "Start met 4 letters. Verdien punten en badges om 5 en 6 letters te ontgrendelen.",
-      icon: <Target className="w-6 h-6" />,
+      icon: <Target className="w-12 h-12" />,
     },
     {
       n: "02",
