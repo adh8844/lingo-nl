@@ -18,10 +18,7 @@ import {
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
-import dingoTrophy from "@/assets/dingo-trophy.png";
-import dingoSunglasses from "@/assets/dingo-sunglasses.png";
 import dingoConfetti from "@/assets/dingo-confetti.png";
-import dingoDancing from "@/assets/dingo-dancing.png";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -320,19 +317,19 @@ const HowItWorks = () => {
       n: "01",
       title: "Kies je niveau",
       body: "Start met 4 letters. Verdien punten en badges om 5 en 6 letters te ontgrendelen.",
-      icon: <Target className="w-6 h-6" />,
+      icon: <Target className="w-12 h-12" />,
     },
     {
       n: "02",
       title: "Raad in 5 pogingen",
       body: "Groen = juist. Geel = juiste letter, foute plek. Grijs = nope. De klok tikt — 90 seconden.",
-      icon: <Brain className="w-6 h-6" />,
+      icon: <Brain className="w-12 h-12" />,
     },
     {
       n: "03",
       title: "Daag vrienden uit",
       body: "Best-of-9 live duels met millisecondes-tiebreak. Wie raadt het scherpst en het snelst?",
-      icon: <Users className="w-6 h-6" />,
+      icon: <Users className="w-12 h-12" />,
     },
   ];
   return (
@@ -356,7 +353,7 @@ const HowItWorks = () => {
               {s.n}
             </div>
             <div className="relative flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-primary/15 text-primary flex items-center justify-center">
                 {s.icon}
               </div>
               <span className="text-xs font-bold text-muted-foreground">{s.n}</span>
@@ -393,12 +390,12 @@ const SectionHeader = ({ kicker, title }: { kicker: string; title: string }) => 
 /* ------------------------ Feature grid ------------------------ */
 const FeatureGrid = () => {
   const features = [
-    { icon: <Flame className="w-5 h-5" />, title: "Dagelijkse streaks", body: "Mis geen dag. Bouw een vlam." },
-    { icon: <Star className="w-5 h-5" />, title: "Puntenjacht", body: "Hoe sneller je raadt, hoe meer punten." },
-    { icon: <Crown className="w-5 h-5" />, title: "Nationale ranglijst", body: "Strijd tegen heel Nederland." },
-    { icon: <Zap className="w-5 h-5" />, title: "Live duels", body: "Best-of-9 tegen je vrienden." },
-    { icon: <Trophy className="w-5 h-5" />, title: "Tientallen badges", body: "Zeldzame medailles voor scherpe spelers." },
-    { icon: <Sparkles className="w-5 h-5" />, title: "Challenger Mode", body: "Eén poging. 60 seconden. Lange woorden." },
+    { icon: <Flame className="w-9 h-9" />, title: "Dagelijkse streaks", body: "Mis geen dag. Bouw een vlam." },
+    { icon: <Star className="w-9 h-9" />, title: "Puntenjacht", body: "Hoe sneller je raadt, hoe meer punten." },
+    { icon: <Crown className="w-9 h-9" />, title: "Nationale ranglijst", body: "Strijd tegen heel Nederland." },
+    { icon: <Zap className="w-9 h-9" />, title: "Live duels", body: "Best-of-9 tegen je vrienden." },
+    { icon: <Trophy className="w-9 h-9" />, title: "Tientallen badges", body: "Zeldzame medailles voor scherpe spelers." },
+    { icon: <Sparkles className="w-9 h-9" />, title: "Challenger Mode", body: "Eén poging. 60 seconden. Lange woorden." },
   ];
   return (
     <section className="py-24 px-4 bg-gradient-to-b from-transparent via-card/30 to-transparent">
@@ -414,7 +411,7 @@ const FeatureGrid = () => {
             whileHover={{ scale: 1.03, borderColor: "hsl(var(--primary))" }}
             className="p-6 rounded-2xl bg-card border border-border cursor-default"
           >
-            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-3">
+            <div className="w-16 h-16 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-4">
               {f.icon}
             </div>
             <h4 className="font-extrabold text-lg mb-1">{f.title}</h4>
@@ -428,9 +425,9 @@ const FeatureGrid = () => {
 
 /* ------------------------ Board showcase ------------------------ */
 const BoardShowcase = () => {
-  // Animated mini-board reveal: typing "WEIDE" then flipping with colors
-  const target = "WEIDE";
-  const guesses = ["WINDEN".slice(0, 5), "WEIDEN".slice(0, 5), target];
+  // Animated mini-board reveal voor 6-letter woord HERKEN
+  const target = "HERKEN";
+  const guesses = ["HONGER", "HARKEN", "HERKEN"];
   const colors = (guess: string) =>
     guess.split("").map((c, i) =>
       c === target[i] ? "correct" : target.includes(c) ? "present" : "absent",
@@ -489,17 +486,17 @@ const BoardShowcase = () => {
           <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/30 to-accent/30 blur-3xl opacity-50" />
           <div className="relative p-6 sm:p-8 rounded-[2rem] bg-card border border-border shadow-2xl">
             <div className="flex items-center justify-between mb-5 text-xs font-bold text-muted-foreground">
-              <span>5 letters · Nederlands</span>
+              <span>6 letters · Nederlands</span>
               <span className="flex items-center gap-1">
                 <Flame className="w-3 h-3 text-accent" /> 6
-                <span className="ml-3">⏱ 1:10</span>
+                <span className="ml-3">⏱ 0:52</span>
               </span>
             </div>
             <div className="space-y-2">
               {guesses.map((g, row) => {
                 const cs = colors(g);
                 return (
-                  <div key={row} className="grid grid-cols-5 gap-2">
+                  <div key={row} className="grid grid-cols-6 gap-2">
                     {g.split("").map((ch, i) => (
                       <motion.div
                         key={i}
@@ -510,7 +507,7 @@ const BoardShowcase = () => {
                           duration: 0.6,
                           delay: row * 0.5 + i * 0.1,
                         }}
-                        className={`aspect-square rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-extrabold ${colorClass[cs[i]]}`}
+                        className={`aspect-square rounded-lg flex items-center justify-center text-xl sm:text-2xl font-extrabold ${colorClass[cs[i]]}`}
                       >
                         {ch}
                       </motion.div>
@@ -519,8 +516,8 @@ const BoardShowcase = () => {
                 );
               })}
               {[...Array(2)].map((_, i) => (
-                <div key={i} className="grid grid-cols-5 gap-2">
-                  {[...Array(5)].map((_, j) => (
+                <div key={i} className="grid grid-cols-6 gap-2">
+                  {[...Array(6)].map((_, j) => (
                     <div
                       key={j}
                       className="aspect-square rounded-lg bg-[hsl(var(--tile-empty))] border border-border/50"
@@ -549,10 +546,14 @@ const BoardShowcase = () => {
 /* ------------------------ Badges section ------------------------ */
 const BadgesSection = () => {
   const badges = [
-    { img: dingoTrophy, name: "Kampioen", rare: true },
-    { img: dingoSunglasses, name: "Cool onder druk", rare: false },
-    { img: dingoConfetti, name: "Feestbeest", rare: false },
-    { img: dingoDancing, name: "Op dreef", rare: true },
+    { icon: <Flame className="w-7 h-7" />, name: "Op dreef", desc: "5 dagen op rij gespeeld", points: 50, rare: false },
+    { icon: <Zap className="w-7 h-7" />, name: "Supersnel", desc: "Geraden binnen 20 seconden", points: 30, rare: false },
+    { icon: <Target className="w-7 h-7" />, name: "Vlekkeloos", desc: "Geraden in 1 poging", points: 75, rare: true },
+    { icon: <Crown className="w-7 h-7" />, name: "Maandmaster", desc: "Een maand lang elke dag gespeeld", points: 200, rare: true },
+    { icon: <Trophy className="w-7 h-7" />, name: "Meesterspeler", desc: "1000 spellen gewonnen", points: 250, rare: true },
+    { icon: <Users className="w-7 h-7" />, name: "Werver", desc: "5 vrienden uitgenodigd", points: 100, rare: false },
+    { icon: <Brain className="w-7 h-7" />, name: "Onvermoeibaar", desc: "50 spellen in één dag", points: 80, rare: false },
+    { icon: <Star className="w-7 h-7" />, name: "Legend", desc: "Top 10 van Nederland", points: 500, rare: true },
   ];
   return (
     <section className="py-28 px-4 relative overflow-hidden">
@@ -560,24 +561,36 @@ const BadgesSection = () => {
         kicker="Verzamel ze allemaal"
         title="Badges die laten zien hoe jij speelt."
       />
-      <div className="max-w-5xl mx-auto mt-14 grid grid-cols-2 md:grid-cols-4 gap-5">
+      <div className="max-w-5xl mx-auto mt-14 grid grid-cols-2 md:grid-cols-4 gap-3">
         {badges.map((b, i) => (
           <motion.div
             key={b.name}
-            initial={{ opacity: 0, y: 30, rotate: -6 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: i * 0.1, type: "spring" }}
-            whileHover={{ y: -8, rotate: [0, -4, 4, 0], transition: { rotate: { duration: 0.5 } } }}
-            className="relative aspect-square p-5 rounded-3xl bg-card border border-border flex flex-col items-center justify-center text-center"
+            transition={{ duration: 0.5, delay: (i % 4) * 0.08, type: "spring" }}
+            whileHover={{ y: -4 }}
+            className={`relative rounded-xl border p-4 ${
+              b.rare
+                ? "bg-accent/10 border-accent/30"
+                : "bg-primary/10 border-primary/30"
+            }`}
           >
-            {b.rare && (
-              <span className="absolute top-2 right-2 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-accent text-accent-foreground">
-                ZELDZAAM
-              </span>
-            )}
-            <img src={b.img} alt={b.name} className="w-24 h-24 object-contain mb-2 drop-shadow-xl" />
-            <div className="text-sm font-extrabold">{b.name}</div>
+            <div className="flex items-start gap-3">
+              <div className={`shrink-0 mt-0.5 ${b.rare ? "text-accent" : "text-primary"}`}>
+                {b.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-bold text-foreground">
+                    {b.name}
+                    {b.rare && " ★"}
+                  </p>
+                  <span className="text-[10px] font-bold text-primary shrink-0">+{b.points}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{b.desc}</p>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
