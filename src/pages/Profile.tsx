@@ -88,7 +88,11 @@ const Profile = () => {
 
   const loadViewPlayer = useCallback(async () => {
     if (!playerId || isOwnProfile) return;
-    const { data } = await supabase.from("players").select("*").eq("id", playerId).single();
+    const { data } = await supabase
+      .from("players")
+      .select("id, display_name, player_code, points, current_streak, best_streak, total_games_played, total_hours_played, unlocked_5letter, unlocked_6letter, last_played_date, created_at, updated_at")
+      .eq("id", playerId)
+      .single();
     if (data) setViewPlayer(data as unknown as Player);
   }, [playerId, isOwnProfile]);
 

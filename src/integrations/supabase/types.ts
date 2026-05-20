@@ -1056,6 +1056,32 @@ export type Database = {
           player_id: string
         }[]
       }
+      get_my_player: {
+        Args: never
+        Returns: {
+          best_streak: number
+          birthdate: string | null
+          created_at: string
+          current_streak: number
+          display_name: string
+          id: string
+          last_played_date: string | null
+          player_code: string
+          points: number
+          total_games_played: number
+          total_hours_played: number
+          unlocked_5letter: boolean
+          unlocked_6letter: boolean
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "players"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_own_games: {
         Args: { p_player_id: string }
         Returns: {

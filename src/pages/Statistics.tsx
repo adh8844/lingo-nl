@@ -34,10 +34,7 @@ const Statistics = () => {
       if (p) setPlayerName(p.display_name);
     }
 
-    const { data: games } = await supabase
-      .from("games" as any)
-      .select("level, solved, attempts, duration_seconds, played_at, points_earned")
-      .eq("player_id", targetId);
+    const { data: games } = await supabase.rpc("get_own_games", { p_player_id: targetId });
 
     if (!games) return;
 

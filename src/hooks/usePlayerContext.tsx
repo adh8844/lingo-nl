@@ -39,7 +39,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     setLoadingPlayer(true);
 
-    const { data } = await supabase.from("players").select("*").eq("user_id", user.id).maybeSingle();
+    const { data } = await supabase.rpc("get_my_player");
 
     if (data) {
       const nextPlayer = data as unknown as Player;
@@ -58,15 +58,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     let code = generateCode();
 
     for (let i = 0; i < 3; i++) {
-      const { data: newPlayer, error } = await supabase
+      const { error: insertError } = await supabase
         .from("players")
         .insert({
           display_name: displayName,
           player_code: code,
           user_id: user.id,
-        })
-        .select()
-        .single();
+        });
+
+      const { data: newPlayer, error } = insertError
+        ? { data: null, error: insertError }
+        : await supabase.rpc("get_my_player");
 
       if (newPlayer) {
         const nextPlayer = newPlayer as unknown as Player;
@@ -95,7 +97,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const refreshPlayer = useCallback(async () => {
     if (!player) return;
-    const { data } = await supabase.from("players").select("*").eq("id", player.id).single();
+    const { data } = await supabase.rpc("get_my_player");
     if (data) {
       const nextPlayer = data as unknown as Player;
       setPlayer(nextPlayer);
