@@ -115,7 +115,10 @@ const Rankings = () => {
   }, [activeMatch, navigate]);
 
   const loadAllPlayers = useCallback(async () => {
-    const { data } = await supabase.from("players").select("*").limit(500);
+    const { data } = await supabase
+      .from("players")
+      .select("id, display_name, player_code, current_streak, best_streak, points")
+      .limit(500);
     if (data) setAllPlayers(data.map((p) => ({ ...p, points: p.points ?? 0 })));
   }, []);
 
