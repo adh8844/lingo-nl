@@ -66,10 +66,10 @@ const Landing = () => {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
       >
-        <div className="flex items-center gap-1 pl-1 sm:pl-2 pr-2 sm:pr-3">
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">L</span>
+        <div className="flex items-center gap-0.5 pl-1 sm:pl-2 pr-2 sm:pr-3">
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Ding</span>
           <DingoMascot size={20} className="-mx-0.5 sm:size-[22px]" />
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">NGO</span>
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Lingo</span>
         </div>
         <button
           onClick={() => navigate("/auth")}
