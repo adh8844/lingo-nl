@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getRandomWordAsync, WordLength } from "@/data/words";
+
 import { playInviteSound, playAcceptSound } from "@/hooks/useSounds";
 import { usePresenceSettings } from "@/hooks/useAppSettings";
 
@@ -165,42 +165,16 @@ const GlobalOnlineManager = () => {
     setAccepting(challenge.id);
 
     try {
-      await supabase
-        .from("online_challenges")
-        .update({ status: "accepted" })
-        .eq("id", challenge.id);
-
-      const word = await getRandomWordAsync(
-        "nl",
-        challenge.word_length as WordLength
-      );
-
-      const { data: match } = await supabase
-        .from("online_matches")
-        .insert({
-          player1_id: challenge.challenger_id,
-          player2_id: playerId,
-          timer_seconds: challenge.timer_seconds,
-          word_length: challenge.word_length,
-          language: "nl",
-          current_word: word,
-          status: "active",
-        })
-        .select()
-        .single();
-
-      if (match) {
-        await supabase.from("match_rounds").insert({
-          match_id: match.id,
-          round_number: 1,
-          word,
-          status: "active",
-        });
-
-        playAcceptSound();
-        setChallenges(prev => prev.filter(c => c.id !== challenge.id));
-        navigate("/online-match");
+      const { data, error } = await supabase.functions.invoke("match-action", {
+        body: { action: "accept_challenge", challenge_id: challenge.id },
+      });
+      if (error || !data?.match_id) {
+        console.error("accept_challenge failed", error);
+        return;
       }
+      playAcceptSound();
+      setChallenges(prev => prev.filter(c => c.id !== challenge.id));
+      navigate("/online-match");
     } finally {
       setAccepting(null);
     }
