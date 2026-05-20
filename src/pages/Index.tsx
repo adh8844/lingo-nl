@@ -36,34 +36,20 @@ const Index = () => {
     if (player.unlocked_5letter && player.unlocked_6letter) return;
 
     const [fgRes, badgesRes, defsRes, faRes] = await Promise.all([
-      supabase
-        .from("games" as any)
-        .select("points_earned")
-        .eq("player_id", player.id)
-        .eq("level", 4),
-      supabase
-        .from("player_badges" as any)
-        .select("badge_id")
-        .eq("player_id", player.id),
+      supabase.from("games" as any).select("points_earned").eq("player_id", player.id).eq("level", 4),
+      supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id),
       supabase.from("badges" as any).select("id, category, is_rare"),
-      supabase
-        .from("games" as any)
-        .select("id", { count: "exact", head: true })
-        .eq("player_id", player.id)
-        .eq("solved", true)
-        .eq("attempts", 1),
+      supabase.from("games" as any).select("id", { count: "exact", head: true }).eq("player_id", player.id).eq("solved", true).eq("attempts", 1),
     ]);
 
     const fourLetterPoints = (fgRes.data || []).reduce((s: number, g: any) => s + (g.points_earned || 0), 0);
     const badgeIds = new Set((badgesRes.data || []).map((b: any) => b.badge_id));
     const cats = new Set<string>();
-    let rare = 0,
-      normal = 0;
+    let rare = 0, normal = 0;
     (defsRes.data || []).forEach((b: any) => {
       if (badgeIds.has(b.id)) {
         cats.add(b.category);
-        if (b.is_rare) rare++;
-        else normal++;
+        if (b.is_rare) rare++; else normal++;
       }
     });
 
@@ -92,14 +78,14 @@ const Index = () => {
 
   useEffect(() => {
     if (!loading && !session) {
-      navigate("/auth", { replace: true });
+      navigate("/", { replace: true });
     }
   }, [loading, session, navigate]);
 
   if (loading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
+        <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
       </div>
     );
   }
@@ -107,8 +93,8 @@ const Index = () => {
   if (gameStarted) {
     return (
       <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
-          LINGO
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 sm:mb-6">
+          <span className="text-primary">Dingo</span><span className="text-primary">Lingo</span>
         </h1>
         <LingoGame wordLength={selectedLevel} onBack={handleBack} />
       </div>
@@ -174,18 +160,19 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <SEO
-        title="DingoLingo — Pas op, verslavend woordspel."
+        title="DingoLingo — Speel het woordspel online in het Nederlands"
         description="Speel DingoLingo online in het Nederlands. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst in dit uitdagende woordspel."
         path="/"
       />
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-7xl sm:text-8xl md:text-9xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
-            <span>L</span>
-            <DingoMascot size={128} className="mx-[-4px] mb-[2px] hidden md:block" />
-            <DingoMascot size={96} className="mx-[-4px] mb-[2px] hidden sm:block md:hidden" />
-            <DingoMascot size={72} className="mx-[-4px] mb-[2px] block sm:hidden" />
-            <span>NGO</span>
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-tighter flex items-end leading-none">
+            <span className="text-primary">Dingo</span>
+            <span className="text-primary ml-2 sm:ml-3 md:ml-4">L</span>
+            <DingoMascot size={72} className="mx-[-3px] mb-[2px] hidden md:block" />
+            <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block md:hidden" />
+            <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
+            <span className="text-primary">ngo</span>
           </h1>
           <p className="text-muted-foreground text-lg">Raad het woord</p>
         </div>
