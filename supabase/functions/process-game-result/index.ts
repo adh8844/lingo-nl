@@ -128,10 +128,36 @@ Deno.serve(async (req) => {
     const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points } = await req.json()
 
     const validLevels = [4, 5, 6, 10, 12, 14]
-    if (!player_id || !validLevels.includes(level) || !word || typeof solved !== 'boolean') {
+    if (!player_id || !validLevels.includes(level) || !word || typeof word !== 'string' || typeof solved !== 'boolean') {
       return new Response(JSON.stringify({ error: 'Ongeldige invoer' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
+    }
+
+    // Validate word length matches declared level (for normal modes 4/5/6 only)
+    if ([4, 5, 6].includes(level) && word.length !== level) {
+      return new Response(JSON.stringify({ error: 'Ongeldig woord' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Validate the word exists in the approved Dutch word list to prevent
+    // arbitrary strings being injected into the public games/leaderboard.
+    // Only enforced for normal modes (4/5/6); challenger modes use long words
+    // sourced through different flows.
+    if ([4, 5, 6].includes(level)) {
+      const { data: wordCheck } = await supabase
+        .from('dutch_words')
+        .select('id')
+        .eq('word', word.toLowerCase())
+        .eq('approved', true)
+        .eq('appropriate', true)
+        .maybeSingle()
+      if (!wordCheck) {
+        return new Response(JSON.stringify({ error: 'Ongeldig woord' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
     }
 
     // Verify the caller owns the player record
@@ -529,7 +555,8 @@ Deno.serve(async (req) => {
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error('process-game-result error:', err)
+    return new Response(JSON.stringify({ error: 'Er is een fout opgetreden bij het verwerken van het spel.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
