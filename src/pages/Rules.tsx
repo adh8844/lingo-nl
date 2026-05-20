@@ -1,6 +1,16 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock, LockOpen, AlertTriangle, Users, Star } from "lucide-react";
 import SEO from "@/components/SEO";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Rules = () => {
   const navigate = useNavigate();
@@ -12,7 +22,7 @@ const Rules = () => {
         description="Lees de spelregels van Lingo NL: hoe je woorden raadt, punten verdient, badges ontgrendelt en niveaus van 4, 5 en 6 letters speelt."
         path="/spelregels"
       />
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <button
           onClick={() => navigate("/")}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -21,87 +31,220 @@ const Rules = () => {
           Terug
         </button>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary mb-8">Spelregels — Lingo</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary mb-8">
+          Spelregels — Lingo
+        </h1>
 
-        <div className="space-y-6 text-foreground leading-relaxed text-[15px]">
-          <section>
-            <h2 className="text-xl font-bold mb-2">Wat is Lingo?</h2>
-            <p>
-              Lingo is een woordraadspel waarbij je een verborgen woord moet raden door slimme pogingen te doen. Na elke
-              poging krijg je feedback: welke letters op de juiste plek staan, welke letters wel in het woord zitten
-              maar op de verkeerde plek, en welke letters helemaal niet voorkomen. Je hebt maximaal 5 pogingen per
-              woord.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-2">De drie niveaus</h2>
-            <p className="mb-3">Lingo kent drie niveaus die je één voor één vrijspeelt:</p>
-            <div className="space-y-3 pl-1">
-              <p>
-                <strong>4-letter Lingo</strong> is altijd toegankelijk voor iedereen — dit is het startpunt. Hier leer
-                je het spel kennen en bouw je punten en badges op.
+        <div className="space-y-5">
+          {/* Kaart 1 — Het spel */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Het spel</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4 text-[15px] leading-relaxed">
+                Raad het verborgen woord in maximaal 5 pogingen. Na elke poging krijg je feedback:
               </p>
-              <p>
-                <strong>5-letter Lingo</strong> ontgrendel je zodra je aan één van de volgende voorwaarden voldoet: je
-                hebt 250 punten verzameld in 4-letter Lingo, of je hebt minstens 3 badges verdiend uit minimaal 2
-                verschillende categorieën, of je hebt 5 woorden op rij geraden in je eerste poging.
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="w-24">
+                      <span className="inline-block w-6 h-6 rounded-sm bg-tile-correct" />
+                    </TableCell>
+                    <TableCell>Letter op de juiste plek</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <span className="inline-block w-6 h-6 rounded-sm bg-tile-present" />
+                    </TableCell>
+                    <TableCell>Letter in het woord, maar op de verkeerde plek</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>
+                      <span className="inline-block w-6 h-6 rounded-sm bg-tile-absent" />
+                    </TableCell>
+                    <TableCell>Letter komt niet voor in het woord</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Kaart 2 — Niveaus */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Niveaus</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Niveau</TableHead>
+                    <TableHead>Toegang</TableHead>
+                    <TableHead>Ontgrendelvoorwaarden</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-semibold">4-letter</TableCell>
+                    <TableCell>
+                      <LockOpen className="w-5 h-5 text-tile-correct" />
+                    </TableCell>
+                    <TableCell>Startpunt voor iedereen</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold align-top">5-letter</TableCell>
+                    <TableCell className="align-top">
+                      <Lock className="w-5 h-5 text-muted-foreground" />
+                    </TableCell>
+                    <TableCell>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>250 punten in 4-letter, of</li>
+                        <li>3 badges uit min. 2 categorieën, of</li>
+                        <li>5 woorden op rij geraden in 1e poging</li>
+                      </ul>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold align-top">6-letter</TableCell>
+                    <TableCell className="align-top">
+                      <Lock className="w-5 h-5 text-muted-foreground" />
+                    </TableCell>
+                    <TableCell>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>600 punten totaal (alle niveaus), én</li>
+                        <li>1 zeldzame badge ★ of 8 gewone badges, én</li>
+                        <li>"Op dreef"-badge (3 dagen op rij gespeeld)</li>
+                      </ul>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Kaart 3 — Puntensysteem */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Puntensysteem</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Poging</TableHead>
+                    <TableHead>4-letter (×1,0)</TableHead>
+                    <TableHead>5-letter (×1,5)</TableHead>
+                    <TableHead>6-letter (×2,0)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[
+                    ["1e poging", "20", "30", "40"],
+                    ["2e poging", "15", "22,5", "30"],
+                    ["3e poging", "12", "18", "24"],
+                    ["4e poging", "10", "15", "20"],
+                    ["5e poging", "5", "7,5", "10"],
+                    ["Niet geraden", "2", "3", "4"],
+                  ].map(([label, a, b, c]) => (
+                    <TableRow key={label}>
+                      <TableCell className="font-medium">{label}</TableCell>
+                      <TableCell>{a} pt</TableCell>
+                      <TableCell>{b} pt</TableCell>
+                      <TableCell>{c} pt</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <p>
+                  Bovenop het basisresultaat: snelheidsbonus, reeksbonus en dagelijkse bonus — zie
+                  de puntentabel voor exacte bedragen.
+                </p>
+                <p className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 text-accent shrink-0" />
+                  <span>
+                    Inactief: −100 punten per week zonder Lingo. Puntentotaal wordt nooit negatief.
+                  </span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Kaart 4 — Badges */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Badges</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-3">28 badges in 6 categorieën</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {["Tijd", "Reeks", "Vaardigheid", "Sociaal", "Uithoudingsvermogen", "Prestige"].map(
+                      (c) => (
+                        <Badge key={c} variant="secondary">
+                          {c}
+                        </Badge>
+                      ),
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-1">
+                    Zeldzame badges <Star className="w-4 h-4 fill-primary text-primary" />
+                  </h3>
+                  <ul className="list-disc pl-5 space-y-1 text-[15px]">
+                    <li>Moeilijker te verdienen</li>
+                    <li>Geven meer punten</li>
+                    <li>Tellen zwaarder mee voor 6-letter ontgrendeling</li>
+                  </ul>
+                </div>
+              </div>
+              <p className="mt-5 flex items-start gap-2 text-sm text-muted-foreground">
+                <Users className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>
+                  Badges zijn zichtbaar op je profiel en tonen hoe jij speelt — niet alleen hoe hoog
+                  je staat.
+                </span>
               </p>
-              <p>
-                <strong>6-letter Lingo</strong> is het hoogste niveau en vereist een combinatie: minimaal 600 punten
-                totaal (over alle niveaus samen), plus minstens één zeldzame badge (★) of 8 gewone badges, plus de "Op
-                dreef"-badge (3 dagen op rij gespeeld).
-              </p>
-            </div>
-          </section>
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2 className="text-xl font-bold mb-2">Hoe verdien je punten?</h2>
-            <p className="mb-3">
-              Punten verdien je per spel. Hoe sneller je het woord raadt, hoe meer je krijgt. Het basisresultaat hangt
-              af van in welke poging je het woord raadt:
-            </p>
-            <p className="mb-3">
-              In 4-letter Lingo krijg je 20 punten voor het raden van het woord bij de eerste-poging, 15 voor de tweede,
-              12 voor de derde, 10 voor de vierde, 5 voor de vijfde en 2 punten als je het woord niet raadt. In 5-letter
-              Lingo worden deze bedragen vermenigvuldigd met 1,5. In 6-letter Lingo met 2,0.
-            </p>
-            <p>
-              Bovenop het basisresultaat komen snelheidsbonussen (als je het woord snel raadt), reeksbonussen (als je
-              meerdere dagen op rij speelt) en dagelijkse bonussen. Zie de puntentabel voor de exacte bedragen.
-            </p>
-            <p className="mb-3">Voor elke week dat je geen Lingo speelt verlies je 100 punten. Je puntentotaal kan nooit negatief worden — er wordt nooit meer afgetrokken dan je hebt.</p>
-          </section>
+          {/* Kaarten 5 en 6 — naast elkaar */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Ranglijst</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-5 space-y-1 text-[15px]">
+                  <li>Bepaald door totale punten</li>
+                  <li>Badges zijn zichtbaar maar tellen niet mee voor positie</li>
+                  <li>Punten zijn de enige maatstaf</li>
+                </ul>
+              </CardContent>
+            </Card>
 
-          <section>
-            <h2 className="text-xl font-bold mb-2">Badges</h2>
-            <p className="mb-3">
-              Naast punten verdien je badges voor bijzondere prestaties. Er zijn 28 badges verdeeld over 6 categorieën:
-              Tijd, Reeks, Vaardigheid, Sociaal, Uithoudingsvermogen en Prestige. Zeldzame badges (★) zijn moeilijker te
-              verdienen maar geven meer punten en tellen zwaarder mee bij het ontgrendelen van 6-letter Lingo.
-            </p>
-            <p>
-              Badges zijn zichtbaar op je profiel. Ze tonen aan andere spelers wat voor speler jij bent — niet alleen
-              hoe hoog je staat, maar ook hoe je speelt.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-2">De ranglijst</h2>
-            <p>
-              De ranglijst wordt bepaald door totale punten. Badges zijn zichtbaar maar tellen niet direct mee voor je
-              positie op de ranglijst. Punten zijn de enige maatstaf voor wie er bovenaan staat.
-            </p>
-          </section>
-
-          <section className="bg-primary/5 border border-primary/20 rounded-xl p-4 sm:p-5">
-            <h2 className="text-xl font-bold mb-2">Kort samengevat</h2>
-            <p>
-              Punten zijn de motor van het spel: ze bepalen je positie op de ranglijst en zijn één route naar hogere
-              niveaus. Badges zijn de sleutels: ze openen deuren die punten alleen soms niet kunnen openen, en ze
-              vertellen het verhaal van hoe jij speelt. Het beste resultaat bereik je met een combinatie van beide.
-            </p>
-          </section>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Kort samengevat</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-5 space-y-1 text-[15px]">
+                  <li>
+                    <strong>Punten</strong> — bepalen je positie op de ranglijst
+                  </li>
+                  <li>
+                    <strong>Badges</strong> — openen hogere niveaus, ook zonder punten
+                  </li>
+                  <li>
+                    <strong>Combinatie</strong> — levert het beste resultaat
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
