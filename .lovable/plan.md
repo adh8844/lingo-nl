@@ -1,66 +1,38 @@
+# Mascotte in titel: originele verhoudingen op landingspagina
+
+## Oorzaak van het verschil
+
+De `DingoMascot` component dwingt een **vierkant** kader af (zelfde `width` als `height`, plus inline `style`). De afbeelding zelf is 383×668 px — een **portret-rechthoek** (~0.57:1). `object-contain` past hem netjes in het vierkant in, maar laat dan links/rechts transparante ruimte over.
+
+- Op **Landing** is het vak groot (45 / 80 / 112 px vierkant), dus de lege ruimte naast de mascotte is goed zichtbaar → oogt vierkant met witruimte ertussen.
+- Op **Auth** is het vak klein (44 / 56 px vierkant) en met `mx-[-3px]` worden de letters er bovenop geschoven, waardoor de lege flanken minder opvallen → oogt smaller/rechthoekig.
+
+In beide gevallen is de **getekende** mascotte gelijk van vorm; alleen het onzichtbare kader verschilt visueel in effect.
+
 ## Doel
 
-De grote titel op de landingspagina, inlogpagina (`/auth`) en spelpagina (`/spelen`) krijgt een nieuwe opmaak:
+Op de **landingspagina** de mascotte tonen in zijn echte verhouding (smal en hoog), zonder horizontale loze ruimte, zodat "L" en "ngo" strak aansluiten. Auth-pagina en spelen-pagina **ongewijzigd**.
 
-- **Dingo** → in het bestaande themarood (`text-accent`, HSL `4 85% 55%`)
-- **Lingo** → in het bestaande themageel (`text-primary`, HSL `45 100% 55%`)
-- De **i** in "Lingo" wordt vervangen door de DingoMascot-afbeelding
-- De **i** in "Dingo" blijft gewoon een letter "i"
+## Aanpak
 
-## Hoe het er ongeveer uit komt te zien
+Alleen `src/pages/Landing.tsx` aanpassen. De `DingoMascot` component zelf blijft gelijk (wordt op andere plekken vierkant gebruikt). In Landing rendert de mascotte direct als `<img>` (of via een wrapper) met:
 
-```text
-   ┌─────┐   ┌─────┐   ┌─────┐  ╔═══╗  ┌─────┐   ┌─────┐   ┌─────┐
-   │  D  │   │  i  │   │  n  │  ║ g ║  │  o  │   │     │   │     │
-   │  D  │   │  i  │   │  n  │  ║ g ║  │  o  │   │  L  │ 🐕  │ngo│
-   └─────┘   └─────┘   └─────┘  ╚═══╝  └─────┘   └─────┘   └─────┘
-   ◄────────── ROOD (accent) ──────────►          ◄──── GEEL (primary) ────►
-                                                          ▲
-                                                          │
-                                                  mascot vervangt de "i"
-```
+- `height` = huidige grootte (45 / 80 / 112 px responsief)
+- `width` = `auto` (volgt natuurlijke beeldverhouding → ~26 / 46 / 64 px)
+- `object-contain` blijft, geen geforceerde breedte/hoogte-stijl
 
-Visueel, op één regel:
-
-```text
-D i n g o  L🐕n g o
-└─────────┘ └──────┘
-   rood       geel
-              ↑ mascotte staat op de plek van de i
-```
-
-## Wijzigingen per pagina
-
-### 1. `src/pages/Landing.tsx` — hero h1 (regels 141-164)
-
-Huidige structuur: `Ding` + mascot + `Lingo` (alles in `text-primary` geel).
-
-Nieuwe structuur:
-- `<span class="text-accent">Dingo</span>` (rood, géén mascot)
-- `<span class="text-primary">L</span>` + mascot (op i-positie) + `<span class="text-primary">ngo</span>`
-- Mascot-grootte en bestaande motion-animaties blijven gelijk (size 56 mobiel, 100 sm, 140 md).
-- De rand-margins `mx-[-4px] sm:mx-[-6px]` worden licht bijgesteld zodat de mascotte strak in de plek van de "i" past tussen L en n.
-
-### 2. `src/pages/Auth.tsx` — h1 (regels 120-125)
-
-Huidige structuur: `Ding` + mascot + `Lingo`.
-
-Wordt: `Dingo` (rood) + `L` + mascot + `ngo` (geel). Bestaande responsive switch (mascot 44 mobiel / 56 desktop) blijft.
-
-### 3. `src/pages/Index.tsx` — twee plekken
-
-- **Spel-actief titel (regel 89)**: `<h1>DingoLingo</h1>` wordt opgesplitst: `Dingo` in `text-accent`, `Lingo` in `text-primary` (geen mascotte hier, want huidige versie heeft die ook niet en het is een kleine titel).
-- **Hoofd-hero (regels 154-162)**: zelfde patroon als Landing — `Dingo` rood, `L` + mascot + `ngo` geel. Responsive mascot-sizes (44/56/72) blijven gelijk.
-
-## Wat NIET verandert
-
-- De kleine navigatiebalk bovenaan (Landing & Auth) — daar staat het logo "Ding[mascot]Lingo" op klein formaat; gebruiker vraagt expliciet om "the title", dus deze laat ik ongemoeid tenzij anders aangegeven.
-- Footer-tekst "DingoLingo" in Landing footer blijft één kleur (gewone fließtext).
-- SEO-titels, marquee-woorden, alle andere content.
-- Kleuren `--primary` en `--accent` in `index.css` — die bestaan al en worden hergebruikt.
+Resultaat: geen lege horizontale flanken meer, mascotte staat strak tussen "L" en "ngo" met de bestaande `mx-[-3px]` overlap.
 
 ## Technische details
 
-- Geen nieuwe design tokens nodig; `text-accent` (rood) en `text-primary` (geel) bestaan al in de Tailwind-config via de bestaande HSL CSS-variabelen.
-- Alleen JSX-wijzigingen in 3 bestanden. Geen logica, geen backend, geen nieuwe assets.
-- Animaties (framer-motion `initial/animate/transition`) blijven per span behouden; de "L" en "ngo" krijgen elk hun eigen `motion.span` zodat de mascotte er tussenin kan poppen met de bestaande spring-animatie.
+In `src/pages/Landing.tsx` (regel 162-165) wordt de huidige inline `DingoMascot` vervangen door een `<img>` met aspect-correcte rendering:
+
+```tsx
+<img
+  src={dingoLogo}
+  alt="Dingo mascotte"
+  className="h-[45px] w-auto sm:h-[80px] md:h-[112px] object-contain block"
+/>
+```
+
+Met import van `dingo-final-zittend-cool.png` bovenaan. Geen wijziging aan `DingoMascot.tsx`, Auth.tsx, of Index.tsx.
