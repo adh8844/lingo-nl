@@ -428,9 +428,9 @@ const FeatureGrid = () => {
 
 /* ------------------------ Board showcase ------------------------ */
 const BoardShowcase = () => {
-  // Animated mini-board reveal: typing "WEIDE" then flipping with colors
-  const target = "WEIDE";
-  const guesses = ["WINDEN".slice(0, 5), "WEIDEN".slice(0, 5), target];
+  // Animated mini-board reveal voor 6-letter woord HERKEN
+  const target = "HERKEN";
+  const guesses = ["HONGER", "HARKEN", "HERKEN"];
   const colors = (guess: string) =>
     guess.split("").map((c, i) =>
       c === target[i] ? "correct" : target.includes(c) ? "present" : "absent",
@@ -489,17 +489,17 @@ const BoardShowcase = () => {
           <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-primary/30 to-accent/30 blur-3xl opacity-50" />
           <div className="relative p-6 sm:p-8 rounded-[2rem] bg-card border border-border shadow-2xl">
             <div className="flex items-center justify-between mb-5 text-xs font-bold text-muted-foreground">
-              <span>5 letters · Nederlands</span>
+              <span>6 letters · Nederlands</span>
               <span className="flex items-center gap-1">
                 <Flame className="w-3 h-3 text-accent" /> 6
-                <span className="ml-3">⏱ 1:10</span>
+                <span className="ml-3">⏱ 0:52</span>
               </span>
             </div>
             <div className="space-y-2">
               {guesses.map((g, row) => {
                 const cs = colors(g);
                 return (
-                  <div key={row} className="grid grid-cols-5 gap-2">
+                  <div key={row} className="grid grid-cols-6 gap-2">
                     {g.split("").map((ch, i) => (
                       <motion.div
                         key={i}
@@ -510,7 +510,7 @@ const BoardShowcase = () => {
                           duration: 0.6,
                           delay: row * 0.5 + i * 0.1,
                         }}
-                        className={`aspect-square rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-extrabold ${colorClass[cs[i]]}`}
+                        className={`aspect-square rounded-lg flex items-center justify-center text-xl sm:text-2xl font-extrabold ${colorClass[cs[i]]}`}
                       >
                         {ch}
                       </motion.div>
@@ -519,8 +519,8 @@ const BoardShowcase = () => {
                 );
               })}
               {[...Array(2)].map((_, i) => (
-                <div key={i} className="grid grid-cols-5 gap-2">
-                  {[...Array(5)].map((_, j) => (
+                <div key={i} className="grid grid-cols-6 gap-2">
+                  {[...Array(6)].map((_, j) => (
                     <div
                       key={j}
                       className="aspect-square rounded-lg bg-[hsl(var(--tile-empty))] border border-border/50"
