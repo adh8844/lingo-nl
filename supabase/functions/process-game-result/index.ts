@@ -201,7 +201,11 @@ Deno.serve(async (req) => {
 
     // For challenger games, simplified scoring
     if (is_challenger || [10, 12, 14].includes(level)) {
-      const cPoints = solved ? (challenger_points || 200) : 0
+      // Server-side clamp: max 500 pts (matches frontend POINTS_TABLE max).
+      // Never trust client-supplied challenger_points.
+      const requested = Number(challenger_points)
+      const safeRequested = Number.isFinite(requested) && requested >= 0 ? Math.min(requested, 500) : 200
+      const cPoints = solved ? safeRequested : 0
       if (solved) {
         pts.push({ points: cPoints, reason: `Challenger gewonnen! (${level}-letter, ${cPoints} pts)` })
       } else {
