@@ -332,7 +332,7 @@ const HowItWorks = () => {
       n: "03",
       title: "Daag vrienden uit",
       body: "Best-of-9 live duels met millisecondes-tiebreak. Wie raadt het scherpst en het snelst?",
-      icon: <Users className="w-6 h-6" />,
+      icon: <Users className="w-12 h-12" />,
     },
   ];
   return (
