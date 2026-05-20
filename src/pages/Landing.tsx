@@ -393,12 +393,12 @@ const SectionHeader = ({ kicker, title }: { kicker: string; title: string }) => 
 /* ------------------------ Feature grid ------------------------ */
 const FeatureGrid = () => {
   const features = [
-    { icon: <Flame className="w-5 h-5" />, title: "Dagelijkse streaks", body: "Mis geen dag. Bouw een vlam." },
-    { icon: <Star className="w-5 h-5" />, title: "Puntenjacht", body: "Hoe sneller je raadt, hoe meer punten." },
-    { icon: <Crown className="w-5 h-5" />, title: "Nationale ranglijst", body: "Strijd tegen heel Nederland." },
-    { icon: <Zap className="w-5 h-5" />, title: "Live duels", body: "Best-of-9 tegen je vrienden." },
-    { icon: <Trophy className="w-5 h-5" />, title: "Tientallen badges", body: "Zeldzame medailles voor scherpe spelers." },
-    { icon: <Sparkles className="w-5 h-5" />, title: "Challenger Mode", body: "Eén poging. 60 seconden. Lange woorden." },
+    { icon: <Flame className="w-9 h-9" />, title: "Dagelijkse streaks", body: "Mis geen dag. Bouw een vlam." },
+    { icon: <Star className="w-9 h-9" />, title: "Puntenjacht", body: "Hoe sneller je raadt, hoe meer punten." },
+    { icon: <Crown className="w-9 h-9" />, title: "Nationale ranglijst", body: "Strijd tegen heel Nederland." },
+    { icon: <Zap className="w-9 h-9" />, title: "Live duels", body: "Best-of-9 tegen je vrienden." },
+    { icon: <Trophy className="w-9 h-9" />, title: "Tientallen badges", body: "Zeldzame medailles voor scherpe spelers." },
+    { icon: <Sparkles className="w-9 h-9" />, title: "Challenger Mode", body: "Eén poging. 60 seconden. Lange woorden." },
   ];
   return (
     <section className="py-24 px-4 bg-gradient-to-b from-transparent via-card/30 to-transparent">
