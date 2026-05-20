@@ -636,7 +636,7 @@ const FinalCTA = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string
         transition={{ duration: 0.7 }}
         className="relative max-w-3xl mx-auto text-center"
       >
-        <DingoMascot size={120} className="mx-auto mb-6" />
+        <img src={dingoLogo} alt="Dingo mascotte" className="mx-auto mb-6 h-[120px] w-auto object-contain" />
         <h2 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight">
           Klaar om de <span className="text-primary">scherpste</span> talenknobbel te worden?
         </h2>
