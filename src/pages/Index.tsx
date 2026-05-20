@@ -85,7 +85,7 @@ const Index = () => {
   if (loading || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
+        <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
       </div>
     );
   }
