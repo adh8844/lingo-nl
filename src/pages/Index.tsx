@@ -93,8 +93,8 @@ const Index = () => {
   if (gameStarted) {
     return (
       <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-primary mb-4 sm:mb-6">
-          DingoLingo
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 sm:mb-6">
+          <span className="text-accent">Dingo</span><span className="text-primary">Lingo</span>
         </h1>
         <LingoGame wordLength={selectedLevel} onBack={handleBack} />
       </div>
@@ -166,12 +166,13 @@ const Index = () => {
       />
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
-            <span>Ding</span>
+          <h1 className="text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-tighter flex items-end leading-none">
+            <span className="text-accent">Dingo</span>
+            <span className="text-primary ml-2 sm:ml-3 md:ml-4">L</span>
             <DingoMascot size={72} className="mx-[-3px] mb-[2px] hidden md:block" />
             <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block md:hidden" />
             <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
-            <span>Lingo</span>
+            <span className="text-primary">ngo</span>
           </h1>
           <p className="text-muted-foreground text-lg">Raad het woord</p>
         </div>

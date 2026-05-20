@@ -109,11 +109,12 @@ const Auth = () => {
       />
       <div className="flex flex-col items-center gap-6 w-full max-w-sm animate-bounce-in">
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tighter text-primary flex items-end leading-none">
-            <span>Ding</span>
-            <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block" />
+          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tighter flex items-end leading-none">
+            <span className="text-accent">Dingo</span>
+            <span className="text-primary ml-2 sm:ml-3">L</span>
             <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
-            <span>Lingo</span>
+            <DingoMascot size={56} className="mx-[-3px] mb-[2px] hidden sm:block" />
+            <span className="text-primary">ngo</span>
           </h1>
           <p className="text-muted-foreground">{isLogin ? "Inloggen" : "Account aanmaken"}</p>
         </div>
