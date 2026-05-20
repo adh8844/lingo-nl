@@ -289,7 +289,7 @@ const FloatingTiles = () => {
 
 /* ----------------------- Marquee strip ----------------------- */
 const MarqueeStrip = () => {
-  const words = ["WINDEN", "WEIDE", "DROOM", "KAAS", "FIETS", "STROOP", "OLIFANT", "GEZELLIG", "VUURTOREN"];
+  const words = ["WINDEN", "WEIDE", "DROOM", "KAAS", "FIETS", "STROOP", "TIJGER", "KROKET", "VUURTOREN"];
   return (
     <section className="py-8 border-y border-border bg-card/40 overflow-hidden">
       <motion.div
