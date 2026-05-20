@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getRandomWordAsync, WordLength } from "@/data/words";
+
 import { playInviteSound, playAcceptSound } from "@/hooks/useSounds";
 import { usePresenceSettings } from "@/hooks/useAppSettings";
 
