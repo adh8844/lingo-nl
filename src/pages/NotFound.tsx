@@ -12,8 +12,8 @@ const NotFound = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
       <SEO
-        title="Pagina niet gevonden — LINGO NL"
-        description="Deze pagina bestaat niet. Ga terug naar de Lingo NL homepagina om het Nederlandse woordspel te spelen."
+        title="Pagina niet gevonden — DingoLingo"
+        description="Deze pagina bestaat niet. Ga terug naar de DingoLingo homepagina om het Nederlandse woordspel te spelen."
         path={location.pathname}
       />
       <div className="text-center">

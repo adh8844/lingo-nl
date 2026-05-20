@@ -374,7 +374,7 @@ const Admin = () => {
   if (loading || checking || !authReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
+        <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
       </div>
     );
   }
@@ -386,8 +386,8 @@ const Admin = () => {
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-4">
       <SEO
-        title="Beheer — LINGO NL"
-        description="Beheerpaneel voor LINGO NL: woorden goedkeuren, badges configureren en spelinstellingen aanpassen."
+        title="Beheer — DingoLingo"
+        description="Beheerpaneel voor DingoLingo: woorden goedkeuren, badges configureren en spelinstellingen aanpassen."
         path="/admin"
       />
       <div className="w-full max-w-2xl">

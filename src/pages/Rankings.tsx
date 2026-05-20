@@ -293,7 +293,7 @@ const Rankings = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl font-extrabold text-primary animate-pulse">LINGO</div>
+        <div className="text-2xl font-extrabold text-primary animate-pulse">DINGOLINGO</div>
       </div>
     );
   }
@@ -664,7 +664,7 @@ const Rankings = () => {
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
       <SEO
-        title="Ranglijst — LINGO NL woordspel"
+        title="Ranglijst — DingoLingo woordspel"
         description="Bekijk de Lingo ranglijst: top spelers, dagelijkse punten, streaks, badges en uitdagingen. Klim mee in het Nederlandse woordspel."
         path="/rankings"
       />

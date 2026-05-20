@@ -48,8 +48,8 @@ const Landing = () => {
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="LINGO NL — Het Nederlandse woordspel dat je niet meer loslaat"
-        description="Raad het woord, jaag op badges, beklim de ranglijst. Speel Lingo gratis online in het Nederlands."
+        title="DingoLingo — Het Nederlandse woordspel dat je niet meer loslaat"
+        description="Raad het woord, jaag op badges, beklim de ranglijst. Speel DingoLingo gratis online in het Nederlands."
         path="/"
       />
 
@@ -66,10 +66,10 @@ const Landing = () => {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
       >
-        <div className="flex items-center gap-1 pl-1 sm:pl-2 pr-2 sm:pr-3">
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">L</span>
+        <div className="flex items-center gap-0.5 pl-1 sm:pl-2 pr-2 sm:pr-3">
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Ding</span>
           <DingoMascot size={20} className="-mx-0.5 sm:size-[22px]" />
-          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">NGO</span>
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">Lingo</span>
         </div>
         <button
           onClick={() => navigate("/auth")}
@@ -138,28 +138,28 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
           Nederlands woordspel · gratis · geen reclame
         </motion.div>
 
-        <h1 className="font-extrabold tracking-tighter text-primary leading-[0.85] text-7xl sm:text-8xl md:text-9xl flex items-end justify-center">
+        <h1 className="font-extrabold tracking-tighter text-primary leading-[0.85] text-5xl sm:text-7xl md:text-9xl flex items-end justify-center">
           <motion.span
             initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.1 }}
           >
-            L
+            Ding
           </motion.span>
           <motion.span
             initial={{ scale: 0, rotate: -45 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 180, damping: 12, delay: 0.4 }}
-            className="inline-block mx-[-6px] mb-[2px]"
+            className="inline-block mx-[-4px] sm:mx-[-6px] mb-[2px]"
           >
-            <DingoMascot size={120} className="md:!w-[140px] md:!h-[140px]" />
+            <DingoMascot size={56} className="sm:!w-[100px] sm:!h-[100px] md:!w-[140px] md:!h-[140px]" />
           </motion.span>
           <motion.span
             initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            NGO
+            Lingo
           </motion.span>
         </h1>
 
@@ -652,7 +652,7 @@ const FinalCTA = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string
 const Footer = () => (
   <footer className="py-10 px-4 border-t border-border text-center text-xs text-muted-foreground">
     <p>
-      © {new Date().getFullYear()} LINGO NL — Gemaakt met ♥ in Nederland
+      © {new Date().getFullYear()} DingoLingo — Gemaakt met ♥ in Nederland
     </p>
   </footer>
 );
