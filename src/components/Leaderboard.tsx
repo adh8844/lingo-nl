@@ -35,7 +35,7 @@ const Leaderboard = ({ player, language }: LeaderboardProps) => {
     const friendIds = friendLinks.map((f) => f.friend_id);
     const { data: friendPlayers } = await supabase
       .from("players")
-      .select("*")
+      .select("id, display_name, player_code, current_streak, best_streak, points")
       .in("id", friendIds);
 
     if (friendPlayers) {
@@ -57,7 +57,7 @@ const Leaderboard = ({ player, language }: LeaderboardProps) => {
 
     const { data: friendPlayer } = await supabase
       .from("players")
-      .select("*")
+      .select("id, display_name, player_code")
       .eq("player_code", code)
       .single();
 
