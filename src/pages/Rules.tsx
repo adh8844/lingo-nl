@@ -24,7 +24,7 @@ const Rules = () => {
       />
       <div className="w-full max-w-3xl">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/spelen")}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
