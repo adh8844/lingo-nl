@@ -1,38 +1,75 @@
-# Mascotte in titel: originele verhoudingen op landingspagina
+## Probleem
 
-## Oorzaak van het verschil
+Nieuw aangemelde gebruikers (laatste 2 op 21 mei) staan **wel** in `auth.users`, maar er wordt **geen** rij aangemaakt in de `players` tabel. Daardoor: geen punten, niet zichtbaar in rankings.
 
-De `DingoMascot` component dwingt een **vierkant** kader af (zelfde `width` als `height`, plus inline `style`). De afbeelding zelf is 383×668 px — een **portret-rechthoek** (~0.57:1). `object-contain` past hem netjes in het vierkant in, maar laat dan links/rechts transparante ruimte over.
+## Oorzaak
 
-- Op **Landing** is het vak groot (45 / 80 / 112 px vierkant), dus de lege ruimte naast de mascotte is goed zichtbaar → oogt vierkant met witruimte ertussen.
-- Op **Auth** is het vak klein (44 / 56 px vierkant) en met `mx-[-3px]` worden de letters er bovenop geschoven, waardoor de lege flanken minder opvallen → oogt smaller/rechthoekig.
+De database-functie `get_my_player()` is gedefinieerd als `RETURNS players` (een enkele composite row, geen `SETOF`). Als de gebruiker nog geen player-rij heeft, retourneert deze functie geen `null`, maar een **composite met allemaal NULL-velden** (`{id: null, display_name: null, ...}`).
 
-In beide gevallen is de **getekende** mascotte gelijk van vorm; alleen het onzichtbare kader verschilt visueel in effect.
+In `src/hooks/usePlayerContext.tsx` controleert `loadPlayer()`:
 
-## Doel
-
-Op de **landingspagina** de mascotte tonen in zijn echte verhouding (smal en hoog), zonder horizontale loze ruimte, zodat "L" en "ngo" strak aansluiten. Auth-pagina en spelen-pagina **ongewijzigd**.
-
-## Aanpak
-
-Alleen `src/pages/Landing.tsx` aanpassen. De `DingoMascot` component zelf blijft gelijk (wordt op andere plekken vierkant gebruikt). In Landing rendert de mascotte direct als `<img>` (of via een wrapper) met:
-
-- `height` = huidige grootte (45 / 80 / 112 px responsief)
-- `width` = `auto` (volgt natuurlijke beeldverhouding → ~26 / 46 / 64 px)
-- `object-contain` blijft, geen geforceerde breedte/hoogte-stijl
-
-Resultaat: geen lege horizontale flanken meer, mascotte staat strak tussen "L" en "ngo" met de bestaande `mx-[-3px]` overlap.
-
-## Technische details
-
-In `src/pages/Landing.tsx` (regel 162-165) wordt de huidige inline `DingoMascot` vervangen door een `<img>` met aspect-correcte rendering:
-
-```tsx
-<img
-  src={dingoLogo}
-  alt="Dingo mascotte"
-  className="h-[45px] w-auto sm:h-[80px] md:h-[112px] object-contain block"
-/>
+```ts
+const { data } = await supabase.rpc("get_my_player");
+if (data) {                              // ← truthy, want {} is truthy
+  setPlayer(data as Player);
+  localStorage.setItem("lingo-player-id", nextPlayer.id);  // ← slaat "null" op
+  return;                                // ← INSERT wordt nooit bereikt
+}
 ```
 
-Met import van `dingo-final-zittend-cool.png` bovenaan. Geen wijziging aan `DingoMascot.tsx`, Auth.tsx, of Index.tsx.
+Gevolgen:
+- De `INSERT` voor de player wordt nooit uitgevoerd (daarom geen RLS-error op `players` in de logs)
+- `localStorage` bevat de string `"null"` als player-id
+- Alle vervolgcalls (`player_presence` upsert, etc.) sturen `"null"` als UUID → de logs staan vol met `invalid input syntax for type uuid: "null"` (elke 5 seconden) en `new row violates row-level security policy for table "player_presence"`
+- Geen punten omdat `process-game-result` nooit fatsoenlijk aangeroepen wordt met een geldig player-id
+
+Dit is dus **geen** te-strenge RLS — de bestaande policies kloppen. Het is een client/RPC contract-bug die pas zichtbaar werd voor splinternieuwe gebruikers.
+
+## Oplossing
+
+Twee aanvullende fixes — beide nodig voor robuustheid:
+
+### 1. SQL: `get_my_player` herschrijven naar `SETOF players`
+
+Migratie:
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_my_player()
+RETURNS SETOF public.players
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+  SELECT * FROM public.players WHERE user_id = auth.uid() LIMIT 1
+$$;
+```
+
+Met `SETOF` retourneert PostgREST een lege array `[]` als er geen rij is, en de client krijgt netjes `data = null` (of `[]`, afhankelijk van `.single()` vs `.maybeSingle()`).
+
+### 2. Client: defensieve check in `usePlayerContext.tsx`
+
+In `loadPlayer()` en `refreshPlayer()` controleren op `data?.id` in plaats van alleen `data`. Hetzelfde geldt voor de check ná de retry-insert.
+
+```ts
+if (data?.id) { ... }
+```
+
+Zo zijn we beschermd tegen onverwachte composite-NULLs of array-responses na de SETOF-wijziging.
+
+### 3. Opschonen stale localStorage
+
+Bij opstart in `PlayerProvider`: als `localStorage.getItem("lingo-player-id") === "null"` (string) → verwijderen. Dat ruimt de huidige browsers van bestaande getroffen gebruikers op zodat ze niet blijven hangen.
+
+### 4. Handmatig herstel bestaande accounts
+
+Voor de 2 reeds aangemelde gebruikers zonder players-rij: na de fix is de eenvoudigste oplossing dat ze opnieuw inloggen — `loadPlayer` maakt dan alsnog de player aan. Geen handmatige inserts nodig.
+
+## Niet veranderen
+
+- RLS-policies op `players`, `player_presence`, `points_log` blijven ongewijzigd — die zijn correct.
+- `is_admin()` en hardcoded admin-e-mail (in DB-functie) blijven zoals ze nu zijn (eerdere refactor).
+
+## Verificatie
+
+Na uitrollen:
+- Test met een nieuw account → controleer dat er een rij in `players` verschijnt en de naam in de ranglijst komt
+- Check Postgres-logs: de stroom `invalid input syntax for type uuid: "null"` moet stoppen
