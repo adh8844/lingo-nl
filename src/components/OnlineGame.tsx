@@ -161,7 +161,8 @@ const OnlineGame = ({
       : `${opponentName} was faster! The word was: ${currentRound.word.toUpperCase()}`;
     setRoundTransition(msg);
     playRoundLoseSound();
-    setTimeout(() => setRoundTransition(null), 3000);
+    setTimeout(() => setRoundTransition(null), 1500);
+
   }, [currentRound?.id, currentRound?.status, currentRound?.winner_id, currentRound?.word, playerId, language, opponentName, stopTimer]);
 
   // Reset state when round changes (new round inserted)
@@ -191,15 +192,16 @@ const OnlineGame = ({
         setRoundTransition(null);
         prevWordRef.current = wordForNext;
         resetBoard(currentRound);
-      }, 3000);
+      }, 1500);
     } else {
-      // Transition already showing — wait briefly then reset
+      // Transition already showing — give it a brief moment then reset.
       setTimeout(() => {
         setRoundTransition(null);
         prevWordRef.current = wordForNext;
         resetBoard(currentRound);
-      }, 1500);
+      }, 600);
     }
+
   }, [currentRound?.id]);
 
   const resetBoard = useCallback((round: MatchRound) => {
@@ -303,7 +305,7 @@ const OnlineGame = ({
         ? `Jij won deze ronde! 🎉 Het woord was: ${word.toUpperCase()}`
         : `You won this round! 🎉 The word was: ${word.toUpperCase()}`;
       setRoundTransition(msg);
-      setTimeout(() => setRoundTransition(null), 3000);
+      setTimeout(() => setRoundTransition(null), 1500);
 
     } else if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();

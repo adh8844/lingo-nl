@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 import { playInviteSound, playAcceptSound } from "@/hooks/useSounds";
@@ -16,7 +16,7 @@ interface ChallengeNotif {
 
 const GlobalOnlineManager = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  
   const { heartbeatIntervalMs, onlineThresholdMs } = usePresenceSettings();
   const [challenges, setChallenges] = useState<ChallengeNotif[]>([]);
   const [accepting, setAccepting] = useState<string | null>(null);
@@ -62,7 +62,7 @@ const GlobalOnlineManager = () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       supabase.from("player_presence").delete().eq("player_id", playerId);
     };
-  }, [getPlayerId, location.pathname, heartbeatIntervalMs, onlineThresholdMs]);
+  }, [getPlayerId, heartbeatIntervalMs, onlineThresholdMs]);
 
   // Challenge subscription
   useEffect(() => {
@@ -157,7 +157,7 @@ const GlobalOnlineManager = () => {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
-  }, [getPlayerId, navigate, location.pathname]);
+  }, [getPlayerId, navigate]);
 
   const acceptChallenge = async (challenge: ChallengeNotif) => {
     const playerId = getPlayerId();
