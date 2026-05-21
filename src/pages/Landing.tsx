@@ -596,15 +596,15 @@ const BadgesSection = () => {
               <div className={`shrink-0 mt-0.5 ${b.rare ? "text-accent" : "text-primary"}`}>
                 {b.icon}
               </div>
-              <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-bold text-foreground">
                     {b.name}
-                    {b.rare && " ★"}
+                    <span className="hidden md:inline">{b.rare && " ★"}</span>
                   </p>
-                  <span className="text-[10px] font-bold text-primary shrink-0">+{b.points}</span>
+                  <span className="hidden md:block text-[10px] font-bold text-primary shrink-1">+{b.points}</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{b.desc}</p>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{b.desc}</p>
               </div>
             </div>
           </motion.div>
