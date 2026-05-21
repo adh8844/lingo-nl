@@ -203,24 +203,42 @@ export function useOnlineMatch(playerId: string | undefined) {
     }
   }, [playerId]);
 
+  const refetchLatestRound = useCallback(async (matchId: string) => {
+    const { data } = await supabase
+      .from("match_rounds")
+      .select("*")
+      .eq("match_id", matchId)
+      .order("round_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) handleIncomingRound(data as MatchRound);
+  }, [handleIncomingRound]);
+
   const submitGuessTime = useCallback(async (guessTimeMs: number) => {
     const match = activeMatchRef.current;
     if (!match || !currentRound || !playerId) return;
-    await callMatchAction("submit_guess", {
+    const res = await callMatchAction("submit_guess", {
       match_id: match.id,
       round_id: currentRound.id,
       guess_time_ms: Math.max(0, Math.round(guessTimeMs)),
     });
-  }, [currentRound, playerId]);
+    if (res?.alreadyResolved || res?.alreadyRecorded) {
+      refetchLatestRound(match.id);
+    }
+  }, [currentRound, playerId, refetchLatestRound]);
 
   const submitFailed = useCallback(async () => {
     const match = activeMatchRef.current;
     if (!match || !currentRound || !playerId) return;
-    await callMatchAction("submit_failed", {
+    const res = await callMatchAction("submit_failed", {
       match_id: match.id,
       round_id: currentRound.id,
     });
-  }, [currentRound, playerId]);
+    if (res?.alreadyResolved || res?.roundResolved || res?.finished) {
+      refetchLatestRound(match.id);
+    }
+  }, [currentRound, playerId, refetchLatestRound]);
+
 
   const requestRematch = useCallback(async () => {
     const match = activeMatchRef.current;
