@@ -192,15 +192,16 @@ const OnlineGame = ({
         setRoundTransition(null);
         prevWordRef.current = wordForNext;
         resetBoard(currentRound);
-      }, 3000);
+      }, 1500);
     } else {
-      // Transition already showing — wait briefly then reset
+      // Transition already showing — give it a brief moment then reset.
       setTimeout(() => {
         setRoundTransition(null);
         prevWordRef.current = wordForNext;
         resetBoard(currentRound);
-      }, 1500);
+      }, 600);
     }
+
   }, [currentRound?.id]);
 
   const resetBoard = useCallback((round: MatchRound) => {
