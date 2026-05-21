@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const WINS_TO_WIN = 5;
+const REVEAL_BUFFER_MS = 1500;
 
 async function callMatchAction(action: string, body: Record<string, unknown> = {}) {
   const { data, error } = await supabase.functions.invoke("match-action", {
@@ -13,6 +14,7 @@ async function callMatchAction(action: string, body: Record<string, unknown> = {
   }
   return data;
 }
+
 
 async function awardMatchPoints(matchId: string) {
   try {
