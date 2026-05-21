@@ -62,7 +62,7 @@ const GlobalOnlineManager = () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       supabase.from("player_presence").delete().eq("player_id", playerId);
     };
-  }, [getPlayerId, location.pathname, heartbeatIntervalMs, onlineThresholdMs]);
+  }, [getPlayerId, heartbeatIntervalMs, onlineThresholdMs]);
 
   // Challenge subscription
   useEffect(() => {
