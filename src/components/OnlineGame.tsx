@@ -305,7 +305,7 @@ const OnlineGame = ({
         ? `Jij won deze ronde! 🎉 Het woord was: ${word.toUpperCase()}`
         : `You won this round! 🎉 The word was: ${word.toUpperCase()}`;
       setRoundTransition(msg);
-      setTimeout(() => setRoundTransition(null), 3000);
+      setTimeout(() => setRoundTransition(null), 1500);
 
     } else if (newGuesses.length >= MAX_GUESSES) {
       stopTimer();
