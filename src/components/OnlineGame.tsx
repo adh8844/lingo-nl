@@ -161,7 +161,8 @@ const OnlineGame = ({
       : `${opponentName} was faster! The word was: ${currentRound.word.toUpperCase()}`;
     setRoundTransition(msg);
     playRoundLoseSound();
-    setTimeout(() => setRoundTransition(null), 3000);
+    setTimeout(() => setRoundTransition(null), 1500);
+
   }, [currentRound?.id, currentRound?.status, currentRound?.winner_id, currentRound?.word, playerId, language, opponentName, stopTimer]);
 
   // Reset state when round changes (new round inserted)
