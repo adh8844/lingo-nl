@@ -160,9 +160,9 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <SEO
-        title="DingoLingo — Speel het woordspel online in het Nederlands"
-        description="Speel DingoLingo online in het Nederlands. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst in dit uitdagende woordspel."
-        path="/"
+        title="Spelen — DingoLingo Lingo online in het Nederlands"
+        description="Speel DingoLingo Lingo online: kies 4, 5 of 6 letters, raad het Nederlandse woord, verdien badges en klim op de ranglijst."
+        path="/spelen"
       />
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
         <div className="flex flex-col items-center gap-2">
