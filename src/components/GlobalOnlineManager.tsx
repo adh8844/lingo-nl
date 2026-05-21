@@ -16,7 +16,7 @@ interface ChallengeNotif {
 
 const GlobalOnlineManager = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  
   const { heartbeatIntervalMs, onlineThresholdMs } = usePresenceSettings();
   const [challenges, setChallenges] = useState<ChallengeNotif[]>([]);
   const [accepting, setAccepting] = useState<string | null>(null);
