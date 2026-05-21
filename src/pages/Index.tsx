@@ -7,17 +7,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield } from "lucide-react";
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 declare const __BUILD_TIMESTAMP__: string;
-
-const ADMIN_EMAIL = "denheijera@icloud.com";
 
 const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
-  const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  const { isAdmin } = useIsAdmin();
+
 
   const [unlockProgress, setUnlockProgress] = useState({
     fourLetterPoints: 0,
