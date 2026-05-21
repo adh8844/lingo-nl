@@ -324,12 +324,7 @@ export function useOnlineMatch(playerId: string | undefined) {
         table: "match_rounds",
         filter: `match_id=eq.${matchId}`,
       }, (payload) => {
-        const round = payload.new as MatchRound;
-        if (round && round.status === "active") {
-          setCurrentRound(round);
-          setRoundStartTime(Date.now());
-          setOpponentProgress({});
-        }
+        handleIncomingRound(payload.new as MatchRound);
       })
       .on("postgres_changes", {
         event: "INSERT",
@@ -347,54 +342,60 @@ export function useOnlineMatch(playerId: string | undefined) {
         table: "match_rounds",
         filter: `match_id=eq.${matchId}`,
       }, (payload) => {
-        const round = payload.new as MatchRound;
-        if (round && round.status === "finished") {
-          setCurrentRound(prev => prev?.id === round.id ? round : prev);
-        }
+        handleIncomingRound(payload.new as MatchRound);
       })
       .subscribe();
 
-    supabase
-      .from("match_rounds")
-      .select("*")
-      .eq("match_id", matchId)
-      .order("round_number", { ascending: false })
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          setCurrentRound(data[0]);
-          if (data[0].status === "active") {
-            setRoundStartTime(Date.now());
-          }
-        }
-      });
-
+    refetchLatestRound(matchId);
 
     return () => {
       supabase.removeChannel(matchChannel);
     };
-  }, [activeMatch?.id, playerId]);
+  }, [activeMatch?.id, playerId, handleIncomingRound, refetchLatestRound]);
 
-  // Schedule next round on server ~3s after a round finishes (so both clients can see the word).
-  // Both participants schedule; server is idempotent (unique on match_id, round_number).
-  // This prevents matches from getting stuck if one client disconnects/misses the realtime event.
+  // Recovery polling: every 4s while a match is active, refetch the latest
+  // round + match in case a realtime event was dropped. Goes through the same
+  // handleIncomingRound buffer so reveal timing is preserved.
   useEffect(() => {
-    if (!activeMatch || activeMatch.status !== "active" || !playerId) return;
-    if (playerId !== activeMatch.player1_id && playerId !== activeMatch.player2_id) return;
-    if (!currentRound || currentRound.status !== "finished") return;
-    if (currentRound.round_number !== activeMatch.current_round) return;
+    if (!activeMatch?.id || activeMatch.status !== "active") return;
+    const matchId = activeMatch.id;
+    const tick = async () => {
+      const [roundRes, matchRes] = await Promise.all([
+        supabase
+          .from("match_rounds")
+          .select("*")
+          .eq("match_id", matchId)
+          .order("round_number", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("online_matches")
+          .select("*")
+          .eq("id", matchId)
+          .maybeSingle(),
+      ]);
+      if (matchRes.data) {
+        const m = matchRes.data as OnlineMatch;
+        setActiveMatch(prev => {
+          if (!prev || prev.id !== m.id) return prev;
+          // Shallow compare key fields to avoid unnecessary renders
+          if (
+            prev.status === m.status &&
+            prev.current_round === m.current_round &&
+            prev.player1_wins === m.player1_wins &&
+            prev.player2_wins === m.player2_wins &&
+            prev.winner_id === m.winner_id
+          ) return prev;
+          return m;
+        });
+      }
+      if (roundRes.data) handleIncomingRound(roundRes.data as MatchRound);
+    };
+    const interval = setInterval(tick, 4000);
+    return () => clearInterval(interval);
+  }, [activeMatch?.id, activeMatch?.status, handleIncomingRound]);
 
-    const key = `${activeMatch.id}:${currentRound.round_number}`;
-    if (nextRoundScheduledRef.current.has(key)) return;
-    nextRoundScheduledRef.current.add(key);
 
-    // P1 calls after 3s (reveal time), P2 acts as fallback after 6s in case P1 is gone.
-    const delay = playerId === activeMatch.player1_id ? 3000 : 6000;
-    const t = setTimeout(() => {
-      callMatchAction("next_round", { match_id: activeMatch.id });
-    }, delay);
-    return () => clearTimeout(t);
-  }, [activeMatch, currentRound, playerId]);
 
 
   // Award match points once when match is finished
