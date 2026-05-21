@@ -157,7 +157,7 @@ const GlobalOnlineManager = () => {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
-  }, [getPlayerId, navigate, location.pathname]);
+  }, [getPlayerId, navigate]);
 
   const acceptChallenge = async (challenge: ChallengeNotif) => {
     const playerId = getPlayerId();
