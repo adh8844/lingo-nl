@@ -233,10 +233,12 @@ Deno.serve(async (req) => {
             await admin.from("online_matches").update({
               player1_wins: newP1, player2_wins: newP2,
             }).eq("id", matchId);
+            await createNextRoundIfNeeded(admin, matchId);
           }
         }
         return json({ ok: true });
       }
+
 
       case "submit_failed": {
         const matchId = String(body.match_id || "");
