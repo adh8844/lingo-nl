@@ -76,11 +76,57 @@ export function useOnlineMatch(playerId: string | undefined) {
   const [opponentProgress, setOpponentProgress] = useState<Record<number, number>>({});
   const activeMatchRef = useRef<OnlineMatch | null>(null);
   const awardedRef = useRef<Set<string>>(new Set());
-  const nextRoundScheduledRef = useRef<Set<string>>(new Set());
+  const currentRoundRef = useRef<MatchRound | null>(null);
+  const finishedAtRef = useRef<Record<string, number>>({});
+  const pendingPromotionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     activeMatchRef.current = activeMatch;
   }, [activeMatch]);
+
+  useEffect(() => {
+    currentRoundRef.current = currentRound;
+  }, [currentRound]);
+
+  // Handle any round arriving from realtime / poll / initial fetch.
+  // - Same id → update in place; record finishedAt when transitioning to finished.
+  // - Newer round_number → buffer for REVEAL_BUFFER_MS after previous round finished,
+  //   so the reveal banner has time to snapshot the just-played word.
+  const handleIncomingRound = useCallback((round: MatchRound) => {
+    const prev = currentRoundRef.current;
+    if (prev && round.id === prev.id) {
+      if (round.status === "finished" && prev.status !== "finished") {
+        finishedAtRef.current[round.id] = Date.now();
+      }
+      setCurrentRound(round);
+      return;
+    }
+    if (!prev || round.round_number > prev.round_number) {
+      const promote = () => {
+        pendingPromotionRef.current = null;
+        currentRoundRef.current = round;
+        setCurrentRound(round);
+        setRoundStartTime(round.status === "active" ? Date.now() : null);
+        setOpponentProgress({});
+      };
+      if (prev && prev.status === "finished") {
+        const finishedAt = finishedAtRef.current[prev.id] ?? Date.now();
+        const elapsed = Date.now() - finishedAt;
+        const delay = Math.max(0, REVEAL_BUFFER_MS - elapsed);
+        if (pendingPromotionRef.current) clearTimeout(pendingPromotionRef.current);
+        pendingPromotionRef.current = setTimeout(promote, delay);
+      } else {
+        promote();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pendingPromotionRef.current) clearTimeout(pendingPromotionRef.current);
+    };
+  }, []);
+
 
   const loadChallenges = useCallback(async () => {
     if (!playerId) return;
