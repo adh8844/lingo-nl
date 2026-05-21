@@ -50,8 +50,8 @@ const Landing = () => {
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="DingoLingo — Het Nederlandse woordspel dat je niet meer loslaat"
-        description="Raad het woord, jaag op badges, beklim de ranglijst. Speel DingoLingo gratis online in het Nederlands."
+        title="DingoLingo — Speel Lingo online in het Nederlands"
+        description="Speel DingoLingo, het gratis Nederlandse Lingo woordspel online. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst."
         path="/"
       />
 
