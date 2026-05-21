@@ -611,7 +611,7 @@ const BadgesSection = () => {
         ))}
       </div>
       <p className="text-center mt-8 text-sm text-muted-foreground">
-        Plus tientallen andere — voor streaks, snelheid, doorzettingsvermogen en pure brille.
+        Plus tientallen andere — voor streaks, snelheid, doorzettingsvermogen en juiste timing.
       </p>
     </section>
   );
