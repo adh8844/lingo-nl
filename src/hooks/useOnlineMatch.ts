@@ -462,7 +462,13 @@ export function useOnlineMatch(playerId: string | undefined) {
     if (!activeMatch || activeMatch.status !== "finished" || !playerId) return;
     const m = activeMatch as any;
     if (m.rematch_player1 === true && m.rematch_player2 === true && playerId === activeMatch.player2_id) {
+      const startedFromMatchId = activeMatch.id;
       const interval = setInterval(async () => {
+        // Bail out if the active match already swapped (e.g. P1 loaded the new one first).
+        if (activeMatchRef.current?.id !== startedFromMatchId) {
+          clearInterval(interval);
+          return;
+        }
         const { data } = await supabase
           .from("online_matches")
           .select("*")
@@ -471,7 +477,7 @@ export function useOnlineMatch(playerId: string | undefined) {
           .order("created_at", { ascending: false })
           .limit(1);
 
-        if (data && data.length > 0 && data[0].id !== activeMatch.id) {
+        if (data && data.length > 0 && data[0].id !== startedFromMatchId) {
           setActiveMatch(data[0] as OnlineMatch);
           clearInterval(interval);
         }
