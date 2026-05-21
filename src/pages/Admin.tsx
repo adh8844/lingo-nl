@@ -15,7 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { usePresenceSettings, updatePresenceSetting } from "@/hooks/useAppSettings";
 import SEO from "@/components/SEO";
 
-const ADMIN_EMAIL = "denheijera@icloud.com";
+
 
 const BULK_CHUNK_SIZE = 100;
 async function bulkUpdateWords(ids: string[], updates: Record<string, any>): Promise<{ ok: boolean; done: number }> {
@@ -123,14 +123,19 @@ const Admin = () => {
       navigate("/auth", { replace: true });
       return;
     }
-    const email = session.user?.email?.toLowerCase();
-    if (email === ADMIN_EMAIL) {
-      setIsAdmin(true);
-    } else {
-      navigate("/", { replace: true });
-    }
-    setChecking(false);
+    let cancelled = false;
+    supabase.rpc("is_admin").then(({ data, error }) => {
+      if (cancelled) return;
+      if (!error && data === true) {
+        setIsAdmin(true);
+      } else {
+        navigate("/", { replace: true });
+      }
+      setChecking(false);
+    });
+    return () => { cancelled = true; };
   }, [authReady, session, navigate]);
+
 
   const loadPendingWords = useCallback(async () => {
     setLoadingWords(true);
