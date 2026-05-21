@@ -29,6 +29,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
 
+  // Cleanup stale "null" string left in localStorage by an earlier bug
+  useEffect(() => {
+    const stored = localStorage.getItem("lingo-player-id");
+    if (stored === "null" || stored === "undefined") {
+      localStorage.removeItem("lingo-player-id");
+    }
+  }, []);
+
   const loadPlayer = useCallback(async () => {
     if (!user) {
       setPlayer(null);
@@ -40,9 +48,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setLoadingPlayer(true);
 
     const { data } = await supabase.rpc("get_my_player");
+    const existing = Array.isArray(data) ? data[0] : data;
 
-    if (data) {
-      const nextPlayer = data as unknown as Player;
+    if (existing?.id) {
+      const nextPlayer = existing as unknown as Player;
       setPlayer(nextPlayer);
       localStorage.setItem("lingo-player-id", nextPlayer.id);
       setLoadingPlayer(false);
@@ -66,11 +75,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
           user_id: user.id,
         });
 
-      const { data: newPlayer, error } = insertError
-        ? { data: null, error: insertError }
-        : await supabase.rpc("get_my_player");
+      if (insertError && insertError.code !== "23505") {
+        console.error("Failed to create player:", insertError);
+        break;
+      }
 
-      if (newPlayer) {
+      const { data: fetched } = await supabase.rpc("get_my_player");
+      const newPlayer = Array.isArray(fetched) ? fetched[0] : fetched;
+
+      if (newPlayer?.id) {
         const nextPlayer = newPlayer as unknown as Player;
         setPlayer(nextPlayer);
         localStorage.setItem("lingo-player-id", nextPlayer.id);
@@ -78,12 +91,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (error?.code === "23505") {
+      if (insertError?.code === "23505") {
         code = generateCode();
         continue;
       }
 
-      console.error("Failed to create player:", error);
+      console.error("Player insert succeeded but fetch returned nothing");
       break;
     }
 
@@ -98,8 +111,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const refreshPlayer = useCallback(async () => {
     if (!player) return;
     const { data } = await supabase.rpc("get_my_player");
-    if (data) {
-      const nextPlayer = data as unknown as Player;
+    const fresh = Array.isArray(data) ? data[0] : data;
+    if (fresh?.id) {
+      const nextPlayer = fresh as unknown as Player;
       setPlayer(nextPlayer);
       localStorage.setItem("lingo-player-id", nextPlayer.id);
     }

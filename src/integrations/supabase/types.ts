@@ -1074,12 +1074,12 @@ export type Database = {
           unlocked_6letter: boolean
           updated_at: string
           user_id: string | null
-        }
+        }[]
         SetofOptions: {
           from: "*"
           to: "players"
-          isOneToOne: true
-          isSetofReturn: false
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       get_own_games: {
