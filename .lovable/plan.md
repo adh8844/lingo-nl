@@ -1,75 +1,37 @@
 ## Probleem
 
-Nieuw aangemelde gebruikers (laatste 2 op 21 mei) staan **wel** in `auth.users`, maar er wordt **geen** rij aangemaakt in de `players` tabel. Daardoor: geen punten, niet zichtbaar in rankings.
+Match `018cf56e-…` (NAJRA vs Janice) staat vast: ronde 1 is `finished` (beide spelers de timer laten verlopen → beide `-1`, winner `null`, geen punt voor wie dan ook), maar de match staat nog op `current_round=1, status=active`. Er is geen ronde 2 aangemaakt en niemand kan verder.
 
-## Oorzaak
+### Oorzaak
 
-De database-functie `get_my_player()` is gedefinieerd als `RETURNS players` (een enkele composite row, geen `SETOF`). Als de gebruiker nog geen player-rij heeft, retourneert deze functie geen `null`, maar een **composite met allemaal NULL-velden** (`{id: null, display_name: null, ...}`).
+De server (`match-action`) maakt nooit zelf een volgende ronde. Dat doet uitsluitend de **client van speler 1**, 3 seconden nadat hij ziet dat de huidige ronde `finished` is (zie `useOnlineMatch.ts`, effect "Schedule next round on server"). Daar zitten twee gaten:
 
-In `src/hooks/usePlayerContext.tsx` controleert `loadPlayer()`:
+1. **Alleen speler 1** mag `next_round` aanroepen. Als P1 de tab sluit, het netwerk verliest of de realtime-update mist, gebeurt er niets meer — ook na refresh niet.
+2. Bij **paginalaad** wordt alleen de **actieve** ronde opgehaald. Als de laatste ronde al `finished` is, is `currentRound` `null` en vuurt het schedule-effect nooit (`currentRound.status !== "finished"`). Refresh herstelt de match dus niet.
 
-```ts
-const { data } = await supabase.rpc("get_my_player");
-if (data) {                              // ← truthy, want {} is truthy
-  setPlayer(data as Player);
-  localStorage.setItem("lingo-player-id", nextPlayer.id);  // ← slaat "null" op
-  return;                                // ← INSERT wordt nooit bereikt
-}
-```
+Daar bovenop redirect `Rankings.tsx` (regel 114) elke speler met een active match automatisch terug naar `/online-match`, waardoor ze in de vastzittende match opgesloten zitten.
 
-Gevolgen:
-- De `INSERT` voor de player wordt nooit uitgevoerd (daarom geen RLS-error op `players` in de logs)
-- `localStorage` bevat de string `"null"` als player-id
-- Alle vervolgcalls (`player_presence` upsert, etc.) sturen `"null"` als UUID → de logs staan vol met `invalid input syntax for type uuid: "null"` (elke 5 seconden) en `new row violates row-level security policy for table "player_presence"`
-- Geen punten omdat `process-game-result` nooit fatsoenlijk aangeroepen wordt met een geldig player-id
+De security-migraties hebben dit niet veroorzaakt (de edge function gebruikt service role), maar het was altijd al een latente bug die nu zichtbaar wordt.
 
-Dit is dus **geen** te-strenge RLS — de bestaande policies kloppen. Het is een client/RPC contract-bug die pas zichtbaar werd voor splinternieuwe gebruikers.
+## Plan
 
-## Oplossing
+### 1. Vastzittende match opruimen
+Eenmalige migration die match `018cf56e-bac8-4089-8717-3bd9c4236063` afsluit (`status='finished'`, `winner_id=null`) zodat NAJRA en Janice niet meer in de redirect blijven hangen. (Geen punten toegekend — was 0-0.)
 
-Twee aanvullende fixes — beide nodig voor robuustheid:
+### 2. Server: `next_round` idempotent maken vanaf elke deelnemer
+`match-action` accepteert `next_round` al van beide spelers en heeft een `unique`-check op `(match_id, round_number)`. Geen wijziging nodig, maar bevestigen in code.
 
-### 1. SQL: `get_my_player` herschrijven naar `SETOF players`
+### 3. Client: herstel bij laden en bij stilstand (`useOnlineMatch.ts`)
+- Bij `loadActiveMatch`: ook de **laatste ronde ongeacht status** ophalen. Als die `finished` is én `round_number === match.current_round`, direct (na korte delay voor de reveal) `next_round` aanroepen.
+- Schedule-effect: **beide spelers** mogen `next_round` plannen na 3s (server is idempotent). Daarmee verdwijnt de single-point-of-failure op P1.
+- Extra vangnet: als een match `active` is, geen `currentRound` actief is, en sinds de laatste ronde > 6s verstreken is → `next_round` aanroepen (recovery-timer, eens per match-id).
 
-Migratie:
+### 4. Verificatie
+- DB-query: match 018cf56e staat op `finished`.
+- Edge-function-logs van `match-action` checken op `next_round` calls.
+- In preview/console testen: ronde laten timeouten als beide spelers → ronde 2 verschijnt automatisch binnen ~3-6s.
 
-```sql
-CREATE OR REPLACE FUNCTION public.get_my_player()
-RETURNS SETOF public.players
-LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-  SELECT * FROM public.players WHERE user_id = auth.uid() LIMIT 1
-$$;
-```
-
-Met `SETOF` retourneert PostgREST een lege array `[]` als er geen rij is, en de client krijgt netjes `data = null` (of `[]`, afhankelijk van `.single()` vs `.maybeSingle()`).
-
-### 2. Client: defensieve check in `usePlayerContext.tsx`
-
-In `loadPlayer()` en `refreshPlayer()` controleren op `data?.id` in plaats van alleen `data`. Hetzelfde geldt voor de check ná de retry-insert.
-
-```ts
-if (data?.id) { ... }
-```
-
-Zo zijn we beschermd tegen onverwachte composite-NULLs of array-responses na de SETOF-wijziging.
-
-### 3. Opschonen stale localStorage
-
-Bij opstart in `PlayerProvider`: als `localStorage.getItem("lingo-player-id") === "null"` (string) → verwijderen. Dat ruimt de huidige browsers van bestaande getroffen gebruikers op zodat ze niet blijven hangen.
-
-### 4. Handmatig herstel bestaande accounts
-
-Voor de 2 reeds aangemelde gebruikers zonder players-rij: na de fix is de eenvoudigste oplossing dat ze opnieuw inloggen — `loadPlayer` maakt dan alsnog de player aan. Geen handmatige inserts nodig.
-
-## Niet veranderen
-
-- RLS-policies op `players`, `player_presence`, `points_log` blijven ongewijzigd — die zijn correct.
-- `is_admin()` en hardcoded admin-e-mail (in DB-functie) blijven zoals ze nu zijn (eerdere refactor).
-
-## Verificatie
-
-Na uitrollen:
-- Test met een nieuw account → controleer dat er een rij in `players` verschijnt en de naam in de ranglijst komt
-- Check Postgres-logs: de stroom `invalid input syntax for type uuid: "null"` moet stoppen
+### Bestanden
+- `supabase/migrations/<new>.sql` — match afsluiten.
+- `src/hooks/useOnlineMatch.ts` — `loadActiveMatch` uitbreiden, schedule-effect openzetten voor P2, recovery-timer toevoegen.
+- Geen wijziging in `match-action/index.ts` nodig.
