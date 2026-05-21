@@ -292,15 +292,17 @@ export function useOnlineMatch(playerId: string | undefined) {
       .from("match_rounds")
       .select("*")
       .eq("match_id", matchId)
-      .eq("status", "active")
       .order("round_number", { ascending: false })
       .limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
           setCurrentRound(data[0]);
-          setRoundStartTime(Date.now());
+          if (data[0].status === "active") {
+            setRoundStartTime(Date.now());
+          }
         }
       });
+
 
     return () => {
       supabase.removeChannel(matchChannel);
