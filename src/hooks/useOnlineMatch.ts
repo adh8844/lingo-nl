@@ -309,11 +309,12 @@ export function useOnlineMatch(playerId: string | undefined) {
     };
   }, [activeMatch?.id, playerId]);
 
-  // Schedule next round on server 3s after a round finishes (so both clients can see the word)
+  // Schedule next round on server ~3s after a round finishes (so both clients can see the word).
+  // Both participants schedule; server is idempotent (unique on match_id, round_number).
+  // This prevents matches from getting stuck if one client disconnects/misses the realtime event.
   useEffect(() => {
     if (!activeMatch || activeMatch.status !== "active" || !playerId) return;
-    // Only P1 schedules to avoid duplicate calls; server is idempotent anyway.
-    if (playerId !== activeMatch.player1_id) return;
+    if (playerId !== activeMatch.player1_id && playerId !== activeMatch.player2_id) return;
     if (!currentRound || currentRound.status !== "finished") return;
     if (currentRound.round_number !== activeMatch.current_round) return;
 
@@ -321,11 +322,14 @@ export function useOnlineMatch(playerId: string | undefined) {
     if (nextRoundScheduledRef.current.has(key)) return;
     nextRoundScheduledRef.current.add(key);
 
+    // P1 calls after 3s (reveal time), P2 acts as fallback after 6s in case P1 is gone.
+    const delay = playerId === activeMatch.player1_id ? 3000 : 6000;
     const t = setTimeout(() => {
       callMatchAction("next_round", { match_id: activeMatch.id });
-    }, 3000);
+    }, delay);
     return () => clearTimeout(t);
   }, [activeMatch, currentRound, playerId]);
+
 
   // Award match points once when match is finished
   useEffect(() => {
