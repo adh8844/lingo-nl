@@ -30,6 +30,29 @@ async function pickRandomWord(admin: any, length: number): Promise<string> {
   return w;
 }
 
+async function createNextRoundIfNeeded(admin: any, matchId: string) {
+  const { data: match } = await admin
+    .from("online_matches").select("*").eq("id", matchId).single();
+  if (!match || match.status !== "active") return;
+
+  const nextRoundNum = match.current_round + 1;
+  const { data: existing } = await admin.from("match_rounds")
+    .select("id").eq("match_id", matchId).eq("round_number", nextRoundNum).maybeSingle();
+  if (existing) return;
+
+  try {
+    const word = await pickRandomWord(admin, match.word_length);
+    await admin.from("match_rounds").insert({
+      match_id: matchId, round_number: nextRoundNum, word, status: "active",
+    });
+    await admin.from("online_matches").update({
+      current_round: nextRoundNum, current_word: word,
+    }).eq("id", matchId);
+  } catch (e) {
+    console.error("createNextRoundIfNeeded failed", e);
+  }
+}
+
 async function resolveAndAdvance(admin: any, matchId: string, roundId: string) {
   const { data: round } = await admin
     .from("match_rounds").select("*").eq("id", roundId).single();
@@ -75,9 +98,11 @@ async function resolveAndAdvance(admin: any, matchId: string, roundId: string) {
     await admin.from("online_matches").update({
       player1_wins: newP1, player2_wins: newP2,
     }).eq("id", matchId);
+    await createNextRoundIfNeeded(admin, matchId);
     return { ok: true, roundResolved: true };
   }
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
