@@ -4,7 +4,7 @@ import LingoGame from "@/components/LingoGame";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug } from "lucide-react";
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -251,14 +251,34 @@ const Index = () => {
               </button>
             )}
 
-            {/* Uitloggen */}
-            <button
-              onClick={signOut}
-              className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Uitloggen
-            </button>
+            {/* Support + Uitloggen */}
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => {
+                  const width = 625;
+                  const height = 750;
+                  const left = window.screenLeft + (window.outerWidth - width) / 2;
+                  const top = window.screenTop + (window.outerHeight - height) / 2;
+                  const features = `width=${width},height=${height},left=${left},top=${top},location=no,menubar=no,toolbar=no,status=no,resizable=yes`;
+                  window.open(
+                    "https://bugs2prompt.najra.app/report/51554d9b-bff3-4248-a801-b358614ea99e",
+                    "bugReport",
+                    features
+                  );
+                }}
+                className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Bug className="w-4 h-4" />
+                Werkt iets niet?
+              </button>
+              <button
+                onClick={signOut}
+                className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Uitloggen
+              </button>
+            </div>
           </>
         )}
       </div>
