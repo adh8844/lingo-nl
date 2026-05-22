@@ -4,7 +4,7 @@ import LingoGame from "@/components/LingoGame";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug } from "lucide-react";
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
