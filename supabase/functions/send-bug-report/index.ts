@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
     const payload = {
       title,
       description: description ?? '',
-      type: type ?? 'bug',
-      severity: severity ?? 'Medium',
+      type: (type ?? 'bug').toString().toLowerCase(),
+      severity: (severity ?? 'Medium').toString().toLowerCase(),
       reporter: reporter ?? '',
       source_url: source_url ?? '',
       timestamp: new Date().toISOString(),
