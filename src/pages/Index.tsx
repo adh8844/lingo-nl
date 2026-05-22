@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import LingoGame from "@/components/LingoGame";
+import BugReportModal from "@/components/BugReportModal";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ const Index = () => {
   const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
   const { isAdmin } = useIsAdmin();
+  const [bugReportOpen, setBugReportOpen] = useState(false);
 
 
   const [unlockProgress, setUnlockProgress] = useState({
@@ -254,18 +256,7 @@ const Index = () => {
             {/* Support + Uitloggen */}
             <div className="flex gap-2 w-full">
               <button
-                onClick={() => {
-                  const width = 625;
-                  const height = 750;
-                  const left = window.screenLeft + (window.outerWidth - width) / 2;
-                  const top = window.screenTop + (window.outerHeight - height) / 2;
-                  const features = `width=${width},height=${height},left=${left},top=${top},location=no,menubar=no,toolbar=no,status=no,resizable=yes`;
-                  window.open(
-                    "https://bugs2prompt.najra.app/report/51554d9b-bff3-4248-a801-b358614ea99e",
-                    "bugReport",
-                    features
-                  );
-                }}
+                onClick={() => setBugReportOpen(true)}
                 className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Bug className="w-4 h-4" />
