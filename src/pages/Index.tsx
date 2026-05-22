@@ -283,6 +283,7 @@ const Index = () => {
         })}{" "}
         CET
       </p>
+      <BugReportModal open={bugReportOpen} onOpenChange={setBugReportOpen} />
     </div>
   );
 };
