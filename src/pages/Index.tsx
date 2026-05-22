@@ -251,14 +251,34 @@ const Index = () => {
               </button>
             )}
 
-            {/* Uitloggen */}
-            <button
-              onClick={signOut}
-              className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Uitloggen
-            </button>
+            {/* Support + Uitloggen */}
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={() => {
+                  const width = 625;
+                  const height = 750;
+                  const left = window.screenLeft + (window.outerWidth - width) / 2;
+                  const top = window.screenTop + (window.outerHeight - height) / 2;
+                  const features = `width=${width},height=${height},left=${left},top=${top},location=no,menubar=no,toolbar=no,status=no,resizable=yes`;
+                  window.open(
+                    "https://bugs2prompt.najra.app/report/51554d9b-bff3-4248-a801-b358614ea99e",
+                    "bugReport",
+                    features
+                  );
+                }}
+                className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Bug className="w-4 h-4" />
+                Werkt iets niet?
+              </button>
+              <button
+                onClick={signOut}
+                className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Uitloggen
+              </button>
+            </div>
           </>
         )}
       </div>
