@@ -10,20 +10,32 @@ export function useAuthReady() {
   useEffect(() => {
     let mounted = true;
 
+    const applySession = (nextSession: Session | null) => {
+      if (!mounted) return;
+      setSession((prev) => {
+        // Avoid updating state when the session is effectively unchanged
+        // (e.g. TOKEN_REFRESHED on tab focus). New object refs would otherwise
+        // cascade into player reloads and make the page appear to refresh.
+        if (prev?.user?.id === nextSession?.user?.id && prev?.access_token === nextSession?.access_token) {
+          return prev;
+        }
+        return nextSession;
+      });
+      setUser((prev) => {
+        if (prev?.id === nextSession?.user?.id) return prev;
+        return nextSession?.user ?? null;
+      });
+      setIsReady(true);
+    };
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!mounted) return;
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      setIsReady(true);
+      applySession(nextSession);
     });
 
     supabase.auth.getSession().then(({ data: { session: restoredSession } }) => {
-      if (!mounted) return;
-      setSession(restoredSession);
-      setUser(restoredSession?.user ?? null);
-      setIsReady(true);
+      applySession(restoredSession);
     });
 
     return () => {
@@ -31,6 +43,7 @@ export function useAuthReady() {
       subscription.unsubscribe();
     };
   }, []);
+
 
   return { isReady, session, user };
 }
