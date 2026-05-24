@@ -283,7 +283,12 @@ const Index = () => {
         })}{" "}
         CET
       </p>
-      <BugReportModal open={bugReportOpen} onOpenChange={setBugReportOpen} />
+      <BugReportModal
+        open={bugReportOpen}
+        onOpenChange={setBugReportOpen}
+        userEmail={session?.user?.email ?? ""}
+        role={isAdmin ? "admin" : (player ? "player" : "guest")}
+      />
     </div>
   );
 };
