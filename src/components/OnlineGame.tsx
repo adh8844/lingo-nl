@@ -537,6 +537,17 @@ const OnlineGame = ({
           );
         })()}
 
+        {isWinner && !wasForfeit && winSnapshot && (
+          <ShareResultButton
+            mode="online"
+            guesses={winSnapshot.guesses}
+            statuses={winSnapshot.statuses}
+            wordLength={wordLength}
+            solved
+            extra={{ opponentName, score: `${myWins}-${oppWins}` }}
+          />
+        )}
+
         <div className="flex gap-3 mt-2">
           <button
             onClick={() => { setRematchRequested(true); onRequestRematch(); }}
