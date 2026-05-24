@@ -10,6 +10,7 @@ import WinAnimation from "./WinAnimation";
 import { OnlineMatch, MatchRound } from "@/hooks/useOnlineMatch";
 import { playRoundWinSound, playRoundLoseSound } from "@/hooks/useSounds";
 import { supabase } from "@/integrations/supabase/client";
+import ShareResultButton from "./ShareResultButton";
 
 const MAX_GUESSES = 5;
 const WINS_TO_WIN = 5;
@@ -89,6 +90,8 @@ const OnlineGame = ({
   // Snapshot of the just-played round's word, so the reveal banner never leaks
   // the next round's word once `currentRound` updates via realtime.
   const [revealWord, setRevealWord] = useState<string>("");
+  // Snapshot of the last round this player won — used for the share image after the match.
+  const [winSnapshot, setWinSnapshot] = useState<{ guesses: string[]; statuses: TileStatus[][] } | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevRoundRef = useRef<string | null>(null);
   const prevWordRef = useRef<string>("");
@@ -297,6 +300,7 @@ const OnlineGame = ({
       setWon(true);
       setSubmitted(true);
       setRevealWord(word);
+      setWinSnapshot({ guesses: newGuesses, statuses: newStatuses });
       playRoundWinSound();
       const guessTimeMs = roundStartTime ? Date.now() - roundStartTime : 0;
       onSubmitGuessTime(guessTimeMs);
