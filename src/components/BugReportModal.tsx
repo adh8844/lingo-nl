@@ -33,7 +33,7 @@ const BugReportModal = ({ open, onOpenChange, userEmail = "", role = "guest" }: 
     setTitle("");
     setDescription("");
     setSeverity("Medium");
-    setReporter("");
+    setReporter(userEmail);
     setError(null);
   };
 
