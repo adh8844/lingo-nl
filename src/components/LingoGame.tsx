@@ -20,6 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import ShareResultButton from "./ShareResultButton";
 
 const MAX_GUESSES = 5;
 const TIMER_SECONDS = 90;
@@ -442,9 +443,19 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
             </div>
           )}
 
-          <button onClick={handleNextRound} className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
-            Volgende ronde
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <ShareResultButton
+              mode="solo"
+              guesses={guesses}
+              statuses={statuses}
+              wordLength={wordLength}
+              solved={won}
+              extra={{ attempts: guesses.length }}
+            />
+            <button onClick={handleNextRound} className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
+              Volgende ronde
+            </button>
+          </div>
         </div>
       )}
 
