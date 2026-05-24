@@ -48,14 +48,35 @@ const BugReportModal = ({ open, onOpenChange, userEmail = "", role = "guest" }: 
 
     setSubmitting(true);
     try {
+      const finalReporter = (reporter.trim() || userEmail || "").trim();
+      const sourceUrl = window.location.href;
+      const timestamp = new Date().toISOString();
+      const viewport = `${window.innerWidth}x${window.innerHeight} @${window.devicePixelRatio}x`;
+      const userAgent = navigator.userAgent;
+
+      const contextBlock = [
+        "---",
+        `Reporter: ${finalReporter || "(none)"}`,
+        `Role: ${role}`,
+        `Source URL: ${sourceUrl}`,
+        `Timestamp: ${timestamp}`,
+        `App version: ${APP_VERSION}`,
+        `Viewport: ${viewport}`,
+        `User agent: ${userAgent}`,
+      ].join("\n");
+
+      const fullDescription = description.trim()
+        ? `${description.trim()}\n\n${contextBlock}`
+        : contextBlock;
+
       const { data, error: invokeError } = await supabase.functions.invoke("send-bug-report", {
         body: {
           title: title.trim(),
-          description: description.trim(),
+          description: fullDescription,
           type: "bug",
           severity,
-          reporter: reporter.trim(),
-          source_url: window.location.href,
+          reporter: finalReporter,
+          source_url: sourceUrl,
         },
       });
 
