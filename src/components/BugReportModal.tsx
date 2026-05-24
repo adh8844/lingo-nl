@@ -10,15 +10,22 @@ import { toast } from "sonner";
 interface BugReportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userEmail?: string;
+  role?: string;
 }
 
 type Severity = "Low" | "Medium" | "High" | "Critical";
 
-const BugReportModal = ({ open, onOpenChange }: BugReportModalProps) => {
+const APP_VERSION =
+  (typeof __BUILD_TIMESTAMP__ !== "undefined" ? __BUILD_TIMESTAMP__ : "unknown");
+
+declare const __BUILD_TIMESTAMP__: string;
+
+const BugReportModal = ({ open, onOpenChange, userEmail = "", role = "guest" }: BugReportModalProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<Severity>("Medium");
-  const [reporter, setReporter] = useState("");
+  const [reporter, setReporter] = useState(userEmail);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
