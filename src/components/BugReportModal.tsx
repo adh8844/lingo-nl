@@ -10,15 +10,22 @@ import { toast } from "sonner";
 interface BugReportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userEmail?: string;
+  role?: string;
 }
 
 type Severity = "Low" | "Medium" | "High" | "Critical";
 
-const BugReportModal = ({ open, onOpenChange }: BugReportModalProps) => {
+const APP_VERSION =
+  (typeof __BUILD_TIMESTAMP__ !== "undefined" ? __BUILD_TIMESTAMP__ : "unknown");
+
+declare const __BUILD_TIMESTAMP__: string;
+
+const BugReportModal = ({ open, onOpenChange, userEmail = "", role = "guest" }: BugReportModalProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<Severity>("Medium");
-  const [reporter, setReporter] = useState("");
+  const [reporter, setReporter] = useState(userEmail);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +33,7 @@ const BugReportModal = ({ open, onOpenChange }: BugReportModalProps) => {
     setTitle("");
     setDescription("");
     setSeverity("Medium");
-    setReporter("");
+    setReporter(userEmail);
     setError(null);
   };
 
@@ -41,14 +48,35 @@ const BugReportModal = ({ open, onOpenChange }: BugReportModalProps) => {
 
     setSubmitting(true);
     try {
+      const finalReporter = (reporter.trim() || userEmail || "").trim();
+      const sourceUrl = window.location.href;
+      const timestamp = new Date().toISOString();
+      const viewport = `${window.innerWidth}x${window.innerHeight} @${window.devicePixelRatio}x`;
+      const userAgent = navigator.userAgent;
+
+      const contextBlock = [
+        "---",
+        `Reporter: ${finalReporter || "(none)"}`,
+        `Role: ${role}`,
+        `Source URL: ${sourceUrl}`,
+        `Timestamp: ${timestamp}`,
+        `App version: ${APP_VERSION}`,
+        `Viewport: ${viewport}`,
+        `User agent: ${userAgent}`,
+      ].join("\n");
+
+      const fullDescription = description.trim()
+        ? `${description.trim()}\n\n${contextBlock}`
+        : contextBlock;
+
       const { data, error: invokeError } = await supabase.functions.invoke("send-bug-report", {
         body: {
           title: title.trim(),
-          description: description.trim(),
+          description: fullDescription,
           type: "bug",
           severity,
-          reporter: reporter.trim(),
-          source_url: window.location.href,
+          reporter: finalReporter,
+          source_url: sourceUrl,
         },
       });
 
