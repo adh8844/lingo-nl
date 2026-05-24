@@ -93,8 +93,14 @@ export async function renderResultImage(opts: RenderResultOptions): Promise<Blob
   // Header: mascot + wordmark
   try {
     const dingo = await loadDingo();
-    const dSize = 110;
-    ctx.drawImage(dingo, padX, 50, dSize, dSize);
+    const maxH = 130;
+    const maxW = 130;
+    const natW = dingo.naturalWidth || dingo.width;
+    const natH = dingo.naturalHeight || dingo.height;
+    const scale = Math.min(maxW / natW, maxH / natH);
+    const dW = natW * scale;
+    const dH = natH * scale;
+    ctx.drawImage(dingo, padX, 50 + (maxH - dH) / 2, dW, dH);
   } catch {
     /* ignore missing mascot */
   }
