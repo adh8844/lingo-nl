@@ -40,6 +40,7 @@ const App = () => (
             <Route path="/statistics/:playerId" element={<Statistics />} />
             <Route path="/online-match" element={<OnlineMatch />} />
             <Route path="/spelregels" element={<Rules />} />
+            <Route path="/school" element={<School />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
