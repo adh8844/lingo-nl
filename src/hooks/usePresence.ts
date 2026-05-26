@@ -10,6 +10,7 @@ export interface OnlinePlayer {
   best_streak: number;
   status: string;
   last_seen: string;
+  school_id: string | null;
 }
 
 export function usePresence(playerId: string | undefined) {
@@ -36,23 +37,37 @@ export function usePresence(playerId: string | undefined) {
       return;
     }
 
+    // Fetch caller's school_id to restrict the list to the same circle
+    let mySchoolId: string | null = null;
+    if (playerId) {
+      const { data: me } = await supabase
+        .from("players")
+        .select("school_id")
+        .eq("id", playerId)
+        .maybeSingle();
+      mySchoolId = (me as any)?.school_id ?? null;
+    }
+
     const { data: players } = await supabase
       .from("players")
-      .select("id, display_name, player_code, points, best_streak")
+      .select("id, display_name, player_code, points, best_streak, school_id")
       .in("id", playerIds);
 
     if (players) {
       const presenceMap = new Map(data.map(p => [p.player_id, p]));
       setOnlinePlayers(
-        players.map(p => ({
-          player_id: p.id,
-          display_name: p.display_name,
-          player_code: p.player_code,
-          points: p.points ?? 0,
-          best_streak: p.best_streak,
-          status: presenceMap.get(p.id)?.status || "online",
-          last_seen: presenceMap.get(p.id)?.last_seen || "",
-        }))
+        players
+          .filter((p: any) => (p.school_id ?? null) === mySchoolId)
+          .map((p: any) => ({
+            player_id: p.id,
+            display_name: p.display_name,
+            player_code: p.player_code,
+            points: p.points ?? 0,
+            best_streak: p.best_streak,
+            status: presenceMap.get(p.id)?.status || "online",
+            last_seen: presenceMap.get(p.id)?.last_seen || "",
+            school_id: p.school_id ?? null,
+          }))
       );
     }
   }, [playerId, onlineThresholdMs]);
