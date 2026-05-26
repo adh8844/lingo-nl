@@ -135,15 +135,20 @@ const Rankings = () => {
     );
   };
 
+  const mySchoolId: string | null = (player as any)?.school_id ?? null;
+
   const buildList = async (
     rows: { player_id: string; value: number }[]
   ): Promise<RankEntry[]> => {
     const ids = rows.map((r) => r.player_id);
-    const names = await namesFor(ids);
+    const info = await namesFor(ids);
     return rows
-      .map((r) => ({ id: r.player_id, display_name: names.get(r.player_id) || "?", value: r.value }))
-      .filter((e) => e.value > 0)
-      .sort((a, b) => b.value - a.value);
+      .map((r) => {
+        const i = info.get(r.player_id);
+        return { id: r.player_id, display_name: i?.name || "?", value: r.value, _school: i?.school_id ?? null };
+      })
+      .filter((e) => e.value > 0 && e._school === mySchoolId)
+      .map(({ _school, ...rest }) => rest);
   };
 
   const loadPointsToday = useCallback(async () => {
