@@ -14,6 +14,7 @@ import OnlineMatch from "./pages/OnlineMatch";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
+import School from "./pages/School";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
 import { PlayerProvider } from "@/hooks/usePlayerContext";
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/statistics/:playerId" element={<Statistics />} />
             <Route path="/online-match" element={<OnlineMatch />} />
             <Route path="/spelregels" element={<Rules />} />
+            <Route path="/school" element={<School />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

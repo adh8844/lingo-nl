@@ -693,6 +693,7 @@ export type Database = {
           last_played_date: string | null
           player_code: string
           points: number
+          school_id: string | null
           total_games_played: number
           total_hours_played: number
           unlocked_5letter: boolean
@@ -710,6 +711,7 @@ export type Database = {
           last_played_date?: string | null
           player_code: string
           points?: number
+          school_id?: string | null
           total_games_played?: number
           total_hours_played?: number
           unlocked_5letter?: boolean
@@ -727,6 +729,7 @@ export type Database = {
           last_played_date?: string | null
           player_code?: string
           points?: number
+          school_id?: string | null
           total_games_played?: number
           total_hours_played?: number
           unlocked_5letter?: boolean
@@ -734,7 +737,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "players_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       points_log: {
         Row: {
@@ -784,6 +795,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      school_details: {
+        Row: {
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          invite_code: string
+          school_id: string
+        }
+        Insert: {
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          invite_code: string
+          school_id: string
+        }
+        Update: {
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          invite_code?: string
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_details_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schools: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -1014,6 +1081,7 @@ export type Database = {
     }
     Functions: {
       current_player_id: { Args: never; Returns: string }
+      current_player_school_id: { Args: never; Returns: string }
       get_badges_count_in_range: {
         Args: { p_end?: string; p_start: string }
         Returns: {
@@ -1068,6 +1136,7 @@ export type Database = {
           last_played_date: string | null
           player_code: string
           points: number
+          school_id: string | null
           total_games_played: number
           total_hours_played: number
           unlocked_5letter: boolean
@@ -1111,6 +1180,10 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_match_participant: { Args: { p_match_id: string }; Returns: boolean }
+      players_in_same_circle: {
+        Args: { p1: string; p2: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

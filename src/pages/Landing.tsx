@@ -14,6 +14,7 @@ import {
   Target,
   Crown,
   ChevronDown,
+  GraduationCap,
 } from "lucide-react";
 
 import SEO from "@/components/SEO";
@@ -93,6 +94,7 @@ const Landing = () => {
       <FeatureGrid />
       <BoardShowcase />
       <BadgesSection />
+      <ForSchoolsSection />
       <FinalCTA ctaTarget={ctaTarget} ctaLabel={ctaLabel} />
       <Footer />
     </div>
@@ -613,6 +615,63 @@ const BadgesSection = () => {
       <p className="text-center mt-8 text-sm text-muted-foreground">
         Plus tientallen andere — voor streaks, snelheid, doorzettingsvermogen en juiste timing.
       </p>
+    </section>
+  );
+};
+
+
+/* ------------------------ For schools ------------------------ */
+const ForSchoolsSection = () => {
+  const navigate = useNavigate();
+  return (
+    <section className="py-24 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6 }}
+        className="max-w-5xl mx-auto p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/10 border border-border relative overflow-hidden"
+      >
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+        <div className="relative grid md:grid-cols-[1fr_auto] gap-8 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-primary/15 text-primary text-xs font-extrabold tracking-widest uppercase">
+              <GraduationCap className="w-3.5 h-3.5" />
+              Voor scholen
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
+              DingoLingo voor de klas.
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-xl">
+              Speel je wijzer in Groep 3 t/m 8. Eigen accounts per leerling,
+              een veilige school-omgeving, en eigen ranglijst binnen de school.
+              Vanaf <span className="text-foreground font-extrabold">€1 per leerling per jaar</span>.
+            </p>
+            <ul className="mt-5 grid sm:grid-cols-2 gap-2 text-sm">
+              {[
+                "Eigen accounts per leerling",
+                "Eigen ranglijst binnen de school",
+                "€1 per leerling per jaar",
+                "Geen reclame, veilige omgeving",
+              ].map((b) => (
+                <li key={b} className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5">✓</span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/school")}
+            className="self-stretch md:self-center inline-flex items-center justify-center gap-2 px-7 py-5 rounded-2xl bg-primary text-primary-foreground font-extrabold text-base shadow-lg shadow-primary/30 whitespace-nowrap"
+          >
+            Ontdek het schoolaanbod
+            <ArrowRight className="w-5 h-5" />
+          </motion.button>
+        </div>
+      </motion.div>
     </section>
   );
 };

@@ -153,6 +153,14 @@ Deno.serve(async (req) => {
         if (ch.challenged_id !== callerId) return json({ error: "Forbidden" }, 403);
         if (ch.status !== "pending") return json({ error: "Challenge not pending" }, 400);
 
+        // Same-circle (school) guard
+        const { data: sameCircle } = await admin.rpc("players_in_same_circle", {
+          p1: ch.challenger_id, p2: ch.challenged_id,
+        });
+        if (sameCircle !== true) {
+          return json({ error: "Players are not in the same school circle" }, 403);
+        }
+
         await admin.from("online_challenges")
           .update({ status: "accepted" }).eq("id", challengeId);
 

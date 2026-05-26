@@ -20,6 +20,7 @@ interface PlayerRow {
   current_streak: number;
   best_streak: number;
   points: number;
+  school_id: string | null;
 }
 
 interface RankEntry {
@@ -117,29 +118,37 @@ const Rankings = () => {
   const loadAllPlayers = useCallback(async () => {
     const { data } = await supabase
       .from("players")
-      .select("id, display_name, player_code, current_streak, best_streak, points")
+      .select("id, display_name, player_code, current_streak, best_streak, points, school_id")
       .limit(500);
-    if (data) setAllPlayers(data.map((p) => ({ ...p, points: p.points ?? 0 })));
+    if (data) setAllPlayers(data.map((p: any) => ({ ...p, points: p.points ?? 0, school_id: p.school_id ?? null })));
   }, []);
 
-  // Helper: fetch display names for a set of player ids
+  // Helper: fetch display names + school_id for a set of player ids
   const namesFor = async (ids: string[]) => {
-    if (ids.length === 0) return new Map<string, string>();
+    if (ids.length === 0) return new Map<string, { name: string; school_id: string | null }>();
     const { data } = await supabase
       .from("players")
-      .select("id, display_name")
+      .select("id, display_name, school_id")
       .in("id", ids);
-    return new Map((data || []).map((p: any) => [p.id, p.display_name]));
+    return new Map<string, { name: string; school_id: string | null }>(
+      (data || []).map((p: any) => [p.id, { name: p.display_name, school_id: p.school_id ?? null }])
+    );
   };
+
+  const mySchoolId: string | null = (player as any)?.school_id ?? null;
 
   const buildList = async (
     rows: { player_id: string; value: number }[]
   ): Promise<RankEntry[]> => {
     const ids = rows.map((r) => r.player_id);
-    const names = await namesFor(ids);
+    const info = await namesFor(ids);
     return rows
-      .map((r) => ({ id: r.player_id, display_name: names.get(r.player_id) || "?", value: r.value }))
-      .filter((e) => e.value > 0)
+      .map((r) => {
+        const i = info.get(r.player_id);
+        return { id: r.player_id, display_name: i?.name || "?", value: r.value, _school: i?.school_id ?? null };
+      })
+      .filter((e) => e.value > 0 && e._school === mySchoolId)
+      .map(({ _school, ...rest }) => rest)
       .sort((a, b) => b.value - a.value);
   };
 
@@ -267,12 +276,16 @@ const Rankings = () => {
   }, [tab]);
 
 
-  // Derived lists
+  // Derived lists — restricted to caller's school circle
+  const sameCircle = (p: PlayerRow) => (p.school_id ?? null) === mySchoolId;
+
   const pointsTotalList: RankEntry[] = [...allPlayers]
+    .filter(sameCircle)
     .map((p) => ({ id: p.id, display_name: p.display_name, value: p.points }))
     .sort((a, b) => b.value - a.value);
 
   const maxStreakList: RankEntry[] = [...allPlayers]
+    .filter(sameCircle)
     .map((p) => {
       const max = Math.max(p.best_streak || 0, p.current_streak || 0);
       return {
@@ -286,6 +299,7 @@ const Rankings = () => {
     .sort((a, b) => b.value - a.value);
 
   const currentStreakList: RankEntry[] = [...allPlayers]
+    .filter(sameCircle)
     .map((p) => ({ id: p.id, display_name: p.display_name, value: p.current_streak || 0 }))
     .filter((e) => e.value > 0)
     .sort((a, b) => b.value - a.value);

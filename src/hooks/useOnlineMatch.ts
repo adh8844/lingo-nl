@@ -188,6 +188,20 @@ export function useOnlineMatch(playerId: string | undefined) {
     language: string
   ) => {
     if (!playerId) return null;
+
+    // Same-circle (school) guard: only invite players from the same school / non-school pool
+    const { data: bothPlayers } = await supabase
+      .from("players")
+      .select("id, school_id")
+      .in("id", [playerId, challengedId]);
+    if (!bothPlayers || bothPlayers.length < 2) return null;
+    const mine = bothPlayers.find((p: any) => p.id === playerId);
+    const other = bothPlayers.find((p: any) => p.id === challengedId);
+    if ((mine as any)?.school_id !== (other as any)?.school_id) {
+      console.warn("Challenge blocked: different school circle");
+      return null;
+    }
+
     const { data, error } = await supabase
       .from("online_challenges")
       .insert({
