@@ -276,12 +276,16 @@ const Rankings = () => {
   }, [tab]);
 
 
-  // Derived lists
+  // Derived lists — restricted to caller's school circle
+  const sameCircle = (p: PlayerRow) => (p.school_id ?? null) === mySchoolId;
+
   const pointsTotalList: RankEntry[] = [...allPlayers]
+    .filter(sameCircle)
     .map((p) => ({ id: p.id, display_name: p.display_name, value: p.points }))
     .sort((a, b) => b.value - a.value);
 
   const maxStreakList: RankEntry[] = [...allPlayers]
+    .filter(sameCircle)
     .map((p) => {
       const max = Math.max(p.best_streak || 0, p.current_streak || 0);
       return {
@@ -295,6 +299,7 @@ const Rankings = () => {
     .sort((a, b) => b.value - a.value);
 
   const currentStreakList: RankEntry[] = [...allPlayers]
+    .filter(sameCircle)
     .map((p) => ({ id: p.id, display_name: p.display_name, value: p.current_streak || 0 }))
     .filter((e) => e.value > 0)
     .sort((a, b) => b.value - a.value);
