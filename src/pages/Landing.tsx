@@ -14,6 +14,7 @@ import {
   Target,
   Crown,
   ChevronDown,
+  GraduationCap,
 } from "lucide-react";
 
 import SEO from "@/components/SEO";
