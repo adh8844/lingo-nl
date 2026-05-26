@@ -14,6 +14,7 @@ import OnlineMatch from "./pages/OnlineMatch";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
+import School from "./pages/School";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
 import { PlayerProvider } from "@/hooks/usePlayerContext";
 
