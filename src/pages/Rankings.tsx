@@ -148,7 +148,8 @@ const Rankings = () => {
         return { id: r.player_id, display_name: i?.name || "?", value: r.value, _school: i?.school_id ?? null };
       })
       .filter((e) => e.value > 0 && e._school === mySchoolId)
-      .map(({ _school, ...rest }) => rest);
+      .map(({ _school, ...rest }) => rest)
+      .sort((a, b) => b.value - a.value);
   };
 
   const loadPointsToday = useCallback(async () => {
