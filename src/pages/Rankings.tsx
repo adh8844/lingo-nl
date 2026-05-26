@@ -20,6 +20,7 @@ interface PlayerRow {
   current_streak: number;
   best_streak: number;
   points: number;
+  school_id: string | null;
 }
 
 interface RankEntry {
