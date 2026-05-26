@@ -94,6 +94,7 @@ const Landing = () => {
       <FeatureGrid />
       <BoardShowcase />
       <BadgesSection />
+      <ForSchoolsSection />
       <FinalCTA ctaTarget={ctaTarget} ctaLabel={ctaLabel} />
       <Footer />
     </div>
