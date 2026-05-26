@@ -118,19 +118,21 @@ const Rankings = () => {
   const loadAllPlayers = useCallback(async () => {
     const { data } = await supabase
       .from("players")
-      .select("id, display_name, player_code, current_streak, best_streak, points")
+      .select("id, display_name, player_code, current_streak, best_streak, points, school_id")
       .limit(500);
-    if (data) setAllPlayers(data.map((p) => ({ ...p, points: p.points ?? 0 })));
+    if (data) setAllPlayers(data.map((p: any) => ({ ...p, points: p.points ?? 0, school_id: p.school_id ?? null })));
   }, []);
 
-  // Helper: fetch display names for a set of player ids
+  // Helper: fetch display names + school_id for a set of player ids
   const namesFor = async (ids: string[]) => {
-    if (ids.length === 0) return new Map<string, string>();
+    if (ids.length === 0) return new Map<string, { name: string; school_id: string | null }>();
     const { data } = await supabase
       .from("players")
-      .select("id, display_name")
+      .select("id, display_name, school_id")
       .in("id", ids);
-    return new Map((data || []).map((p: any) => [p.id, p.display_name]));
+    return new Map<string, { name: string; school_id: string | null }>(
+      (data || []).map((p: any) => [p.id, { name: p.display_name, school_id: p.school_id ?? null }])
+    );
   };
 
   const buildList = async (
