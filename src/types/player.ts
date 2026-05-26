@@ -13,4 +13,5 @@ export interface Player {
   unlocked_6letter: boolean;
   created_at: string;
   user_id?: string | null;
+  school_id?: string | null;
 }
