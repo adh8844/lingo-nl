@@ -27,8 +27,17 @@ const Landing = () => {
   const { session } = usePlayer();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Smooth scroll with Lenis
+  // Smooth scroll with Lenis — disabled on Safari macOS (native scroll is smoother there)
   useEffect(() => {
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isSafari = /^((?!chrome|android|crios|fxios|edg|edgios).)*safari/i.test(ua);
+    const isTouch =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    const isMacOSDesktop = /Macintosh/.test(ua) && !isTouch;
+    if (isSafari && isMacOSDesktop) return;
+
     const lenis = new Lenis({ duration: 1.2, smoothWheel: true });
     function raf(time: number) {
       lenis.raf(time);
