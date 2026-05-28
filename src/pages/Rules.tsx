@@ -43,7 +43,7 @@ const Rules = () => {
             </CardHeader>
             <CardContent>
               <p className="mb-4 text-[15px] leading-relaxed">
-                Raad het verborgen woord in maximaal 5 pogingen. Na elke poging krijg je feedback:
+                Raad het verborgen woord in maximaal 5 pogingen. De eerste letter wordt je al gegeven. De rest moet je raden. Na elke poging krijg je feedback:
               </p>
               <Table>
                 <TableBody>
