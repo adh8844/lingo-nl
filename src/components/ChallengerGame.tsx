@@ -350,6 +350,12 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
               <p className="text-muted-foreground mt-1">Het woord was: <span className="font-bold text-foreground uppercase">{targetWord}</span></p>
             </div>
           )}
+          <WordDefinitionBubble
+            word={targetWord}
+            definition={wordDef.definition}
+            example={wordDef.example}
+            loading={wordDef.loading}
+          />
           <button
             onClick={onComplete}
             className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95"
