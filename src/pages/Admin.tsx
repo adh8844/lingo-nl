@@ -111,6 +111,7 @@ const Admin = () => {
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({
     settings: false,
     stats: false,
+    prompt: false,
     add: false,
     search: false,
     pending: true,
