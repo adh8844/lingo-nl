@@ -107,6 +107,40 @@ const Admin = () => {
     else toast.success("Instelling opgeslagen");
   };
 
+  // Word-definition prompt setting
+  const DEFAULT_DEF_PROMPT = "Een korte uitleg van het woord '[WORD]'. Gebruik hiervoor maximaal 40 tekens. Gevolgd door een voorbeeldzin met dit woord erin. Deze zin mag niet langer zijn dan 25 tekens.";
+  const [defPrompt, setDefPrompt] = useState<string>("");
+  const [loadingDefPrompt, setLoadingDefPrompt] = useState(true);
+  const [savingDefPrompt, setSavingDefPrompt] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "word_definition_prompt")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const v = (data as any)?.value;
+        setDefPrompt(typeof v === "string" && v.length > 0 ? v : DEFAULT_DEF_PROMPT);
+        setLoadingDefPrompt(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+  const saveDefPrompt = async () => {
+    const v = defPrompt.trim();
+    if (!v) { toast.error("Prompt mag niet leeg zijn"); return; }
+    if (!v.includes("[WORD]")) { toast.error("Prompt moet [WORD] bevatten"); return; }
+    setSavingDefPrompt(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "word_definition_prompt", value: v } as any, { onConflict: "key" });
+    setSavingDefPrompt(false);
+    if (error) toast.error("Fout bij opslaan");
+    else toast.success("Prompt opgeslagen");
+  };
+
+
   // Collapsible open state per card
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({
     settings: false,
