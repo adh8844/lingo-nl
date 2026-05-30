@@ -21,6 +21,8 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import ShareResultButton from "./ShareResultButton";
+import WordDefinitionBubble from "./WordDefinitionBubble";
+import { useWordDefinition } from "@/hooks/useWordDefinition";
 
 const MAX_GUESSES = 5;
 const TIMER_SECONDS = 90;
