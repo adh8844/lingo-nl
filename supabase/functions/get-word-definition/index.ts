@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const generated = await generateDefinition(wordRaw)
+    const generated = await generateDefinition(wordRaw, admin)
 
     if (generated.definition || generated.example) {
       await admin.from('word_definitions').upsert(
