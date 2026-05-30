@@ -852,6 +852,39 @@ export type Database = {
         }
         Relationships: []
       }
+      word_definitions: {
+        Row: {
+          created_at: string
+          definition: string | null
+          example: string | null
+          id: string
+          length: number
+          source: string
+          updated_at: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          definition?: string | null
+          example?: string | null
+          id?: string
+          length: number
+          source?: string
+          updated_at?: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          definition?: string | null
+          example?: string | null
+          id?: string
+          length?: number
+          source?: string
+          updated_at?: string
+          word?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       match_rounds_public: {

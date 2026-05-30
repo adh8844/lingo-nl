@@ -1,228 +1,83 @@
-Hier is het volledige herziene plan met de drie aanpassingen verwerkt:
+# Woord-definitie aan het einde van elke ronde
 
----
+Toon een spraakballon met korte uitleg + voorbeeldzin zodra een ronde eindigt (solo en challenger, maar NIET voor online). Definities worden aan het begin van de ronde alvast opgehaald zodat er geen wachttijd is.
 
-## Doel
+## Database
 
-DingoLingo uitbreiden met een B2B-aanbod voor basisscholen (Groep 3 t/m 8). Schoolleiders krijgen een eigen landingspagina, leerlingen krijgen individuele accounts gekoppeld aan hun school. Ranglijsten en online uitdagingen worden gefilterd per "kring" (eigen school, of de open community voor niet-schoolspelers).
+Nieuwe tabel `word_definitions`:
 
----
+- `word` (text, lowercase) + `length` (int) — samen unique
+- `definition` (text, ≤ ~80 tekens)
+- `example` (text, ≤ ~50 tekens)
+- `source` ('ai' | 'manual'), timestamps
 
-## 1. Landing — schoolsectie + CTA
+RLS:
 
-Bestand: `src/pages/Landing.tsx`
+- iedereen mag lezen (`SELECT` voor anon + authenticated)
+- alleen service_role mag schrijven (edge function gebruikt service key)
 
-- Nieuwe sectie `<ForSchoolsSection />` toevoegen tussen `BadgesSection` en `FinalCTA`.
-- Inhoud: kicker "Voor scholen", titel "DingoLingo voor de klas", korte pitch (taalontwikkeling Groep 3-8, veilige omgeving, eigen schoolomgeving), 4 voordeel-bullets (eigen accounts per leerling, eigen ranglijst binnen de school, €1 per leerling per jaar, geen reclame).
-- Prominente CTA-knop "Ontdek het schoolaanbod →" die navigeert naar `/school`.
-- Stijl: zelfde tokens als andere secties (card/border, primary, framer-motion fade-in), past in bestaand ritme.
+## Edge function: `get-word-definition`
 
----
+Input: `{ word, length }`.
 
-## 2. Nieuwe pagina `/school`
+Stappen:
 
-Bestand: `src/pages/School.tsx` (nieuw) Route toevoegen in `src/App.tsx`: `<Route path="/school" element={<School />} />`.
+1. Lookup in `word_definitions`. Indien aanwezig → return direct.
+2. Anders: roep Lovable AI Gateway aan (`google/gemini-3-flash-preview`) met de exact gespecificeerde prompt:
+  > "Een korte uitleg van het woord '[WORD]'. Gebruik hiervoor maximaal 40 tekens. Gevolgd door een voorbeeldzin met dit woord erin. Deze zin mag niet langer zijn dan 25 tekens."
+3. Parse response naar `{ definition, example }` (structured output via AI SDK `Output.object`).
+4. Upsert in `word_definitions` met `source = 'ai'`.
+5. Return `{ definition, example }`.
 
-Secties:
+Fouten (429/402/parse-fail) → return `{ definition: null, example: null }` zodat UI gracefully kan verbergen.
 
-1. **Header / hero** — DingoLingo wordmark, terug-link naar `/`, headline "DingoLingo voor de basisschool", subkop voor schoolleiders/IB'ers.
-2. **Waarom DingoLingo** — 3-4 kaarten: woordenschat & spelling, plezier (badges/streaks), veilige besloten omgeving, geschikt voor Groep 3 t/m 8.
-3. **Eigen schoolomgeving** — uitleg dat leerlingen alleen klasgenoten zien op de ranglijst en alleen klasgenoten kunnen uitdagen.
-4. **Prijs** — grote prijskaart: **€1 per leerlingaccount per schooljaar**, geen verborgen kosten, factuur per school, per jaar.
-5. **Hoe het werkt** — 3 stappen: aanmelden → school krijgt code → leerlingen registreren met die code.
-6. **CTA-formulier / mailto** — knop "Vraag schoolaccount aan" met `mailto:` naar schoolcontact (placeholder e-mail) plus secundaire knop "Terug naar landing".
+## Frontend
 
-Volledig in NL, semantische tokens, SEO-titel "DingoLingo voor scholen — Lingo voor Groep 3 t/m 8".
+### Nieuwe hook `useWordDefinition(word, length)`
 
----
+- Trigger fetch zodra `word` set is (begin van ronde) via `supabase.functions.invoke('get-word-definition', ...)`.
+- Cached in-memory per `word`.
+- Returnt `{ definition, example, loading }`.
 
-## 3. Database *(medium-risk migratie, bestaande data blijft intact)*
+### Nieuwe component `WordDefinitionBubble`
 
-### 3a. Tabel `public.schools` — publieke metadata
+- Spraakballon-stijl (afgeronde kaart met "tail"), gebruikt design tokens (`bg-card`, `border-border`, `text-foreground`, accent voor woord).
+- Toont het woord in hoofdletters + definitie + cursieve voorbeeldzin.
+- Skeleton-state als nog aan het laden bij game-end (zou zelden voorkomen door pre-fetch).
+- Indien beide velden leeg → render niets.
 
-Bevat alleen de informatie die ingelogde gebruikers mogen zien:
+### Integratie
 
-```sql
-CREATE TABLE public.schools (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name         text NOT NULL,
-  city         text,
-  created_at   timestamptz NOT NULL DEFAULT now(),
-  updated_at   timestamptz NOT NULL DEFAULT now()
-);
+`**src/components/LingoGame.tsx**`
 
-```
+- Hook aanroepen zodra `targetWord` gezet is in `startNewRound`.
+- Render `WordDefinitionBubble` in het game-over blok (zowel bij win als verlies), boven de "Volgende ronde"-knop.
 
-**RLS** `schools`**:**
+`**src/components/ChallengerGame.tsx**`
 
-```sql
--- Alleen ingelogde gebruikers mogen schoolnamen lezen (bijv. voor profielen)
-CREATE POLICY "schools_select_authenticated"
-  ON public.schools FOR SELECT
-  TO authenticated
-  USING (true);
+- Zelfde patroon: pre-fetch bij start, toon bubble aan einde.
 
--- INSERT/UPDATE/DELETE alleen via admin
-CREATE POLICY "schools_admin_write"
-  ON public.schools FOR ALL
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
+`**src/components/OnlineGame.tsx**`
 
-```
-
----
-
-### 3b. Tabel `public.school_details` — gevoelige beheerdata *(nieuw, apart)*
-
-Bevat invite-code en contactgegevens. Volledig afgeschermd voor gewone gebruikers:
-
-```sql
-CREATE TABLE public.school_details (
-  school_id     uuid PRIMARY KEY REFERENCES public.schools(id) ON DELETE CASCADE,
-  invite_code   text NOT NULL UNIQUE,  -- 6 tekens, gegenereerd door admin
-  contact_name  text NOT NULL,
-  contact_email text NOT NULL,
-  contact_phone text
-);
-
-```
-
-**RLS** `school_details`**:**
-
-```sql
--- Geen SELECT voor gewone gebruikers — alleen admin
-CREATE POLICY "school_details_admin_only"
-  ON public.school_details FOR ALL
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
-
-```
-
-> De invite-code wordt nooit via een client-side query opgehaald. In een vervolgstap wordt deze alleen ontsloten via een beveiligde RPC (SECURITY DEFINER) die de code valideert zonder hem terug te sturen naar de client.
-
-Unieke index:
-
-```sql
-CREATE UNIQUE INDEX idx_school_details_invite_code ON public.school_details(invite_code);
-
-```
-
----
-
-### 3c. Tabel `public.players` uitbreiden
-
-```sql
-ALTER TABLE public.players
-  ADD COLUMN school_id uuid NULL
-    REFERENCES public.schools(id)
-    ON DELETE SET NULL;
-
-CREATE INDEX idx_players_school_id ON public.players(school_id);
-
-```
-
-Nullable, default NULL → bestaande spelers blijven "niet-school" (open community).
-
-**RLS-policy:** `school_id` **alleen wijzigbaar door admin**
-
-De bestaande `guard_player_protected_columns` trigger blijft ongewijzigd. Daarnaast een expliciete UPDATE-policy:
-
-```sql
--- Speler mag eigen rij updaten, maar school_id niet zelf wijzigen
-CREATE POLICY "players_update_own"
-  ON public.players FOR UPDATE
-  TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (
-    auth.uid() = user_id
-    AND school_id IS NOT DISTINCT FROM (
-      SELECT school_id FROM public.players WHERE user_id = auth.uid()
-    )
-  );
-
--- Admin mag alles updaten, inclusief school_id
-CREATE POLICY "players_admin_update"
-  ON public.players FOR UPDATE
-  TO authenticated
-  USING (is_admin())
-  WITH CHECK (is_admin());
-
-```
-
----
-
-### 3d. Helper-functies
-
-```sql
--- Geeft school_id terug van de ingelogde speler
-CREATE OR REPLACE FUNCTION public.current_player_school_id()
-RETURNS uuid
-LANGUAGE sql STABLE SECURITY DEFINER AS $$
-  SELECT school_id FROM public.players WHERE user_id = auth.uid() LIMIT 1;
-$$;
-
--- True als twee spelers in dezelfde kring zitten (zelfde school, of allebei NULL)
-CREATE OR REPLACE FUNCTION public.players_in_same_circle(p1 uuid, p2 uuid)
-RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER AS $$
-  SELECT (SELECT school_id FROM public.players WHERE id = p1)
-    IS NOT DISTINCT FROM
-         (SELECT school_id FROM public.players WHERE id = p2);
-$$;
-
-```
-
----
-
-## 4. Ranglijst-filtering *(eigen kring)*
-
-Bestand: `src/pages/Rankings.tsx`
-
-- Bij laden van `allPlayers`: `school_id` mee-selecteren en client-side filteren op `p.school_id === player.school_id` (NULL === NULL via `IS NOT DISTINCT FROM` logica).
-- Voor RPC-gebaseerde lijsten (`get_points_in_range`, `get_games_count_total`, etc.): na ophalen filteren op `school_id` via een `playerSchool: Map<id, schoolId|null>` opgebouwd uit de `players` select.
-- Onlinelijst (`usePresence`) eveneens filteren op eigen kring vóór render.
-- Geen wijzigingen aan de RPC's zelf nodig.
-
----
-
-## 5. Uitdagingen beperken tot eigen kring
-
-- `src/pages/Rankings.tsx`: `canChallenge` extra conditie `samenKring(entry.id)`.
-- `src/components/OnlineLobby.tsx`: `onlinePlayers` voor render filteren op eigen `school_id`.
-- `src/hooks/useOnlineMatch.ts` (`sendChallenge`): vóór insert verifieren dat target zelfde kring heeft; anders toast "Je kunt alleen spelers binnen je eigen school uitdagen".
-- Edge function `match-action` (server-side guard): bij `create_challenge` action checken met `players_in_same_circle()`; anders error. Voorkomt omzeiling via UI.
-
----
-
-## 6. Speler-context
-
-- `src/types/player.ts`: `school_id?: string | null` toevoegen.
-- `src/hooks/usePlayerContext.tsx`: `school_id` wordt automatisch meegeselecteerd als `get_my_player` de volledige rij retourneert.
-
----
+- Geen wijzigingen aan bestand. In online games laten we de definities niet zien en vragen deze ook niet op vanuit de database of de AI-agent.
 
 ## Technische details
 
-- Geen wijzigingen aan bestaande punten-/badge-logica.
-- Geen UI voor leerling-registratie via invite_code in deze iteratie — alleen het fundament.
-- Bestaande spelers blijven `school_id = NULL` → zien elkaar zoals nu.
-- `mailto:` adres voor schoolaanmeldingen: het e-mailadres van de admin gebruiker. Geen adres hardcoded in code.
+- Edge function gebruikt `verify_jwt = false` (consistent met andere functies) maar valideert input met zod.
+- Geen wijzigingen aan punten-, badge- of match-logic.
+- Definitie ophalen is fire-and-forget; falen ervan blokkeert het spel niet.
+- Geen wijziging aan bestaande types/schema's behalve toegevoegde tabel.
 
----
+## Bestanden
 
-## Out of scope *(vervolgstappen)*
+Nieuw:
 
-- Leerling-registratie via invite_code (beveiligde RPC die code valideert zonder terug te sturen).
-- Self-service schoolportaal.
-- Facturatie/abonnementen (Stripe).
-- Admin-UI voor scholen beheren binnen `/admin`.
+- `supabase/migrations/<timestamp>_word_definitions.sql`
+- `supabase/functions/get-word-definition/index.ts`
+- `src/hooks/useWordDefinition.ts`
+- `src/components/WordDefinitionBubble.tsx`
 
----
+Gewijzigd:
 
-De drie kernwijzigingen samengevat:
-
-1. **SELECT authenticated** in plaats van public op `schools`
-2. `school_details` als aparte tabel voor invite-code en contactgegevens, enkel leesbaar voor admins
-3. **Expliciete UPDATE-policy** op `players` die voorkomt dat een speler zelf zijn `school_id` kan aanpassen
+- `src/components/LingoGame.tsx`
+- `src/components/ChallengerGame.tsx`

@@ -7,6 +7,8 @@ import confetti from "canvas-confetti";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult } from "@/hooks/useGameResult";
 import { Star, Zap, Plus } from "lucide-react";
+import WordDefinitionBubble from "./WordDefinitionBubble";
+import { useWordDefinition } from "@/hooks/useWordDefinition";
 
 const CHALLENGER_TIMER = 60;
 const CHALLENGER_LEVELS: WordLength[] = [10, 12, 14];
@@ -61,6 +63,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
+  const wordDef = useWordDefinition(targetWord, challengerLevel);
 
   const currentPoints = POINTS_TABLE[Math.min(extraLettersUsed, POINTS_TABLE.length - 1)];
 
@@ -347,6 +350,12 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
               <p className="text-muted-foreground mt-1">Het woord was: <span className="font-bold text-foreground uppercase">{targetWord}</span></p>
             </div>
           )}
+          <WordDefinitionBubble
+            word={targetWord}
+            definition={wordDef.definition}
+            example={wordDef.example}
+            loading={wordDef.loading}
+          />
           <button
             onClick={onComplete}
             className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg hover:brightness-110 transition-all active:scale-95"

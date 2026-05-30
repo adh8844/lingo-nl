@@ -21,6 +21,8 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import ShareResultButton from "./ShareResultButton";
+import WordDefinitionBubble from "./WordDefinitionBubble";
+import { useWordDefinition } from "@/hooks/useWordDefinition";
 
 const MAX_GUESSES = 5;
 const TIMER_SECONDS = 90;
@@ -72,6 +74,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
+  const wordDef = useWordDefinition(targetWord, wordLength);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -442,6 +445,13 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
               ))}
             </div>
           )}
+
+          <WordDefinitionBubble
+            word={targetWord}
+            definition={wordDef.definition}
+            example={wordDef.example}
+            loading={wordDef.loading}
+          />
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             <ShareResultButton
