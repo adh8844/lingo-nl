@@ -33,8 +33,26 @@ function parseAiText(text: string): DefinitionResult {
   return { definition: cleaned, example: null }
 }
 
-async function generateDefinition(word: string): Promise<DefinitionResult> {
-  const prompt = `Een korte uitleg van het woord '${word}'. Gebruik hiervoor maximaal 40 tekens. Gevolgd door een voorbeeldzin met dit woord erin. Deze zin mag niet langer zijn dan 25 tekens.`
+const DEFAULT_PROMPT = `Een korte uitleg van het woord '[WORD]'. Gebruik hiervoor maximaal 40 tekens. Gevolgd door een voorbeeldzin met dit woord erin. Deze zin mag niet langer zijn dan 25 tekens.`
+
+async function getPromptTemplate(admin: ReturnType<typeof createClient>): Promise<string> {
+  try {
+    const { data } = await admin
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'word_definition_prompt')
+      .maybeSingle()
+    const v = (data as any)?.value
+    if (typeof v === 'string' && v.trim().length > 0) return v
+  } catch (e) {
+    console.error('getPromptTemplate error', e)
+  }
+  return DEFAULT_PROMPT
+}
+
+async function generateDefinition(word: string, admin: ReturnType<typeof createClient>): Promise<DefinitionResult> {
+  const template = await getPromptTemplate(admin)
+  const prompt = template.replaceAll('[WORD]', word)
 
   const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -89,7 +107,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const generated = await generateDefinition(wordRaw)
+    const generated = await generateDefinition(wordRaw, admin)
 
     if (generated.definition || generated.example) {
       await admin.from('word_definitions').upsert(

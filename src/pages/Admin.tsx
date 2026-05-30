@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePresenceSettings, updatePresenceSetting } from "@/hooks/useAppSettings";
 import SEO from "@/components/SEO";
@@ -107,10 +108,45 @@ const Admin = () => {
     else toast.success("Instelling opgeslagen");
   };
 
+  // Word-definition prompt setting
+  const DEFAULT_DEF_PROMPT = "Een korte uitleg van het woord '[WORD]'. Gebruik hiervoor maximaal 40 tekens. Gevolgd door een voorbeeldzin met dit woord erin. Deze zin mag niet langer zijn dan 25 tekens.";
+  const [defPrompt, setDefPrompt] = useState<string>("");
+  const [loadingDefPrompt, setLoadingDefPrompt] = useState(true);
+  const [savingDefPrompt, setSavingDefPrompt] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "word_definition_prompt")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const v = (data as any)?.value;
+        setDefPrompt(typeof v === "string" && v.length > 0 ? v : DEFAULT_DEF_PROMPT);
+        setLoadingDefPrompt(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+  const saveDefPrompt = async () => {
+    const v = defPrompt.trim();
+    if (!v) { toast.error("Prompt mag niet leeg zijn"); return; }
+    if (!v.includes("[WORD]")) { toast.error("Prompt moet [WORD] bevatten"); return; }
+    setSavingDefPrompt(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert({ key: "word_definition_prompt", value: v } as any, { onConflict: "key" });
+    setSavingDefPrompt(false);
+    if (error) toast.error("Fout bij opslaan");
+    else toast.success("Prompt opgeslagen");
+  };
+
+
   // Collapsible open state per card
   const [openCards, setOpenCards] = useState<Record<string, boolean>>({
     settings: false,
     stats: false,
+    prompt: false,
     add: false,
     search: false,
     pending: true,
@@ -550,7 +586,55 @@ const Admin = () => {
           </Collapsible>
         </Card>
 
+        {/* Word-definition prompt */}
+        <Card className="mb-8">
+          <Collapsible open={openCards.prompt} onOpenChange={() => toggleCard("prompt")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Prompt woorddefinitie
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.prompt ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Deze prompt wordt naar de AI gestuurd om de definitie en voorbeeldzin op te halen.
+                  Gebruik <code className="px-1 rounded bg-muted">[WORD]</code> als plaatshouder voor het woord.
+                  Wijzigingen werken direct door bij de eerstvolgende nieuwe opvraag.
+                </p>
+                <Textarea
+                  value={defPrompt}
+                  onChange={(e) => setDefPrompt(e.target.value)}
+                  disabled={loadingDefPrompt}
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDefPrompt(DEFAULT_DEF_PROMPT)}
+                    disabled={loadingDefPrompt || savingDefPrompt}
+                  >
+                    Standaard
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={saveDefPrompt}
+                    disabled={loadingDefPrompt || savingDefPrompt}
+                  >
+                    <Save className="w-4 h-4 mr-1" /> Opslaan
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
         {/* Add word section */}
+
         <Card className="mb-8">
           <Collapsible open={openCards.add} onOpenChange={() => toggleCard("add")}>
             <CollapsibleTrigger asChild>
