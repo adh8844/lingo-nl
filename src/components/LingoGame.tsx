@@ -446,6 +446,13 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
             </div>
           )}
 
+          <WordDefinitionBubble
+            word={targetWord}
+            definition={wordDef.definition}
+            example={wordDef.example}
+            loading={wordDef.loading}
+          />
+
           <div className="flex flex-wrap items-center justify-center gap-2">
             <ShareResultButton
               mode="solo"
