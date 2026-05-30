@@ -63,6 +63,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
+  const wordDef = useWordDefinition(targetWord, challengerLevel);
 
   const currentPoints = POINTS_TABLE[Math.min(extraLettersUsed, POINTS_TABLE.length - 1)];
 
