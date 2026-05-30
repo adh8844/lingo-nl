@@ -415,6 +415,13 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
             </div>
           )}
 
+          <WordDefinitionBubble
+            word={targetWord}
+            definition={wordDef.definition}
+            example={wordDef.example}
+            loading={wordDef.loading}
+          />
+
           {/* Points breakdown */}
           {gameResult && (
             <div className="w-full max-w-xs bg-card rounded-xl border border-border p-3 space-y-1.5">
@@ -445,13 +452,6 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
               ))}
             </div>
           )}
-
-          <WordDefinitionBubble
-            word={targetWord}
-            definition={wordDef.definition}
-            example={wordDef.example}
-            loading={wordDef.loading}
-          />
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             <ShareResultButton
