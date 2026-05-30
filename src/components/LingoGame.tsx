@@ -74,6 +74,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
+  const wordDef = useWordDefinition(targetWord, wordLength);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
