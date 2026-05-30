@@ -7,6 +7,8 @@ import confetti from "canvas-confetti";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult } from "@/hooks/useGameResult";
 import { Star, Zap, Plus } from "lucide-react";
+import WordDefinitionBubble from "./WordDefinitionBubble";
+import { useWordDefinition } from "@/hooks/useWordDefinition";
 
 const CHALLENGER_TIMER = 60;
 const CHALLENGER_LEVELS: WordLength[] = [10, 12, 14];
