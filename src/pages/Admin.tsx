@@ -586,7 +586,55 @@ const Admin = () => {
           </Collapsible>
         </Card>
 
+        {/* Word-definition prompt */}
+        <Card className="mb-8">
+          <Collapsible open={openCards.prompt} onOpenChange={() => toggleCard("prompt")}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer select-none">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  Prompt woorddefinitie
+                  <ChevronDown className={`w-5 h-5 transition-transform ${openCards.prompt ? "rotate-180" : ""}`} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Deze prompt wordt naar de AI gestuurd om de definitie en voorbeeldzin op te halen.
+                  Gebruik <code className="px-1 rounded bg-muted">[WORD]</code> als plaatshouder voor het woord.
+                  Wijzigingen werken direct door bij de eerstvolgende nieuwe opvraag.
+                </p>
+                <Textarea
+                  value={defPrompt}
+                  onChange={(e) => setDefPrompt(e.target.value)}
+                  disabled={loadingDefPrompt}
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDefPrompt(DEFAULT_DEF_PROMPT)}
+                    disabled={loadingDefPrompt || savingDefPrompt}
+                  >
+                    Standaard
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={saveDefPrompt}
+                    disabled={loadingDefPrompt || savingDefPrompt}
+                  >
+                    <Save className="w-4 h-4 mr-1" /> Opslaan
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
         {/* Add word section */}
+
         <Card className="mb-8">
           <Collapsible open={openCards.add} onOpenChange={() => toggleCard("add")}>
             <CollapsibleTrigger asChild>
