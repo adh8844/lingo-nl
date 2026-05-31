@@ -98,6 +98,17 @@ const OnlineGame = ({
   const lossShownForRoundRef = useRef<string | null>(null);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
+  // Reset per-match UI state when a new match starts (e.g. after a rematch),
+  // otherwise the "Opnieuw spelen" button stays disabled from the previous match.
+  useEffect(() => {
+    setRematchRequested(false);
+    setWinSnapshot(null);
+    setShowForfeitConfirm(false);
+    lossShownForRoundRef.current = null;
+    prevRoundRef.current = null;
+    prevWordRef.current = "";
+  }, [match.id]);
+
   const [suggestionDialogOpen, setSuggestionDialogOpen] = useState(false);
   const [pendingWord, setPendingWord] = useState("");
 
