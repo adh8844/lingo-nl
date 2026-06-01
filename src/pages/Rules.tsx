@@ -177,6 +177,136 @@ const Rules = () => {
             </CardContent>
           </Card>
 
+          {/* Kaart 3b — Bonussen */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Bonussen</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Snelheidsbonus */}
+              <div>
+                <h3 className="font-semibold mb-2">Snelheidsbonus</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Hoe sneller je het woord raadt, hoe meer extra punten je verdient. De drempels
+                  verschillen per niveau.
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Opgelost binnen</TableHead>
+                      <TableHead>4-letter</TableHead>
+                      <TableHead>5-letter</TableHead>
+                      <TableHead>6-letter</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">Supersnel</TableCell>
+                      <TableCell>&lt;15s · +8</TableCell>
+                      <TableCell>&lt;20s · +10</TableCell>
+                      <TableCell>&lt;25s · +15</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Snel</TableCell>
+                      <TableCell>&lt;30s · +4</TableCell>
+                      <TableCell>&lt;40s · +5</TableCell>
+                      <TableCell>&lt;50s · +7</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Vlot</TableCell>
+                      <TableCell>&lt;60s · +2</TableCell>
+                      <TableCell>&lt;75s · +2</TableCell>
+                      <TableCell>&lt;90s · +3</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Reeksbonus */}
+              <div>
+                <h3 className="font-semibold mb-2">Reeksbonus</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Speel meerdere dagen op rij en ontvang elke gespeelde dag een bonus op basis van
+                  je actieve reeks. Je krijgt de hoogste bonus die op je reeks van toepassing is.
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Reeks</TableHead>
+                      <TableHead>4-letter</TableHead>
+                      <TableHead>5-letter</TableHead>
+                      <TableHead>6-letter</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium">2 dagen</TableCell>
+                      <TableCell>+3</TableCell>
+                      <TableCell>+4</TableCell>
+                      <TableCell>+5</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">3 dagen</TableCell>
+                      <TableCell>+6</TableCell>
+                      <TableCell>+8</TableCell>
+                      <TableCell>+10</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">7 dagen</TableCell>
+                      <TableCell>+10</TableCell>
+                      <TableCell>+13</TableCell>
+                      <TableCell>+18</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">30 dagen</TableCell>
+                      <TableCell>+20</TableCell>
+                      <TableCell>+25</TableCell>
+                      <TableCell>+35</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Dagelijkse bonus */}
+              <div>
+                <h3 className="font-semibold mb-2">Dagelijkse bonus</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Beloningen voor je dagelijkse activiteit in het spel.
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Actie</TableHead>
+                      <TableHead className="text-right">Bonus</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>Eerste spel van de dag</TableCell>
+                      <TableCell className="text-right font-medium">+5</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Alle drie niveaus op één dag gespeeld (4, 5 én 6)</TableCell>
+                      <TableCell className="text-right font-medium">+20</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Eerste spel ooit</TableCell>
+                      <TableCell className="text-right font-medium">+10</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>100e spel gespeeld</TableCell>
+                      <TableCell className="text-right font-medium">+50</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>500e spel gespeeld</TableCell>
+                      <TableCell className="text-right font-medium">+150</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Kaart 4 — Badges */}
           <Card>
             <CardHeader>
