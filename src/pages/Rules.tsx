@@ -44,11 +44,11 @@ const Rules = () => {
             <CardContent>
               <div className="mb-4 text-[15px] leading-relaxed space-y-4">
                 <p>
-                  Raad het verborgen woord in maximaal 5 pogingen. De eerste letter wordt je gegeven, de rest moet je raden.
-                  Je mag alleen bestaande Nederlandse woorden invoeren. Doe je dat niet, dan gaat de beurt voorbij.
+                  Raad het verborgen woord in maximaal 5 pogingen. De eerste letter krijg je cadeau — de rest moet je zelf ontdekken.
+                  Alleen bestaande Nederlandse woorden zijn toegestaan. Voer je een ongeldig woord in, dan sla je een beurt over.
                 </p>
                 <p>
-                  Na elke geldige poging krijg je feedback:
+                  Na elke geldige poging ontvang je feedback:
                 </p>
               </div>
               <Table>
