@@ -44,7 +44,7 @@ const Rules = () => {
             <CardContent>
               <div className="mb-4 text-[15px] leading-relaxed space-y-4">
                 <p>
-                  Raad het verborgen woord in maximaal 5 pogingen. De eerste letter wordt je gegeven, de rest moet je raden. 
+                  Raad het verborgen woord in maximaal 5 pogingen. De eerste letter wordt je gegeven, de rest moet je raden.
                   Je mag alleen bestaande Nederlandse woorden invoeren. Doe je dat niet, dan gaat de beurt voorbij.
                 </p>
                 <p>
