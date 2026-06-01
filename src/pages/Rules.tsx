@@ -42,9 +42,15 @@ const Rules = () => {
               <CardTitle className="text-xl">Het spel</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4 text-[15px] leading-relaxed">
-                Raad het verborgen woord in maximaal 5 pogingen. De eerste letter wordt je al gegeven. De rest moet je raden. Na elke poging krijg je feedback:
-              </p>
+              <div className="mb-4 text-[15px] leading-relaxed space-y-4">
+                <p>
+                  Raad het verborgen woord in maximaal 5 pogingen. De eerste letter wordt je gegeven, de rest moet je raden. 
+                  Je mag alleen bestaande Nederlandse woorden invoeren. Doe je dat niet, dan gaat de beurt voorbij.
+                </p>
+                <p>
+                  Na elke geldige poging krijg je feedback:
+                </p>
+              </div>
               <Table>
                 <TableBody>
                   <TableRow>
