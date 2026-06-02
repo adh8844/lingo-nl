@@ -11,6 +11,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortHeader, useSortable } from "@/components/SortableTable";
 import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
