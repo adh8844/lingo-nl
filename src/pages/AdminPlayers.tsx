@@ -96,6 +96,38 @@ const AdminPlayers = () => {
     toast.success(`School bijgewerkt`);
   };
 
+  const handleSchoolSelect = (p: PlayerRow, v: string) => {
+    if (v === "__new__") {
+      setPendingPlayerId(p.id);
+      setNewSchoolName("");
+      setNewSchoolCity("");
+      setNewSchoolOpen(true);
+      return;
+    }
+    updateSchool(p, v === "none" ? null : v);
+  };
+
+  const createSchool = async () => {
+    const name = newSchoolName.trim();
+    if (!name) { toast.error("Naam is verplicht"); return; }
+    setCreatingSchool(true);
+    const { data, error } = await supabase
+      .from("schools")
+      .insert({ name, city: newSchoolCity.trim() || null } as any)
+      .select("id, name")
+      .single();
+    setCreatingSchool(false);
+    if (error || !data) { toast.error("Fout bij aanmaken school"); return; }
+    setSchools(prev => [...prev, data as SchoolRow].sort((a, b) => a.name.localeCompare(b.name)));
+    toast.success(`School "${data.name}" aangemaakt`);
+    if (pendingPlayerId) {
+      const p = players.find(x => x.id === pendingPlayerId);
+      if (p) await updateSchool(p, data.id);
+    }
+    setNewSchoolOpen(false);
+    setPendingPlayerId(null);
+  };
+
   const updateRole = async (p: PlayerRow, role: RoleLabel) => {
     if (!p.user_id) { toast.error("Speler heeft geen gekoppeld account"); return; }
     if (role === "speler") {
