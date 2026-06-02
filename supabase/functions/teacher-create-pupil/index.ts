@@ -166,7 +166,13 @@ Deno.serve(async (req) => {
         password,
         created_by: teacherPlayer.id,
       });
+      // Assign 'leerling' role
+      await admin.from("user_roles").insert({
+        user_id: createdAuth.id,
+        role: "leerling",
+      });
     }
+
 
     return new Response(
       JSON.stringify({ username, password, player_id: playerId, display_name: displayName }),
