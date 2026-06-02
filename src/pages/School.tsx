@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  ArrowLeft,
   Sparkles,
   ShieldCheck,
   GraduationCap,
@@ -12,6 +11,7 @@ import {
   Mail,
 } from "lucide-react";
 import SEO from "@/components/SEO";
+import { usePlayer } from "@/hooks/usePlayer";
 import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
 const SCHOOL_CONTACT_EMAIL = "denheijera@icloud.com";
