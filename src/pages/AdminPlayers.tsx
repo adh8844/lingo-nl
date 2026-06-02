@@ -11,6 +11,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortHeader, useSortable } from "@/components/SortableTable";
 import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
@@ -155,7 +157,7 @@ const AdminPlayers = () => {
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-4">
       <SEO title="Spelers beheren — Admin" description="Beheer rollen, scholen en speelmodi van alle DingoLingo-spelers." path="/admin/spelers" />
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-6xl">
         <div className="flex items-center gap-3 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="w-5 h-5" />
@@ -183,65 +185,17 @@ const AdminPlayers = () => {
         {loading ? (
           <p className="text-muted-foreground">Laden…</p>
         ) : (
-          <div className="grid gap-3">
-            {filtered.map(p => {
-              const currentRole: RoleLabel = (p.user_id && roles[p.user_id]) || "speler";
-              return (
-                <div key={p.id} className="p-4 rounded-2xl bg-card border border-border">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="min-w-[140px]">
-                      <div className="font-extrabold">{p.display_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        #{p.player_code} · {p.points} pt · {p.total_games_played} spellen
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Rol</label>
-                      <Select value={currentRole} onValueChange={(v) => updateRole(p, v as RoleLabel)}>
-                        <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="speler">Speler</SelectItem>
-                          <SelectItem value="teacher">Docent</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Speelmodus</label>
-                      <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => updateMode(p, v as GameMode)}>
-                        <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="leren">Leren</SelectItem>
-                          <SelectItem value="oefenen">Oefenen</SelectItem>
-                          <SelectItem value="klassiek">Klassiek</SelectItem>
-                          <SelectItem value="uitdaging">Uitdaging</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground">School</label>
-                      <Select
-                        value={p.school_id || "none"}
-                        onValueChange={(v) => handleSchoolSelect(p, v)}
-                      >
-                        <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">— Geen school —</SelectItem>
-                          {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                          <SelectItem value="__new__" className="text-primary font-bold">+ Nieuwe school…</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <PlayersTable
+            players={filtered}
+            roles={roles}
+            schools={schools}
+            onUpdateRole={updateRole}
+            onUpdateMode={updateMode}
+            onHandleSchool={handleSchoolSelect}
+          />
         )}
       </div>
+
 
       <Dialog open={newSchoolOpen} onOpenChange={(o) => { setNewSchoolOpen(o); if (!o) setPendingPlayerId(null); }}>
         <DialogContent>
@@ -266,6 +220,94 @@ const AdminPlayers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+interface PlayersTableProps {
+  players: PlayerRow[];
+  roles: Record<string, RoleLabel>;
+  schools: SchoolRow[];
+  onUpdateRole: (p: PlayerRow, role: RoleLabel) => void;
+  onUpdateMode: (p: PlayerRow, mode: GameMode) => void;
+  onHandleSchool: (p: PlayerRow, value: string) => void;
+}
+
+const PlayersTable = ({
+  players, roles, schools, onUpdateRole, onUpdateMode, onHandleSchool,
+}: PlayersTableProps) => {
+  const schoolName = (id: string | null) =>
+    id ? (schools.find(s => s.id === id)?.name ?? "—") : "—";
+
+  type Row = PlayerRow & { role: RoleLabel; school_name: string };
+  const rows: Row[] = players.map(p => ({
+    ...p,
+    role: (p.user_id && roles[p.user_id]) || "speler",
+    school_name: schoolName(p.school_id),
+  }));
+
+  const { sorted, sortKey, sortDir, toggle } =
+    useSortable<Row, "display_name" | "role" | "preferred_mode" | "school_name" | "points" | "total_games_played">(
+      rows, "display_name", "asc",
+    );
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <SortHeader k="display_name" label="Naam" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="role" label="Rol" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="preferred_mode" label="Modus" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="school_name" label="School" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="points" label="Punten" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+            <SortHeader k="total_games_played" label="Spellen" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sorted.map(p => (
+            <TableRow key={p.id} className="text-sm">
+              <TableCell className="py-1.5 px-2">
+                <div className="font-bold">{p.display_name}</div>
+                <div className="text-[10px] text-muted-foreground">#{p.player_code}</div>
+              </TableCell>
+              <TableCell className="py-1.5 px-2">
+                <Select value={p.role} onValueChange={(v) => onUpdateRole(p, v as RoleLabel)}>
+                  <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="speler">Speler</SelectItem>
+                    <SelectItem value="teacher">Docent</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell className="py-1.5 px-2">
+                <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => onUpdateMode(p, v as GameMode)}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="leren">Leren</SelectItem>
+                    <SelectItem value="oefenen">Oefenen</SelectItem>
+                    <SelectItem value="klassiek">Klassiek</SelectItem>
+                    <SelectItem value="uitdaging">Uitdaging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell className="py-1.5 px-2">
+                <Select value={p.school_id || "none"} onValueChange={(v) => onHandleSchool(p, v)}>
+                  <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Geen school —</SelectItem>
+                    {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    <SelectItem value="__new__" className="text-primary font-bold">+ Nieuwe school…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.points}</TableCell>
+              <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.total_games_played}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy, UserPlus, Copy, Check, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy, UserPlus, Copy, Check, Eye, EyeOff, Trash2 } from "lucide-react";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
@@ -15,6 +15,12 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortHeader, useSortable } from "@/components/SortableTable";
 import { toast } from "sonner";
 import { GameMode, MODE_LABEL } from "@/types/mode";
 
@@ -84,6 +90,26 @@ const Teacher = () => {
     if (error) { toast.error("Fout bij modus instellen"); return; }
     setPupils(prev => prev.map(x => x.id === p.id ? { ...x, preferred_mode: mode } : x));
     toast.success(`${p.display_name} → ${MODE_LABEL[mode]}`);
+  };
+
+  const [pupilToDelete, setPupilToDelete] = useState<Pupil | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const deletePupil = async () => {
+    if (!pupilToDelete) return;
+    setDeleting(true);
+    const { data, error } = await supabase.functions.invoke("teacher-delete-pupil", {
+      body: { player_id: pupilToDelete.id },
+    });
+    setDeleting(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Verwijderen mislukt");
+      return;
+    }
+    toast.success(`${pupilToDelete.display_name} verwijderd`);
+    setPupils(prev => prev.filter(x => x.id !== pupilToDelete.id));
+    setCreds(prev => { const n = { ...prev }; delete n[pupilToDelete.id]; return n; });
+    setPupilToDelete(null);
   };
 
   const resetAddForm = () => {
@@ -190,80 +216,16 @@ const Teacher = () => {
             ) : pupils.length === 0 ? (
               <p className="text-muted-foreground">Nog geen leerlingen gekoppeld aan jouw school.</p>
             ) : (
-              <div className="grid gap-3">
-                {pupils.map(p => (
-                  <div key={p.id} className="p-4 rounded-2xl bg-card border border-border">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <button
-                        className="text-left min-w-[150px]"
-                        onClick={() => navigate(`/statistics/${p.id}`)}
-                      >
-                        <div className="font-extrabold hover:text-primary">{p.display_name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          #{p.player_code} · {p.points} pt · streak {p.current_streak} · {p.total_games_played} spellen
-                        </div>
-                        {p.last_played_date && (
-                          <div className="text-[10px] text-muted-foreground/70 mt-0.5">
-                            Laatst gespeeld: {p.last_played_date}
-                          </div>
-                        )}
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Modus:</span>
-                        <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => setMode(p, v as GameMode)}>
-                          <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="leren">Leren</SelectItem>
-                            <SelectItem value="oefenen">Oefenen</SelectItem>
-                            <SelectItem value="klassiek">Klassiek</SelectItem>
-                            <SelectItem value="uitdaging">Uitdaging</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/profile/${p.id}`)}>
-                          Profiel
-                        </Button>
-                      </div>
-                    </div>
-
-                    {creds[p.id] && (
-                      <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Gebruikersnaam: </span>
-                          <span className="font-mono font-bold">{creds[p.id].username}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Wachtwoord: </span>
-                          <span className="font-mono font-bold tracking-widest">
-                            {shownPw[p.id] ? creds[p.id].password : "••••"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setShownPw(s => ({ ...s, [p.id]: !s[p.id] }))}
-                            className="ml-1 text-muted-foreground hover:text-foreground"
-                            aria-label={shownPw[p.id] ? "Verbergen" : "Tonen"}
-                          >
-                            {shownPw[p.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                `Gebruikersnaam: ${creds[p.id].username}\nWachtwoord: ${creds[p.id].password}`,
-                              );
-                              toast.success("Gekopieerd");
-                            }}
-                            className="ml-1 text-muted-foreground hover:text-foreground"
-                            aria-label="Kopiëren"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <PupilTable
+                pupils={pupils}
+                creds={creds}
+                shownPw={shownPw}
+                onTogglePw={(id) => setShownPw(s => ({ ...s, [id]: !s[id] }))}
+                onSetMode={setMode}
+                onNavStats={(id) => navigate(`/statistics/${id}`)}
+                onNavProfile={(id) => navigate(`/profile/${id}`)}
+                onDelete={(p) => setPupilToDelete(p)}
+              />
             )}
           </>
         )}
@@ -344,8 +306,8 @@ const Teacher = () => {
                 <Button
                   variant="outline"
                   className="w-full gap-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
+                  onClick={async () => {
+                    await copyToClipboard(
                       `Naam: ${createdCreds.name}\nGebruikersnaam: ${createdCreds.username}\nWachtwoord: ${createdCreds.password}`,
                     );
                     setCopied(true);
@@ -361,7 +323,162 @@ const Teacher = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Verwijder leerling bevestiging */}
+        <AlertDialog open={!!pupilToDelete} onOpenChange={(o) => { if (!o) setPupilToDelete(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Leerling verwijderen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pupilToDelete
+                  ? `Hiermee verwijder je ${pupilToDelete.display_name} permanent, inclusief account, voortgang en badges. Dit kan niet ongedaan worden gemaakt.`
+                  : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Annuleren</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); deletePupil(); }}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? "Verwijderen…" : "Verwijderen"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
+    </div>
+  );
+};
+
+async function copyToClipboard(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    toast.success("Gekopieerd");
+  } catch {
+    toast.error("Kopiëren mislukt");
+  }
+}
+
+interface PupilTableProps {
+  pupils: Pupil[];
+  creds: Record<string, { username: string; password: string }>;
+  shownPw: Record<string, boolean>;
+  onTogglePw: (id: string) => void;
+  onSetMode: (p: Pupil, mode: GameMode) => void;
+  onNavStats: (id: string) => void;
+  onNavProfile: (id: string) => void;
+  onDelete: (p: Pupil) => void;
+}
+
+const PupilTable = ({
+  pupils, creds, shownPw, onTogglePw, onSetMode, onNavStats, onNavProfile, onDelete,
+}: PupilTableProps) => {
+  type Row = Pupil & { username: string | null };
+  const rows: Row[] = pupils.map(p => ({ ...p, username: creds[p.id]?.username ?? null }));
+  const { sorted, sortKey, sortDir, toggle } =
+    useSortable<Row, "display_name" | "username" | "points" | "current_streak" | "total_games_played" | "preferred_mode" | "last_played_date">(
+      rows, "points", "desc",
+    );
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <SortHeader k="display_name" label="Naam" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="username" label="Login" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="preferred_mode" label="Modus" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="points" label="Punten" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+            <SortHeader k="current_streak" label="Streak" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+            <SortHeader k="total_games_played" label="Spellen" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+            <SortHeader k="last_played_date" label="Laatst" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <TableHead className="text-right py-2 px-2 text-xs uppercase tracking-wider text-muted-foreground">Acties</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sorted.map(p => {
+            const c = creds[p.id];
+            return (
+              <TableRow key={p.id} className="text-sm">
+                <TableCell className="py-1.5 px-2">
+                  <button onClick={() => onNavStats(p.id)} className="font-bold hover:text-primary text-left">
+                    {p.display_name}
+                  </button>
+                  <div className="text-[10px] text-muted-foreground">#{p.player_code}</div>
+                </TableCell>
+                <TableCell className="py-1.5 px-2">
+                  {c ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-xs">{c.username}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-xs tracking-widest">
+                          {shownPw[p.id] ? c.password : "••••"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onTogglePw(p.id)}
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label={shownPw[p.id] ? "Verbergen" : "Tonen"}
+                        >
+                          {shownPw[p.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(`Gebruikersnaam: ${c.username}\nWachtwoord: ${c.password}`)}
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label="Kopiëren"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="py-1.5 px-2">
+                  <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => onSetMode(p, v as GameMode)}>
+                    <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="leren">Leren</SelectItem>
+                      <SelectItem value="oefenen">Oefenen</SelectItem>
+                      <SelectItem value="klassiek">Klassiek</SelectItem>
+                      <SelectItem value="uitdaging">Uitdaging</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.points}</TableCell>
+                <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.current_streak}</TableCell>
+                <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.total_games_played}</TableCell>
+                <TableCell className="py-1.5 px-2 text-xs text-muted-foreground">{p.last_played_date || "—"}</TableCell>
+                <TableCell className="py-1.5 px-2 text-right whitespace-nowrap">
+                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onNavProfile(p.id)}>
+                    Profiel
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => onDelete(p)}
+                    aria-label="Verwijderen"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 };
