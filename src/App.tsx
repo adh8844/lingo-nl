@@ -46,6 +46,7 @@ const App = () => (
             <Route path="/online-match" element={<OnlineMatch />} />
             <Route path="/spelregels" element={<Rules />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/spelers" element={<AdminPlayers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
