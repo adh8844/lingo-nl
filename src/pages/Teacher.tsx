@@ -38,6 +38,8 @@ const Teacher = () => {
 
   const [pupils, setPupils] = useState<Pupil[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creds, setCreds] = useState<Record<string, { username: string; password: string }>>({});
+  const [shownPw, setShownPw] = useState<Record<string, boolean>>({});
 
   // Add-pupil dialog
   const [addOpen, setAddOpen] = useState(false);
@@ -59,7 +61,19 @@ const Teacher = () => {
       .eq("school_id", player.school_id)
       .neq("id", player.id)
       .order("points", { ascending: false });
-    setPupils((data as Pupil[]) || []);
+    const list = (data as Pupil[]) || [];
+    setPupils(list);
+    if (list.length) {
+      const { data: credRows } = await supabase
+        .from("pupil_credentials")
+        .select("player_id, username, password")
+        .in("player_id", list.map(p => p.id));
+      const map: Record<string, { username: string; password: string }> = {};
+      (credRows || []).forEach((c: any) => { map[c.player_id] = { username: c.username, password: c.password }; });
+      setCreds(map);
+    } else {
+      setCreds({});
+    }
     setLoading(false);
   };
 
