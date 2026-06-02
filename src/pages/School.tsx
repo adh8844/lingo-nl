@@ -36,29 +36,36 @@ const School = () => {
         path="/school"
       />
 
-      {/* Floating header */}
+      {/* Floating nav (transplanted from old landing) */}
       <motion.header
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed top-3 inset-x-0 mx-auto w-fit z-40 flex items-center gap-2 px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg"
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="fixed top-3 inset-x-0 mx-auto w-fit z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
       >
+        <div className="flex items-center gap-0.5 pl-1 sm:pl-2 pr-2 sm:pr-3">
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">DingoLingo</span>
+        </div>
         <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-1 text-xs font-bold text-foreground/80 hover:text-foreground transition-colors"
+          onClick={() => navigate("/auth")}
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Terug
+          Inloggen
         </button>
-        <span className="text-base font-extrabold text-primary leading-none px-2">
-          DingoLingo
-        </span>
-        <a
-          href={mailto}
-          className="text-[11px] sm:text-xs font-extrabold px-3 py-1.5 rounded-full bg-primary text-primary-foreground"
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate(ctaTarget)}
+          className="text-[11px] sm:text-xs font-extrabold px-2 sm:px-3 py-1.5 rounded-full bg-primary text-primary-foreground whitespace-nowrap"
         >
-          Vraag aan
-        </a>
+          {session ? "Spelen" : "Start gratis"}
+        </motion.button>
+        <button
+          onClick={() => navigate("/klassiek")}
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/70 hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          Klassiek spelen
+        </button>
       </motion.header>
 
       {/* Hero */}
