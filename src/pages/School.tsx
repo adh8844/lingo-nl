@@ -120,18 +120,7 @@ const School = () => {
               Vraag schoolaccount aan
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </motion.a>
-            <motion.a
-              whileHover={{ scale: 1.05, boxShadow: "0 0 40px hsl(var(--primary) / 0.5)" }}
-              whileTap={{ scale: 0.95 }}
-              href={mailto}
-              className="group inline-flex items-center gap-2 px-7 py-4 rounded-2xl bg-primary text-primary-foreground font-extrabold text-lg shadow-lg shadow-primary/30"
-            >
-              Vraag schoolaccount aan
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </motion.a>
           </div>
-        </motion.div>
-      </section>
         </motion.div>
       </section>
 
