@@ -729,6 +729,7 @@ const Admin = () => {
                   const currentApproved = isEditing && editData.approved !== undefined ? editData.approved : word.approved;
                   const currentAppropriate = isEditing && editData.appropriate !== undefined ? editData.appropriate : word.appropriate;
                   const currentRejected = isEditing && editData.rejected !== undefined ? editData.rejected : word.rejected;
+                  const currentEducational = isEditing && editData.educational !== undefined ? editData.educational : word.educational;
 
                   return (
                     <div key={word.id} className="p-3 rounded-xl bg-card border border-border">
