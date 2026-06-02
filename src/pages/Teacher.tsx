@@ -215,6 +215,100 @@ const Teacher = () => {
             )}
           </>
         )}
+
+        {/* Dialog: leerling toevoegen */}
+        <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetAddForm(); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Leerling toevoegen</DialogTitle>
+              <DialogDescription>
+                De school wordt automatisch ingesteld op jouw school. Gebruikersnaam en wachtwoord worden automatisch gegenereerd.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1">
+                <Label htmlFor="fn">Voornaam *</Label>
+                <Input id="fn" value={addFirstName} onChange={(e) => setAddFirstName(e.target.value)} placeholder="Bijv. Sanne" />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="ln">Achternaam</Label>
+                <Input id="ln" value={addLastName} onChange={(e) => setAddLastName(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1">
+                  <Label htmlFor="age">Leeftijd</Label>
+                  <Input id="age" type="number" min={4} max={18} value={addAge} onChange={(e) => setAddAge(e.target.value)} />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="grp">Groep</Label>
+                  <Input id="grp" type="number" min={1} max={8} value={addGroup} onChange={(e) => setAddGroup(e.target.value)} />
+                </div>
+              </div>
+              <div className="grid gap-1">
+                <Label>Speelmodus</Label>
+                <Select value={addMode} onValueChange={(v) => setAddMode(v as GameMode)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="leren">Leren</SelectItem>
+                    <SelectItem value="oefenen">Oefenen</SelectItem>
+                    <SelectItem value="klassiek">Klassiek</SelectItem>
+                    <SelectItem value="uitdaging">Uitdaging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setAddOpen(false)} disabled={creating}>Annuleren</Button>
+              <Button onClick={createPupil} disabled={creating || !addFirstName.trim()}>
+                {creating ? "Aanmaken…" : "Aanmaken"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: credentials weergeven */}
+        <Dialog open={!!createdCreds} onOpenChange={(o) => { if (!o) { setCreatedCreds(null); setCopied(false); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Leerling aangemaakt</DialogTitle>
+              <DialogDescription>
+                Noteer deze gegevens. Het wachtwoord wordt later niet meer getoond.
+              </DialogDescription>
+            </DialogHeader>
+            {createdCreds && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Naam</div>
+                  <div className="font-extrabold">{createdCreds.name}</div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Gebruikersnaam</div>
+                  <div className="font-mono text-lg font-extrabold">{createdCreds.username}</div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Wachtwoord</div>
+                  <div className="font-mono text-2xl font-extrabold tracking-widest">{createdCreds.password}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Naam: ${createdCreds.name}\nGebruikersnaam: ${createdCreds.username}\nWachtwoord: ${createdCreds.password}`,
+                    );
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                >
+                  {copied ? <><Check className="w-4 h-4" /> Gekopieerd</> : <><Copy className="w-4 h-4" /> Kopieer gegevens</>}
+                </Button>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => { setCreatedCreds(null); setCopied(false); }}>Klaar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
