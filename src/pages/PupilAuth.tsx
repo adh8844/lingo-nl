@@ -90,7 +90,7 @@ const PupilAuth = () => {
       onMouseMove={handleMouseMove}
       className="min-h-screen relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4"
     >
-      <SEO title="Leerling inloggen — Lingo" description="Log in als leerling om te spelen." />
+      <SEO title="Leerling inloggen — Lingo" description="Log in als leerling om te spelen." path="/leerling" />
 
       {/* Animated background blobs */}
       <motion.div
