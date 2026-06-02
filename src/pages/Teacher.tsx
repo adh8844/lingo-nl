@@ -39,6 +39,17 @@ const Teacher = () => {
   const [pupils, setPupils] = useState<Pupil[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Add-pupil dialog
+  const [addOpen, setAddOpen] = useState(false);
+  const [addFirstName, setAddFirstName] = useState("");
+  const [addLastName, setAddLastName] = useState("");
+  const [addAge, setAddAge] = useState("");
+  const [addGroup, setAddGroup] = useState("");
+  const [addMode, setAddMode] = useState<GameMode>("leren");
+  const [creating, setCreating] = useState(false);
+  const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; name: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const loadPupils = async () => {
     if (!player?.school_id) { setPupils([]); setLoading(false); return; }
     setLoading(true);
@@ -60,6 +71,35 @@ const Teacher = () => {
     setPupils(prev => prev.map(x => x.id === p.id ? { ...x, preferred_mode: mode } : x));
     toast.success(`${p.display_name} → ${MODE_LABEL[mode]}`);
   };
+
+  const resetAddForm = () => {
+    setAddFirstName(""); setAddLastName(""); setAddAge(""); setAddGroup(""); setAddMode("leren");
+  };
+
+  const createPupil = async () => {
+    if (!addFirstName.trim()) { toast.error("Voornaam is verplicht"); return; }
+    setCreating(true);
+    const { data, error } = await supabase.functions.invoke("teacher-create-pupil", {
+      body: {
+        first_name: addFirstName.trim(),
+        last_name: addLastName.trim() || null,
+        age: addAge ? Number(addAge) : null,
+        school_group: addGroup ? Number(addGroup) : null,
+        preferred_mode: addMode,
+      },
+    });
+    setCreating(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Aanmaken mislukt");
+      return;
+    }
+    const d = data as { username: string; password: string; display_name: string };
+    setCreatedCreds({ username: d.username, password: d.password, name: d.display_name });
+    setAddOpen(false);
+    resetAddForm();
+    loadPupils();
+  };
+
 
   const mailto =
     `mailto:${TEACHER_CONTACT}` +
