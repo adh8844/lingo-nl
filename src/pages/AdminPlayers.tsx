@@ -41,6 +41,11 @@ const AdminPlayers = () => {
   const [schools, setSchools] = useState<SchoolRow[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [newSchoolOpen, setNewSchoolOpen] = useState(false);
+  const [newSchoolName, setNewSchoolName] = useState("");
+  const [newSchoolCity, setNewSchoolCity] = useState("");
+  const [creatingSchool, setCreatingSchool] = useState(false);
+  const [pendingPlayerId, setPendingPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authReady) return;
