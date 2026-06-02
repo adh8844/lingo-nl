@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import Statistics from "./pages/Statistics";
 import OnlineMatch from "./pages/OnlineMatch";
 import Admin from "./pages/Admin";
+import AdminPlayers from "./pages/AdminPlayers";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
 import School from "./pages/School";
