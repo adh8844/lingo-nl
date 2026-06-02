@@ -18,6 +18,8 @@ const SCHOOL_CONTACT_EMAIL = "denheijera@icloud.com";
 
 const School = () => {
   const navigate = useNavigate();
+  const { session } = usePlayer();
+  const ctaTarget = session ? "/spelen" : "/auth?mode=register";
 
   const mailto =
     `mailto:${SCHOOL_CONTACT_EMAIL}` +
