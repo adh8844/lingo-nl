@@ -185,65 +185,17 @@ const AdminPlayers = () => {
         {loading ? (
           <p className="text-muted-foreground">Laden…</p>
         ) : (
-          <div className="grid gap-3">
-            {filtered.map(p => {
-              const currentRole: RoleLabel = (p.user_id && roles[p.user_id]) || "speler";
-              return (
-                <div key={p.id} className="p-4 rounded-2xl bg-card border border-border">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="min-w-[140px]">
-                      <div className="font-extrabold">{p.display_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        #{p.player_code} · {p.points} pt · {p.total_games_played} spellen
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Rol</label>
-                      <Select value={currentRole} onValueChange={(v) => updateRole(p, v as RoleLabel)}>
-                        <SelectTrigger className="w-[130px] h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="speler">Speler</SelectItem>
-                          <SelectItem value="teacher">Docent</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Speelmodus</label>
-                      <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => updateMode(p, v as GameMode)}>
-                        <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="leren">Leren</SelectItem>
-                          <SelectItem value="oefenen">Oefenen</SelectItem>
-                          <SelectItem value="klassiek">Klassiek</SelectItem>
-                          <SelectItem value="uitdaging">Uitdaging</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wider text-muted-foreground">School</label>
-                      <Select
-                        value={p.school_id || "none"}
-                        onValueChange={(v) => handleSchoolSelect(p, v)}
-                      >
-                        <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">— Geen school —</SelectItem>
-                          {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                          <SelectItem value="__new__" className="text-primary font-bold">+ Nieuwe school…</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <PlayersTable
+            players={filtered}
+            roles={roles}
+            schools={schools}
+            onUpdateRole={updateRole}
+            onUpdateMode={updateMode}
+            onHandleSchool={handleSchoolSelect}
+          />
         )}
       </div>
+
 
       <Dialog open={newSchoolOpen} onOpenChange={(o) => { setNewSchoolOpen(o); if (!o) setPendingPlayerId(null); }}>
         <DialogContent>
