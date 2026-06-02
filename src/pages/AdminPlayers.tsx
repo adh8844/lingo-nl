@@ -224,4 +224,92 @@ const AdminPlayers = () => {
   );
 };
 
+interface PlayersTableProps {
+  players: PlayerRow[];
+  roles: Record<string, RoleLabel>;
+  schools: SchoolRow[];
+  onUpdateRole: (p: PlayerRow, role: RoleLabel) => void;
+  onUpdateMode: (p: PlayerRow, mode: GameMode) => void;
+  onHandleSchool: (p: PlayerRow, value: string) => void;
+}
+
+const PlayersTable = ({
+  players, roles, schools, onUpdateRole, onUpdateMode, onHandleSchool,
+}: PlayersTableProps) => {
+  const schoolName = (id: string | null) =>
+    id ? (schools.find(s => s.id === id)?.name ?? "—") : "—";
+
+  type Row = PlayerRow & { role: RoleLabel; school_name: string };
+  const rows: Row[] = players.map(p => ({
+    ...p,
+    role: (p.user_id && roles[p.user_id]) || "speler",
+    school_name: schoolName(p.school_id),
+  }));
+
+  const { sorted, sortKey, sortDir, toggle } =
+    useSortable<Row, "display_name" | "role" | "preferred_mode" | "school_name" | "points" | "total_games_played">(
+      rows, "display_name", "asc",
+    );
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <SortHeader k="display_name" label="Naam" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="role" label="Rol" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="preferred_mode" label="Modus" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="school_name" label="School" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} />
+            <SortHeader k="points" label="Punten" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+            <SortHeader k="total_games_played" label="Spellen" sortKey={sortKey} sortDir={sortDir} onToggle={toggle} align="right" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sorted.map(p => (
+            <TableRow key={p.id} className="text-sm">
+              <TableCell className="py-1.5 px-2">
+                <div className="font-bold">{p.display_name}</div>
+                <div className="text-[10px] text-muted-foreground">#{p.player_code}</div>
+              </TableCell>
+              <TableCell className="py-1.5 px-2">
+                <Select value={p.role} onValueChange={(v) => onUpdateRole(p, v as RoleLabel)}>
+                  <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="speler">Speler</SelectItem>
+                    <SelectItem value="teacher">Docent</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell className="py-1.5 px-2">
+                <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => onUpdateMode(p, v as GameMode)}>
+                  <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="leren">Leren</SelectItem>
+                    <SelectItem value="oefenen">Oefenen</SelectItem>
+                    <SelectItem value="klassiek">Klassiek</SelectItem>
+                    <SelectItem value="uitdaging">Uitdaging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell className="py-1.5 px-2">
+                <Select value={p.school_id || "none"} onValueChange={(v) => onHandleSchool(p, v)}>
+                  <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Geen school —</SelectItem>
+                    {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    <SelectItem value="__new__" className="text-primary font-bold">+ Nieuwe school…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </TableCell>
+              <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.points}</TableCell>
+              <TableCell className="py-1.5 px-2 text-right tabular-nums">{p.total_games_played}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+
 export default AdminPlayers;
