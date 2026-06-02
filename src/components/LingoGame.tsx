@@ -28,7 +28,7 @@ import { GameMode, MODE_TIMER, MODE_LABEL, DEFAULT_MODE } from "@/types/mode";
 const MAX_GUESSES = 5;
 
 interface LingoGameProps {
-  activeLength: WordLength;
+  wordLength: WordLength;
   onBack: () => void;
   mode?: GameMode;
   mixMode?: boolean;
@@ -49,10 +49,10 @@ function evaluateGuess(guess: string, target: string): TileStatus[] {
   return result;
 }
 
-const LingoGame = ({ activeLength, onBack, mode = DEFAULT_MODE, mixMode = false }: LingoGameProps) => {
-  const timerSeconds = MODE_TIMER[mode]; // null = geen timer (Leren-modus)
+const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }: LingoGameProps) => {
+  const timerSeconds = MODE_TIMER[mode];
   const isUntimed = timerSeconds === null;
-  const [activeLength, setActiveLength] = useState<WordLength>(activeLength);
+  const [activeLength, setActiveLength] = useState<WordLength>(wordLength);
   const [targetWord, setTargetWord] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<TileStatus[][]>([]);
