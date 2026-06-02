@@ -125,8 +125,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points, mode } = await req.json()
+    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points, mode, is_mix } = await req.json()
     const isUntimedMode = mode === 'leren'
+    // Mix-variant: scoor altijd volgens 6-letter regels, ongeacht werkelijke woordlengte
+    const scoringLevel = (is_mix && [4, 5, 6].includes(level)) ? 6 : level
 
     const validLevels = [4, 5, 6, 10, 12, 14]
     if (!player_id || !validLevels.includes(level) || !word || typeof word !== 'string' || typeof solved !== 'boolean') {
