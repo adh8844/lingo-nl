@@ -216,80 +216,17 @@ const Teacher = () => {
             ) : pupils.length === 0 ? (
               <p className="text-muted-foreground">Nog geen leerlingen gekoppeld aan jouw school.</p>
             ) : (
-              <div className="grid gap-3">
-                {pupils.map(p => (
-                  <div key={p.id} className="p-4 rounded-2xl bg-card border border-border">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <button
-                        className="text-left min-w-[150px]"
-                        onClick={() => navigate(`/statistics/${p.id}`)}
-                      >
-                        <div className="font-extrabold hover:text-primary">{p.display_name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          #{p.player_code} · {p.points} pt · streak {p.current_streak} · {p.total_games_played} spellen
-                        </div>
-                        {p.last_played_date && (
-                          <div className="text-[10px] text-muted-foreground/70 mt-0.5">
-                            Laatst gespeeld: {p.last_played_date}
-                          </div>
-                        )}
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Modus:</span>
-                        <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => setMode(p, v as GameMode)}>
-                          <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="leren">Leren</SelectItem>
-                            <SelectItem value="oefenen">Oefenen</SelectItem>
-                            <SelectItem value="klassiek">Klassiek</SelectItem>
-                            <SelectItem value="uitdaging">Uitdaging</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button size="sm" variant="ghost" onClick={() => navigate(`/profile/${p.id}`)}>
-                          Profiel
-                        </Button>
-                      </div>
-                    </div>
-
-                    {creds[p.id] && (
-                      <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Gebruikersnaam: </span>
-                          <span className="font-mono font-bold">{creds[p.id].username}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Wachtwoord: </span>
-                          <span className="font-mono font-bold tracking-widest">
-                            {shownPw[p.id] ? creds[p.id].password : "••••"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setShownPw(s => ({ ...s, [p.id]: !s[p.id] }))}
-                            className="ml-1 text-muted-foreground hover:text-foreground"
-                            aria-label={shownPw[p.id] ? "Verbergen" : "Tonen"}
-                          >
-                            {shownPw[p.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                `Gebruikersnaam: ${creds[p.id].username}\nWachtwoord: ${creds[p.id].password}`,
-                              );
-                              toast.success("Gekopieerd");
-                            }}
-                            className="ml-1 text-muted-foreground hover:text-foreground"
-                            aria-label="Kopiëren"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <PupilTable
+                pupils={pupils}
+                creds={creds}
+                shownPw={shownPw}
+                onTogglePw={(id) => setShownPw(s => ({ ...s, [id]: !s[id] }))}
+                onSetMode={setMode}
+                onNavStats={(id) => navigate(`/statistics/${id}`)}
+                onNavProfile={(id) => navigate(`/profile/${id}`)}
+                onDelete={(p) => setPupilToDelete(p)}
+              />
+            )}
             )}
           </>
         )}
