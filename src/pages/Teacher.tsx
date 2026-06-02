@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy } from "lucide-react";
+import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy, UserPlus, Copy, Check } from "lucide-react";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -34,6 +39,17 @@ const Teacher = () => {
   const [pupils, setPupils] = useState<Pupil[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Add-pupil dialog
+  const [addOpen, setAddOpen] = useState(false);
+  const [addFirstName, setAddFirstName] = useState("");
+  const [addLastName, setAddLastName] = useState("");
+  const [addAge, setAddAge] = useState("");
+  const [addGroup, setAddGroup] = useState("");
+  const [addMode, setAddMode] = useState<GameMode>("leren");
+  const [creating, setCreating] = useState(false);
+  const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string; name: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
   const loadPupils = async () => {
     if (!player?.school_id) { setPupils([]); setLoading(false); return; }
     setLoading(true);
@@ -55,6 +71,35 @@ const Teacher = () => {
     setPupils(prev => prev.map(x => x.id === p.id ? { ...x, preferred_mode: mode } : x));
     toast.success(`${p.display_name} → ${MODE_LABEL[mode]}`);
   };
+
+  const resetAddForm = () => {
+    setAddFirstName(""); setAddLastName(""); setAddAge(""); setAddGroup(""); setAddMode("leren");
+  };
+
+  const createPupil = async () => {
+    if (!addFirstName.trim()) { toast.error("Voornaam is verplicht"); return; }
+    setCreating(true);
+    const { data, error } = await supabase.functions.invoke("teacher-create-pupil", {
+      body: {
+        first_name: addFirstName.trim(),
+        last_name: addLastName.trim() || null,
+        age: addAge ? Number(addAge) : null,
+        school_group: addGroup ? Number(addGroup) : null,
+        preferred_mode: addMode,
+      },
+    });
+    setCreating(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Aanmaken mislukt");
+      return;
+    }
+    const d = data as { username: string; password: string; display_name: string };
+    setCreatedCreds({ username: d.username, password: d.password, name: d.display_name });
+    setAddOpen(false);
+    resetAddForm();
+    loadPupils();
+  };
+
 
   const mailto =
     `mailto:${TEACHER_CONTACT}` +
@@ -120,7 +165,12 @@ const Teacher = () => {
             </div>
 
             {/* Leerlingen */}
-            <h2 className="mt-10 mb-3 text-xl font-extrabold">Leerlingen</h2>
+            <div className="mt-10 mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-extrabold">Leerlingen</h2>
+              <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1">
+                <UserPlus className="w-4 h-4" /> Leerling toevoegen
+              </Button>
+            </div>
             {loading ? (
               <p className="text-muted-foreground">Laden…</p>
             ) : pupils.length === 0 ? (
@@ -165,6 +215,100 @@ const Teacher = () => {
             )}
           </>
         )}
+
+        {/* Dialog: leerling toevoegen */}
+        <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetAddForm(); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Leerling toevoegen</DialogTitle>
+              <DialogDescription>
+                De school wordt automatisch ingesteld op jouw school. Gebruikersnaam en wachtwoord worden automatisch gegenereerd.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-1">
+                <Label htmlFor="fn">Voornaam *</Label>
+                <Input id="fn" value={addFirstName} onChange={(e) => setAddFirstName(e.target.value)} placeholder="Bijv. Sanne" />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="ln">Achternaam</Label>
+                <Input id="ln" value={addLastName} onChange={(e) => setAddLastName(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-1">
+                  <Label htmlFor="age">Leeftijd</Label>
+                  <Input id="age" type="number" min={4} max={18} value={addAge} onChange={(e) => setAddAge(e.target.value)} />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="grp">Groep</Label>
+                  <Input id="grp" type="number" min={1} max={8} value={addGroup} onChange={(e) => setAddGroup(e.target.value)} />
+                </div>
+              </div>
+              <div className="grid gap-1">
+                <Label>Speelmodus</Label>
+                <Select value={addMode} onValueChange={(v) => setAddMode(v as GameMode)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="leren">Leren</SelectItem>
+                    <SelectItem value="oefenen">Oefenen</SelectItem>
+                    <SelectItem value="klassiek">Klassiek</SelectItem>
+                    <SelectItem value="uitdaging">Uitdaging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setAddOpen(false)} disabled={creating}>Annuleren</Button>
+              <Button onClick={createPupil} disabled={creating || !addFirstName.trim()}>
+                {creating ? "Aanmaken…" : "Aanmaken"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: credentials weergeven */}
+        <Dialog open={!!createdCreds} onOpenChange={(o) => { if (!o) { setCreatedCreds(null); setCopied(false); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Leerling aangemaakt</DialogTitle>
+              <DialogDescription>
+                Noteer deze gegevens. Het wachtwoord wordt later niet meer getoond.
+              </DialogDescription>
+            </DialogHeader>
+            {createdCreds && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Naam</div>
+                  <div className="font-extrabold">{createdCreds.name}</div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Gebruikersnaam</div>
+                  <div className="font-mono text-lg font-extrabold">{createdCreds.username}</div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground font-bold">Wachtwoord</div>
+                  <div className="font-mono text-2xl font-extrabold tracking-widest">{createdCreds.password}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Naam: ${createdCreds.name}\nGebruikersnaam: ${createdCreds.username}\nWachtwoord: ${createdCreds.password}`,
+                    );
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                >
+                  {copied ? <><Check className="w-4 h-4" /> Gekopieerd</> : <><Copy className="w-4 h-4" /> Kopieer gegevens</>}
+                </Button>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={() => { setCreatedCreds(null); setCopied(false); }}>Klaar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

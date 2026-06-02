@@ -712,6 +712,7 @@ export type Database = {
           unlocked_6letter: boolean
           updated_at: string
           user_id: string | null
+          username: string | null
         }
         Insert: {
           best_streak?: number
@@ -733,6 +734,7 @@ export type Database = {
           unlocked_6letter?: boolean
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           best_streak?: number
@@ -754,6 +756,7 @@ export type Database = {
           unlocked_6letter?: boolean
           updated_at?: string
           user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {
@@ -1225,6 +1228,7 @@ export type Database = {
           unlocked_6letter: boolean
           updated_at: string
           user_id: string | null
+          username: string | null
         }[]
         SetofOptions: {
           from: "*"
