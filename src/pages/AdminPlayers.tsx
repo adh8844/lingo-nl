@@ -78,11 +78,14 @@ const AdminPlayers = () => {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return players;
+    const schoolName = (id: string | null) =>
+      id ? (schools.find(s => s.id === id)?.name ?? "").toLowerCase() : "";
     return players.filter(p =>
       p.display_name.toLowerCase().includes(q) ||
-      p.player_code.toLowerCase().includes(q),
+      schoolName(p.school_id).includes(q),
     );
-  }, [players, query]);
+  }, [players, query, schools]);
+
 
   const updateMode = async (p: PlayerRow, mode: GameMode) => {
     const { error } = await supabase.from("players").update({ preferred_mode: mode } as any).eq("id", p.id);
@@ -169,7 +172,7 @@ const AdminPlayers = () => {
 
         <div className="flex gap-2 mb-4">
           <Input
-            placeholder="Zoek op naam of code…"
+            placeholder="Zoek op naam of school…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="max-w-sm"
@@ -269,7 +272,6 @@ const PlayersTable = ({
             <TableRow key={p.id} className="text-sm">
               <TableCell className="py-1.5 px-2">
                 <div className="font-bold">{p.display_name}</div>
-                <div className="text-[10px] text-muted-foreground">#{p.player_code}</div>
               </TableCell>
               <TableCell className="py-1.5 px-2">
                 <Select value={p.role} onValueChange={(v) => onUpdateRole(p, v as RoleLabel)}>
