@@ -49,9 +49,10 @@ function evaluateGuess(guess: string, target: string): TileStatus[] {
   return result;
 }
 
-const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) => {
+const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }: LingoGameProps) => {
   const timerSeconds = MODE_TIMER[mode]; // null = geen timer (Leren-modus)
   const isUntimed = timerSeconds === null;
+  const [activeLength, setActiveLength] = useState<WordLength>(wordLength);
   const [targetWord, setTargetWord] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<TileStatus[][]>([]);
