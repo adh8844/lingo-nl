@@ -31,6 +31,7 @@ interface LingoGameProps {
   wordLength: WordLength;
   onBack: () => void;
   mode?: GameMode;
+  mixMode?: boolean;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
