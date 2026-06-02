@@ -306,8 +306,8 @@ const Teacher = () => {
                 <Button
                   variant="outline"
                   className="w-full gap-2"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
+                  onClick={async () => {
+                    await copyToClipboard(
                       `Naam: ${createdCreds.name}\nGebruikersnaam: ${createdCreds.username}\nWachtwoord: ${createdCreds.password}`,
                     );
                     setCopied(true);
