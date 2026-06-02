@@ -276,6 +276,7 @@ const PlayersTable = ({
                   <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="speler">Speler</SelectItem>
+                    <SelectItem value="leerling">Leerling</SelectItem>
                     <SelectItem value="teacher">Docent</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
