@@ -798,12 +798,35 @@ const Admin = () => {
                               {!word.approved && <span className="text-orange-500 ml-2">⏳ Niet goedgekeurd</span>}
                               {word.appropriate && <span className="text-green-500 ml-2">✓ Geschikt</span>}
                               {!word.appropriate && <span className="text-orange-500 ml-2">⏳ Niet geschikt</span>}
+                              {word.educational && <span className="text-blue-500 ml-2">🎓 Educatief</span>}
+                              {!word.educational && <span className="text-muted-foreground/70 ml-2">– Niet-educatief</span>}
                               {word.rejected && <span className="text-red-500 ml-2">✗ Afgewezen</span>}
                             </div>
                           </div>
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingId(word.id); setEditData({}); }}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={word.educational
+                                ? "border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white text-xs"
+                                : "text-xs"}
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from("dutch_words")
+                                  .update({ educational: !word.educational } as any)
+                                  .eq("id", word.id);
+                                if (error) { toast.error("Fout bij opslaan"); return; }
+                                toast.success(word.educational ? "Uit educatieve pool gehaald" : "In educatieve pool geplaatst");
+                                doSearch(searchPage);
+                              }}
+                              title={word.educational ? "Uit educatieve pool" : "Markeer als educatief"}
+                            >
+                              🎓
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setEditingId(word.id); setEditData({}); }}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
