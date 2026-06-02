@@ -61,6 +61,12 @@ const School = () => {
           {session ? "Spelen" : "Start gratis"}
         </motion.button>
         <button
+          onClick={() => navigate("/docent")}
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/70 hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          Docenten
+        </button>
+        <button
           onClick={() => navigate("/klassiek")}
           className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/70 hover:text-foreground transition-colors whitespace-nowrap"
         >
