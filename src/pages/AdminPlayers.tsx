@@ -172,7 +172,7 @@ const AdminPlayers = () => {
 
         <div className="flex gap-2 mb-4">
           <Input
-            placeholder="Zoek op naam of code…"
+            placeholder="Zoek op naam of school…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="max-w-sm"
