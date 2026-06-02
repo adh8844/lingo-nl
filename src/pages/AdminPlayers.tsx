@@ -78,11 +78,14 @@ const AdminPlayers = () => {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return players;
+    const schoolName = (id: string | null) =>
+      id ? (schools.find(s => s.id === id)?.name ?? "").toLowerCase() : "";
     return players.filter(p =>
       p.display_name.toLowerCase().includes(q) ||
-      p.player_code.toLowerCase().includes(q),
+      schoolName(p.school_id).includes(q),
     );
-  }, [players, query]);
+  }, [players, query, schools]);
+
 
   const updateMode = async (p: PlayerRow, mode: GameMode) => {
     const { error } = await supabase.from("players").update({ preferred_mode: mode } as any).eq("id", p.id);
