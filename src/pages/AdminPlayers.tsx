@@ -242,6 +242,30 @@ const AdminPlayers = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={newSchoolOpen} onOpenChange={(o) => { setNewSchoolOpen(o); if (!o) setPendingPlayerId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nieuwe school toevoegen</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Naam *</label>
+              <Input value={newSchoolName} onChange={(e) => setNewSchoolName(e.target.value)} placeholder="bv. Basisschool De Regenboog" autoFocus />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Plaats</label>
+              <Input value={newSchoolCity} onChange={(e) => setNewSchoolCity(e.target.value)} placeholder="bv. Amsterdam" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewSchoolOpen(false)} disabled={creatingSchool}>Annuleren</Button>
+            <Button onClick={createSchool} disabled={creatingSchool || !newSchoolName.trim()}>
+              {creatingSchool ? "Aanmaken…" : "Aanmaken"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
