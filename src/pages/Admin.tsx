@@ -332,7 +332,7 @@ const Admin = () => {
     const from = page * PAGE_SIZE;
     const { data, count } = await supabase
       .from("dutch_words")
-      .select("id, word, length, approved, appropriate, rejected, suggested_by, created_at", { count: "exact" })
+      .select("id, word, length, approved, appropriate, rejected, educational, suggested_by, created_at", { count: "exact" })
       .ilike("word", `%${q}%`)
       .order("word")
       .range(from, from + PAGE_SIZE - 1);
