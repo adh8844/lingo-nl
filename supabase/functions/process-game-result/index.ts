@@ -439,7 +439,7 @@ Deno.serve(async (req) => {
       }
 
       // Vaardigheid badges
-      if (!earnedIds.has('supersnel') && solved && duration_seconds < SPEED_BADGE[level]) tryAward('supersnel')
+      if (!earnedIds.has('supersnel') && solved && duration_seconds < SPEED_BADGE[scoringLevel]) tryAward('supersnel')
       if (!earnedIds.has('vlekkeloos') && solved && attempts === 1) tryAward('vlekkeloos')
       if (!earnedIds.has('comeback') && solved && first_green_attempt != null && first_green_attempt >= 4) tryAward('comeback')
       if (!earnedIds.has('meesterspeler')) {
