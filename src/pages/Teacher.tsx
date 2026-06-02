@@ -165,7 +165,12 @@ const Teacher = () => {
             </div>
 
             {/* Leerlingen */}
-            <h2 className="mt-10 mb-3 text-xl font-extrabold">Leerlingen</h2>
+            <div className="mt-10 mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-extrabold">Leerlingen</h2>
+              <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1">
+                <UserPlus className="w-4 h-4" /> Leerling toevoegen
+              </Button>
+            </div>
             {loading ? (
               <p className="text-muted-foreground">Laden…</p>
             ) : pupils.length === 0 ? (
