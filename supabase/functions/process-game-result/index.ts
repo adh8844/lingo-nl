@@ -273,18 +273,19 @@ Deno.serve(async (req) => {
       
       await supabase.from('games').update({ points_earned: cPoints }).eq('id', game.id)
     } else {
-      // 3. Base points (normal game)
+      // 3. Base points (normal game) — Mix gebruikt 6-letter scoring
       const baseKey = solved ? String(attempts || 1) : 'fail'
-      const basePoints = BASE_POINTS[level]?.[baseKey] || 0
+      const basePoints = BASE_POINTS[scoringLevel]?.[baseKey] || 0
       let gamePoints = basePoints
-      pts.push({ points: basePoints, reason: solved ? `Geraden in poging ${attempts} (${level}-letter)` : `Deelnamebonus (${level}-letter)` })
+      const mixTag = is_mix ? ' · Mix' : ''
+      pts.push({ points: basePoints, reason: solved ? `Geraden in poging ${attempts} (${level}-letter${mixTag})` : `Deelnamebonus (${level}-letter${mixTag})` })
 
       // 4. Speed bonus — uitgeschakeld in de educatieve "leren"-modus
       if (solved && duration_seconds != null && !isUntimedMode) {
-        for (const [maxTime, bonus] of SPEED_THRESHOLDS[level] || []) {
+        for (const [maxTime, bonus] of SPEED_THRESHOLDS[scoringLevel] || []) {
           if (duration_seconds < maxTime) {
             gamePoints += bonus
-            pts.push({ points: bonus, reason: `Snelheidsbonus (<${maxTime}s)` })
+            pts.push({ points: bonus, reason: `Snelheidsbonus (<${maxTime}s)${mixTag}` })
             break
           }
         }
