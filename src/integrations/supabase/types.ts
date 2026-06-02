@@ -1152,6 +1152,13 @@ export type Database = {
       }
     }
     Functions: {
+      assign_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       current_player_id: { Args: never; Returns: string }
       current_player_school_id: { Args: never; Returns: string }
       get_badges_count_in_range: {
@@ -1266,6 +1273,11 @@ export type Database = {
       players_in_same_circle: {
         Args: { p1: string; p2: string }
         Returns: boolean
+      }
+      remove_user_role: { Args: { _user_id: string }; Returns: undefined }
+      teacher_set_pupil_mode: {
+        Args: { _mode: string; _player_id: string }
+        Returns: undefined
       }
     }
     Enums: {
