@@ -114,11 +114,14 @@ const Index = () => {
     );
   }
 
-  const is5Unlocked = player?.unlocked_5letter ?? false;
-  const is6Unlocked = player?.unlocked_6letter ?? false;
-  const isMixUnlocked = (unlockProgress.totalPoints >= 1000)
+  const isSchoolUser = !!player?.school_id;
+  const is5Unlocked = isSchoolUser || (player?.unlocked_5letter ?? false);
+  const is6Unlocked = isSchoolUser || (player?.unlocked_6letter ?? false);
+  const isMixUnlocked = isSchoolUser || (
+    (unlockProgress.totalPoints >= 1000)
     && (unlockProgress.badgeCount >= 12)
-    && unlockProgress.hasNietTeStoppen;
+    && unlockProgress.hasNietTeStoppen
+  );
 
   const startVariant = (v: Variant) => {
     setSelectedVariant(v);
