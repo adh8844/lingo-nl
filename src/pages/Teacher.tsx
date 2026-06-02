@@ -353,18 +353,38 @@ const Teacher = () => {
 };
 
 async function copyToClipboard(text: string) {
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  };
+
   try {
-    if (navigator.clipboard?.writeText) {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
-    } else {
-      const ta = document.createElement("textarea");
-      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.appendChild(ta); ta.select();
-      document.execCommand("copy"); document.body.removeChild(ta);
+      toast.success("Gekopieerd");
+      return;
     }
-    toast.success("Gekopieerd");
   } catch {
-    toast.error("Kopiëren mislukt");
+    // fall through to fallback
+  }
+
+  if (fallback()) {
+    toast.success("Gekopieerd");
+  } else {
+    window.prompt("Kopieer handmatig (Ctrl/Cmd+C):", text);
   }
 }
 
