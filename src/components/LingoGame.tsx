@@ -419,7 +419,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
 
       <div className="text-sm text-muted-foreground font-medium">{activeLength} letters · Nederlands</div>
 
-      <LingoBoard guesses={guesses} statuses={statuses} currentGuess={currentGuess} currentRow={guesses.length} activeLength={activeLength} maxGuesses={MAX_GUESSES} shaking={shaking} revealedRow={revealedRow} />
+      <LingoBoard guesses={guesses} statuses={statuses} currentGuess={currentGuess} currentRow={guesses.length} wordLength={activeLength} maxGuesses={MAX_GUESSES} shaking={shaking} revealedRow={revealedRow} />
 
       {/* Game Over */}
       {gameOver && (
@@ -478,7 +478,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
               mode="solo"
               guesses={guesses}
               statuses={statuses}
-              activeLength={activeLength}
+              wordLength={activeLength}
               solved={won}
               extra={{ attempts: guesses.length }}
             />
