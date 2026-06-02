@@ -350,12 +350,14 @@ const Admin = () => {
     }
     if (editData.approved !== undefined) updates.approved = editData.approved;
     if (editData.appropriate !== undefined) updates.appropriate = editData.appropriate;
+    if (editData.educational !== undefined) updates.educational = editData.educational;
     if (editData.rejected !== undefined) {
       updates.rejected = editData.rejected;
       // Rejected words are by definition not correct and not appropriate.
       if (editData.rejected) {
         updates.approved = false;
         updates.appropriate = false;
+        updates.educational = false;
       }
     }
 
