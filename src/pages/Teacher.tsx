@@ -227,7 +227,6 @@ const Teacher = () => {
                 onDelete={(p) => setPupilToDelete(p)}
               />
             )}
-            )}
           </>
         )}
 
