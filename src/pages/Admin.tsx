@@ -768,6 +768,14 @@ const Admin = () => {
                               />
                               <Label htmlFor={`rejected-${word.id}`} className="text-xs">Afgewezen</Label>
                             </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={currentEducational}
+                                onCheckedChange={(v) => setEditData(d => ({ ...d, educational: v }))}
+                                id={`educational-${word.id}`}
+                              />
+                              <Label htmlFor={`educational-${word.id}`} className="text-xs">Educatief</Label>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <Button size="sm" onClick={() => handleSaveEdit(word)}>
