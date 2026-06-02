@@ -23,13 +23,14 @@ import {
 import ShareResultButton from "./ShareResultButton";
 import WordDefinitionBubble from "./WordDefinitionBubble";
 import { useWordDefinition } from "@/hooks/useWordDefinition";
+import { GameMode, MODE_TIMER, MODE_LABEL, DEFAULT_MODE } from "@/types/mode";
 
 const MAX_GUESSES = 5;
-const TIMER_SECONDS = 90;
 
 interface LingoGameProps {
   wordLength: WordLength;
   onBack: () => void;
+  mode?: GameMode;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
@@ -47,7 +48,9 @@ function evaluateGuess(guess: string, target: string): TileStatus[] {
   return result;
 }
 
-const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
+const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) => {
+  const timerSeconds = MODE_TIMER[mode]; // null = geen timer (Leren-modus)
+  const isUntimed = timerSeconds === null;
   const [targetWord, setTargetWord] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<TileStatus[][]>([]);
@@ -58,7 +61,7 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   const [shaking, setShaking] = useState(false);
   const [revealedRow, setRevealedRow] = useState<number | null>(null);
   const [letterStatuses, setLetterStatuses] = useState<Record<string, TileStatus>>({});
-  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(timerSeconds ?? 0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [gameResult, setGameResult] = useState<GameResultData | null>(null);
@@ -82,23 +85,25 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
 
   const startTimer = useCallback(() => {
     stopTimer();
-    setTimeLeft(TIMER_SECONDS);
+    if (isUntimed) return; // Leren-modus: geen timer
+    setTimeLeft(timerSeconds!);
     startTimeRef.current = Date.now();
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
     }, 1000);
-  }, [stopTimer]);
+  }, [stopTimer, isUntimed, timerSeconds]);
 
   const resumeTimer = useCallback(() => {
+    if (isUntimed) return;
     if (timerRef.current) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
     }, 1000);
-  }, []);
+  }, [isUntimed]);
 
   const startNewRound = useCallback(async () => {
     setIsLoading(true);
-    const word = await getRandomWordAsync("nl", wordLength);
+    const word = await getRandomWordAsync("nl", wordLength, mode === "leren" ? "educational" : "full");
     setTargetWord(word);
     setCurrentGuess(word[0]);
     setGuesses([]);
@@ -112,8 +117,10 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
     setGameResult(null);
     firstGreenAttemptRef.current = null;
     setIsLoading(false);
+    // Houd starttijd ook in untimed-modus bij, zodat duration_seconds correct is.
+    startTimeRef.current = Date.now();
     startTimer();
-  }, [wordLength, startTimer]);
+  }, [wordLength, startTimer, mode]);
 
   useEffect(() => {
     startNewRound();
@@ -121,13 +128,14 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
   }, [startNewRound, stopTimer]);
 
   useEffect(() => {
+    if (isUntimed) return; // geen time-out in Leren-modus
     if (timeLeft === 0 && !gameOver) {
       stopTimer();
       setGameOver(true);
       setCurrentGuess("");
       processGameEnd(false, guesses.length);
     }
-  }, [timeLeft, gameOver]);
+  }, [timeLeft, gameOver, isUntimed]);
 
   const processGameEnd = useCallback(async (solved: boolean, attemptCount: number) => {
     if (!player) return;
@@ -144,11 +152,12 @@ const LingoGame = ({ wordLength, onBack }: LingoGameProps) => {
       solved,
       duration_seconds: duration,
       first_green_attempt: firstGreenAttemptRef.current,
+      mode,
     });
     if (result) {
       setGameResult(result);
     }
-  }, [player, wordLength, targetWord, submitResult]);
+  }, [player, wordLength, targetWord, submitResult, mode]);
 
   const handleRoundEnd = useCallback((playerWon: boolean, attemptCount: number) => {
     stopTimer();
