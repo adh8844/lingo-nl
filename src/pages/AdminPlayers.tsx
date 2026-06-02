@@ -225,12 +225,13 @@ const AdminPlayers = () => {
                       <label className="text-[10px] uppercase tracking-wider text-muted-foreground">School</label>
                       <Select
                         value={p.school_id || "none"}
-                        onValueChange={(v) => updateSchool(p, v === "none" ? null : v)}
+                        onValueChange={(v) => handleSchoolSelect(p, v)}
                       >
                         <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">— Geen school —</SelectItem>
                           {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          <SelectItem value="__new__" className="text-primary font-bold">+ Nieuwe school…</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
