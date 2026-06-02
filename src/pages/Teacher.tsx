@@ -1,16 +1,60 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GraduationCap, Mail, Users, BookOpen, BarChart3 } from "lucide-react";
+import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy } from "lucide-react";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { GameMode, MODE_LABEL } from "@/types/mode";
 
 const TEACHER_CONTACT = "denheijera@icloud.com";
 
+interface Pupil {
+  id: string;
+  display_name: string;
+  player_code: string;
+  points: number;
+  current_streak: number;
+  total_games_played: number;
+  preferred_mode: GameMode;
+  last_played_date: string | null;
+}
+
 const Teacher = () => {
   const navigate = useNavigate();
-  const { session } = usePlayer();
-  const { isTeacher } = useIsTeacher();
+  const { session, player } = usePlayer();
+  const { isTeacher, checking } = useIsTeacher();
+
+  const [pupils, setPupils] = useState<Pupil[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadPupils = async () => {
+    if (!player?.school_id) { setPupils([]); setLoading(false); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("players")
+      .select("id, display_name, player_code, points, current_streak, total_games_played, preferred_mode, last_played_date")
+      .eq("school_id", player.school_id)
+      .neq("id", player.id)
+      .order("points", { ascending: false });
+    setPupils((data as Pupil[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { if (isTeacher && player) loadPupils(); }, [isTeacher, player]);
+
+  const setMode = async (p: Pupil, mode: GameMode) => {
+    const { error } = await supabase.rpc("teacher_set_pupil_mode", { _player_id: p.id, _mode: mode } as never);
+    if (error) { toast.error("Fout bij modus instellen"); return; }
+    setPupils(prev => prev.map(x => x.id === p.id ? { ...x, preferred_mode: mode } : x));
+    toast.success(`${p.display_name} → ${MODE_LABEL[mode]}`);
+  };
 
   const mailto =
     `mailto:${TEACHER_CONTACT}` +
@@ -19,15 +63,21 @@ const Teacher = () => {
       "Beste DingoLingo team,\n\nIk wil graag een docent-account bij DingoLingo.\n\nNaam: \nSchool: \nGroep/klas: \nE-mail account: \n\nMet vriendelijke groet,\n",
     )}`;
 
+  const totals = {
+    pupils: pupils.length,
+    games: pupils.reduce((s, p) => s + (p.total_games_played || 0), 0),
+    avgPoints: pupils.length ? Math.round(pupils.reduce((s, p) => s + (p.points || 0), 0) / pupils.length) : 0,
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SEO
-        title="Docent worden — DingoLingo"
-        description="Beheer een klas leerlingen, wijs woordensets toe en volg voortgang. Vraag een docent-account aan bij DingoLingo."
+        title="Docent-dashboard — DingoLingo"
+        description="Beheer leerlingen, wijs speelmodi toe en volg voortgang in jouw klas."
         path="/docent"
       />
 
-      <header className="px-4 pt-6 pb-2 max-w-3xl mx-auto flex items-center justify-between">
+      <header className="px-4 pt-6 pb-2 max-w-5xl mx-auto flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-1 text-sm font-bold text-muted-foreground hover:text-foreground"
@@ -38,75 +88,122 @@ const Teacher = () => {
         <span className="text-sm font-extrabold text-primary">DingoLingo</span>
       </header>
 
-      <main className="px-4 py-10 max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+      <main className="px-4 py-8 max-w-5xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-primary/10 text-primary text-xs font-extrabold tracking-widest uppercase">
             <GraduationCap className="w-3.5 h-3.5" />
-            Voor docenten
+            {isTeacher ? "Docent" : "Voor docenten"}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            DingoLingo in jouw klas.
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            {isTeacher ? "Jouw klas" : "DingoLingo in jouw klas."}
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Geef leerlingen veilige, gerichte woordenschat-oefening. Met een docent-account
-            koppel je leerlingen aan jouw klas en zie je hun voortgang.
-          </p>
         </motion.div>
 
-        {isTeacher && (
-          <div className="mt-6 p-4 rounded-2xl bg-primary/10 border border-primary/30 text-sm font-bold text-primary">
-            Je hebt een docent-rol. Een volledig docent-dashboard komt binnenkort.
+        {checking ? (
+          <p className="mt-8 text-muted-foreground">Laden…</p>
+        ) : !isTeacher ? (
+          <NonTeacherView session={session} mailto={mailto} />
+        ) : !player?.school_id ? (
+          <div className="mt-8 p-6 rounded-2xl bg-card border border-border">
+            <p className="font-bold">Je bent docent, maar nog niet aan een school gekoppeld.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Vraag een admin om je aan een school te koppelen. Daarna verschijnen je leerlingen hier automatisch.
+            </p>
           </div>
-        )}
-
-        <div className="mt-10 grid sm:grid-cols-3 gap-4">
-          {[
-            { icon: <Users className="w-6 h-6" />, t: "Eigen klas", b: "Leerlingen onder jouw klascode, eigen ranglijst." },
-            { icon: <BookOpen className="w-6 h-6" />, t: "Woordensets", b: "Wijs woordlijsten toe per thema of niveau." },
-            { icon: <BarChart3 className="w-6 h-6" />, t: "Voortgang", b: "Zie per leerling welke woorden zitten en welke niet." },
-          ].map((f) => (
-            <div key={f.t} className="p-5 rounded-2xl bg-card border border-border">
-              <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary flex items-center justify-center mb-3">
-                {f.icon}
-              </div>
-              <h3 className="font-extrabold">{f.t}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{f.b}</p>
+        ) : (
+          <>
+            {/* Dashboard tegels */}
+            <div className="mt-8 grid sm:grid-cols-3 gap-3">
+              <DashTile icon={<Users className="w-5 h-5" />} label="Leerlingen" value={totals.pupils} />
+              <DashTile icon={<BarChart3 className="w-5 h-5" />} label="Totaal spellen" value={totals.games} />
+              <DashTile icon={<Trophy className="w-5 h-5" />} label="Gemiddelde punten" value={totals.avgPoints} />
             </div>
-          ))}
-        </div>
 
-        <div className="mt-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/10 border border-border">
-          <h2 className="text-2xl font-extrabold">Vraag een docent-account aan</h2>
-          <p className="mt-2 text-muted-foreground">
-            {session
-              ? "Stuur een mail vanuit het e-mailadres waarmee je bent ingelogd. We koppelen de rol aan je account."
-              : "Maak eerst een account aan, en stuur dan een mail vanuit hetzelfde e-mailadres."}
-          </p>
-          <div className="mt-5 flex flex-col sm:flex-row gap-3">
-            <a
-              href={mailto}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-extrabold"
-            >
-              <Mail className="w-4 h-4" />
-              Aanvraag versturen
-            </a>
-            {!session && (
-              <button
-                onClick={() => navigate("/auth?mode=register")}
-                className="px-6 py-3 rounded-xl bg-secondary text-secondary-foreground font-bold border border-border"
-              >
-                Eerst account maken
-              </button>
+            {/* Leerlingen */}
+            <h2 className="mt-10 mb-3 text-xl font-extrabold">Leerlingen</h2>
+            {loading ? (
+              <p className="text-muted-foreground">Laden…</p>
+            ) : pupils.length === 0 ? (
+              <p className="text-muted-foreground">Nog geen leerlingen gekoppeld aan jouw school.</p>
+            ) : (
+              <div className="grid gap-3">
+                {pupils.map(p => (
+                  <div key={p.id} className="p-4 rounded-2xl bg-card border border-border flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      className="text-left min-w-[150px]"
+                      onClick={() => navigate(`/statistics/${p.id}`)}
+                    >
+                      <div className="font-extrabold hover:text-primary">{p.display_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        #{p.player_code} · {p.points} pt · streak {p.current_streak} · {p.total_games_played} spellen
+                      </div>
+                      {p.last_played_date && (
+                        <div className="text-[10px] text-muted-foreground/70 mt-0.5">
+                          Laatst gespeeld: {p.last_played_date}
+                        </div>
+                      )}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Modus:</span>
+                      <Select value={p.preferred_mode || "klassiek"} onValueChange={(v) => setMode(p, v as GameMode)}>
+                        <SelectTrigger className="w-[140px] h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="leren">Leren</SelectItem>
+                          <SelectItem value="oefenen">Oefenen</SelectItem>
+                          <SelectItem value="klassiek">Klassiek</SelectItem>
+                          <SelectItem value="uitdaging">Uitdaging</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" variant="ghost" onClick={() => navigate(`/profile/${p.id}`)}>
+                        Profiel
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
       </main>
     </div>
   );
 };
+
+const DashTile = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) => (
+  <div className="p-4 rounded-2xl bg-card border border-border">
+    <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider font-bold">
+      {icon}
+      {label}
+    </div>
+    <div className="mt-1 text-3xl font-extrabold text-primary">{value}</div>
+  </div>
+);
+
+const NonTeacherView = ({ session, mailto }: { session: any; mailto: string }) => (
+  <>
+    <p className="mt-4 text-lg text-muted-foreground">
+      Geef leerlingen veilige, gerichte woordenschat-oefening. Met een docent-account
+      koppel je leerlingen aan jouw klas en zie je hun voortgang.
+    </p>
+    <div className="mt-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-primary/15 via-card to-accent/10 border border-border">
+      <h2 className="text-2xl font-extrabold">Vraag een docent-account aan</h2>
+      <p className="mt-2 text-muted-foreground">
+        {session
+          ? "Stuur een mail vanuit het e-mailadres waarmee je bent ingelogd. We koppelen de rol aan je account."
+          : "Maak eerst een account aan, en stuur dan een mail vanuit hetzelfde e-mailadres."}
+      </p>
+      <div className="mt-5 flex flex-col sm:flex-row gap-3">
+        <a
+          href={mailto}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-extrabold"
+        >
+          <Mail className="w-4 h-4" />
+          Aanvraag versturen
+        </a>
+      </div>
+    </div>
+  </>
+);
 
 export default Teacher;

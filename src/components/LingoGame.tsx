@@ -31,6 +31,7 @@ interface LingoGameProps {
   wordLength: WordLength;
   onBack: () => void;
   mode?: GameMode;
+  mixMode?: boolean;
 }
 
 function evaluateGuess(guess: string, target: string): TileStatus[] {
@@ -48,9 +49,10 @@ function evaluateGuess(guess: string, target: string): TileStatus[] {
   return result;
 }
 
-const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) => {
-  const timerSeconds = MODE_TIMER[mode]; // null = geen timer (Leren-modus)
+const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }: LingoGameProps) => {
+  const timerSeconds = MODE_TIMER[mode];
   const isUntimed = timerSeconds === null;
+  const [activeLength, setActiveLength] = useState<WordLength>(wordLength);
   const [targetWord, setTargetWord] = useState("");
   const [guesses, setGuesses] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<TileStatus[][]>([]);
@@ -77,7 +79,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
-  const wordDef = useWordDefinition(targetWord, wordLength);
+  const wordDef = useWordDefinition(targetWord, activeLength);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -103,7 +105,11 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
 
   const startNewRound = useCallback(async () => {
     setIsLoading(true);
-    const word = await getRandomWordAsync("nl", wordLength, mode === "leren" ? "educational" : "full");
+    const nextLen: WordLength = mixMode
+      ? (([4, 5, 6] as WordLength[])[Math.floor(Math.random() * 3)])
+      : activeLength;
+    setActiveLength(nextLen);
+    const word = await getRandomWordAsync("nl", nextLen, mode === "leren" ? "educational" : "full");
     setTargetWord(word);
     setCurrentGuess(word[0]);
     setGuesses([]);
@@ -117,10 +123,9 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
     setGameResult(null);
     firstGreenAttemptRef.current = null;
     setIsLoading(false);
-    // Houd starttijd ook in untimed-modus bij, zodat duration_seconds correct is.
     startTimeRef.current = Date.now();
     startTimer();
-  }, [wordLength, startTimer, mode]);
+  }, [activeLength, startTimer, mode, mixMode]);
 
   useEffect(() => {
     startNewRound();
@@ -146,7 +151,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
     }
     const result = await submitResult({
       player_id: player.id,
-      level: wordLength,
+      level: activeLength,
       word: targetWord,
       attempts: attemptCount,
       solved,
@@ -157,7 +162,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
     if (result) {
       setGameResult(result);
     }
-  }, [player, wordLength, targetWord, submitResult, mode]);
+  }, [player, activeLength, targetWord, submitResult, mode]);
 
   const handleRoundEnd = useCallback((playerWon: boolean, attemptCount: number) => {
     stopTimer();
@@ -168,7 +173,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
   }, [stopTimer, processGameEnd]);
 
   const handleInvalidGuess = useCallback((guess: string) => {
-    const emptyStatuses: TileStatus[] = Array(wordLength).fill("absent");
+    const emptyStatuses: TileStatus[] = Array(activeLength).fill("absent");
     const newGuesses = [...guesses, guess.toLowerCase()];
     const newStatuses = [...statuses, emptyStatuses];
     setGuesses(newGuesses);
@@ -180,7 +185,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
     } else {
       setCurrentGuess(targetWord[0]);
     }
-  }, [wordLength, guesses, statuses, targetWord, handleRoundEnd]);
+  }, [activeLength, guesses, statuses, targetWord, handleRoundEnd]);
 
   const processGuessAsValid = useCallback((guess: string) => {
     const evaluation = evaluateGuess(guess, targetWord);
@@ -219,8 +224,8 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
   }, [targetWord, guesses, statuses, letterStatuses, handleRoundEnd]);
 
   const submitGuess = useCallback(async () => {
-    if (currentGuess.length !== wordLength || isSubmitting) {
-      if (currentGuess.length !== wordLength) {
+    if (currentGuess.length !== activeLength || isSubmitting) {
+      if (currentGuess.length !== activeLength) {
         setShaking(true);
         setTimeout(() => setShaking(false), 400);
       }
@@ -228,14 +233,14 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
     }
     setIsSubmitting(true);
     const lower = currentGuess.toLowerCase();
-    const rejected = await checkWordRejected(lower, wordLength);
+    const rejected = await checkWordRejected(lower, activeLength);
     if (rejected) {
       setIsSubmitting(false);
       toast.error(`"${lower.toUpperCase()}" is afgekeurd — beurt verloren!`);
       handleInvalidGuess(lower);
       return;
     }
-    const valid = await isValidWordAsync(currentGuess, "nl", wordLength);
+    const valid = await isValidWordAsync(currentGuess, "nl", activeLength);
     setIsSubmitting(false);
     if (!valid) {
       stopTimer();
@@ -244,12 +249,12 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
       return;
     }
     processGuessAsValid(lower);
-  }, [currentGuess, wordLength, isSubmitting, stopTimer, processGuessAsValid, handleInvalidGuess]);
+  }, [currentGuess, activeLength, isSubmitting, stopTimer, processGuessAsValid, handleInvalidGuess]);
 
   const handleSuggestionConfirm = useCallback(async () => {
     setSuggestionDialogOpen(false);
     const w = pendingWord;
-    const result = await suggestWord(w, wordLength, player?.id);
+    const result = await suggestWord(w, activeLength, player?.id);
     if (result.rejected) {
       toast.error(`"${w.toUpperCase()}" is eerder afgekeurd en kan niet worden toegevoegd.`);
       resumeTimer();
@@ -262,26 +267,26 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
     }
     processGuessAsValid(w);
     resumeTimer();
-  }, [pendingWord, wordLength, player, processGuessAsValid, resumeTimer]);
+  }, [pendingWord, activeLength, player, processGuessAsValid, resumeTimer]);
 
   const handleSuggestionCancel = useCallback(() => {
     setSuggestionDialogOpen(false);
     const w = pendingWord;
     // Markeer direct als afgewezen in de database (fire-and-forget)
-    rejectWordSuggestion(w, wordLength, player?.id).catch(() => {});
+    rejectWordSuggestion(w, activeLength, player?.id).catch(() => {});
     toast.error(`"${w.toUpperCase()}" is afgewezen — beurt verloren!`);
     handleInvalidGuess(w);
     resumeTimer();
-  }, [pendingWord, wordLength, player, handleInvalidGuess, resumeTimer]);
+  }, [pendingWord, activeLength, player, handleInvalidGuess, resumeTimer]);
 
   const handleKey = useCallback((key: string) => {
     if (gameOver || suggestionDialogOpen) return;
     if (key === "Enter") { submitGuess(); return; }
     if (key === "Backspace") { if (currentGuess.length > 1) setCurrentGuess(prev => prev.slice(0, -1)); return; }
-    if (/^[a-zA-Z]$/.test(key) && currentGuess.length < wordLength) {
+    if (/^[a-zA-Z]$/.test(key) && currentGuess.length < activeLength) {
       setCurrentGuess(prev => prev + key.toLowerCase());
     }
-  }, [gameOver, currentGuess, wordLength, submitGuess, suggestionDialogOpen]);
+  }, [gameOver, currentGuess, activeLength, submitGuess, suggestionDialogOpen]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -412,9 +417,9 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground font-medium">{wordLength} letters · Nederlands</div>
+      <div className="text-sm text-muted-foreground font-medium">{activeLength} letters · Nederlands</div>
 
-      <LingoBoard guesses={guesses} statuses={statuses} currentGuess={currentGuess} currentRow={guesses.length} wordLength={wordLength} maxGuesses={MAX_GUESSES} shaking={shaking} revealedRow={revealedRow} />
+      <LingoBoard guesses={guesses} statuses={statuses} currentGuess={currentGuess} currentRow={guesses.length} wordLength={activeLength} maxGuesses={MAX_GUESSES} shaking={shaking} revealedRow={revealedRow} />
 
       {/* Game Over */}
       {gameOver && (
@@ -473,7 +478,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
               mode="solo"
               guesses={guesses}
               statuses={statuses}
-              wordLength={wordLength}
+              wordLength={activeLength}
               solved={won}
               extra={{ attempts: guesses.length }}
             />

@@ -39,6 +39,7 @@ interface PendingWord {
   suggestor_name?: string;
   approved: boolean;
   appropriate: boolean;
+  educational: boolean;
 }
 
 interface WordRecord {
@@ -54,6 +55,7 @@ interface FullWord {
   approved: boolean;
   appropriate: boolean;
   rejected: boolean;
+  educational: boolean;
   suggested_by: string | null;
   created_at: string;
 }
@@ -177,7 +179,7 @@ const Admin = () => {
     setLoadingWords(true);
     const { data } = await supabase
       .from("dutch_words")
-      .select("id, word, length, created_at, suggested_by, approved, appropriate")
+      .select("id, word, length, created_at, suggested_by, approved, appropriate, educational")
       .eq("rejected", false)
       .eq("approved", false)
       .order("created_at", { ascending: false });
@@ -330,7 +332,7 @@ const Admin = () => {
     const from = page * PAGE_SIZE;
     const { data, count } = await supabase
       .from("dutch_words")
-      .select("id, word, length, approved, appropriate, rejected, suggested_by, created_at", { count: "exact" })
+      .select("id, word, length, approved, appropriate, rejected, educational, suggested_by, created_at", { count: "exact" })
       .ilike("word", `%${q}%`)
       .order("word")
       .range(from, from + PAGE_SIZE - 1);
@@ -348,12 +350,14 @@ const Admin = () => {
     }
     if (editData.approved !== undefined) updates.approved = editData.approved;
     if (editData.appropriate !== undefined) updates.appropriate = editData.appropriate;
+    if (editData.educational !== undefined) updates.educational = editData.educational;
     if (editData.rejected !== undefined) {
       updates.rejected = editData.rejected;
       // Rejected words are by definition not correct and not appropriate.
       if (editData.rejected) {
         updates.approved = false;
         updates.appropriate = false;
+        updates.educational = false;
       }
     }
 
@@ -439,6 +443,9 @@ const Admin = () => {
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
             Admin — Woordenbeheer
           </h1>
+          <Button size="sm" variant="outline" className="ml-auto" onClick={() => navigate("/admin/spelers")}>
+            Spelers beheren →
+          </Button>
         </div>
 
         {/* Online presence settings */}
@@ -722,6 +729,7 @@ const Admin = () => {
                   const currentApproved = isEditing && editData.approved !== undefined ? editData.approved : word.approved;
                   const currentAppropriate = isEditing && editData.appropriate !== undefined ? editData.appropriate : word.appropriate;
                   const currentRejected = isEditing && editData.rejected !== undefined ? editData.rejected : word.rejected;
+                  const currentEducational = isEditing && editData.educational !== undefined ? editData.educational : word.educational;
 
                   return (
                     <div key={word.id} className="p-3 rounded-xl bg-card border border-border">
@@ -760,6 +768,14 @@ const Admin = () => {
                               />
                               <Label htmlFor={`rejected-${word.id}`} className="text-xs">Afgewezen</Label>
                             </div>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={currentEducational}
+                                onCheckedChange={(v) => setEditData(d => ({ ...d, educational: v }))}
+                                id={`educational-${word.id}`}
+                              />
+                              <Label htmlFor={`educational-${word.id}`} className="text-xs">Educatief</Label>
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <Button size="sm" onClick={() => handleSaveEdit(word)}>
@@ -782,12 +798,35 @@ const Admin = () => {
                               {!word.approved && <span className="text-orange-500 ml-2">⏳ Niet goedgekeurd</span>}
                               {word.appropriate && <span className="text-green-500 ml-2">✓ Geschikt</span>}
                               {!word.appropriate && <span className="text-orange-500 ml-2">⏳ Niet geschikt</span>}
+                              {word.educational && <span className="text-blue-500 ml-2">🎓 Educatief</span>}
+                              {!word.educational && <span className="text-muted-foreground/70 ml-2">– Niet-educatief</span>}
                               {word.rejected && <span className="text-red-500 ml-2">✗ Afgewezen</span>}
                             </div>
                           </div>
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingId(word.id); setEditData({}); }}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={word.educational
+                                ? "border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white text-xs"
+                                : "text-xs"}
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from("dutch_words")
+                                  .update({ educational: !word.educational } as any)
+                                  .eq("id", word.id);
+                                if (error) { toast.error("Fout bij opslaan"); return; }
+                                toast.success(word.educational ? "Uit educatieve pool gehaald" : "In educatieve pool geplaatst");
+                                doSearch(searchPage);
+                              }}
+                              title={word.educational ? "Uit educatieve pool" : "Markeer als educatief"}
+                            >
+                              🎓
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setEditingId(word.id); setEditData({}); }}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </div>
