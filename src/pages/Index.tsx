@@ -5,10 +5,11 @@ import BugReportModal from "@/components/BugReportModal";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug, Shuffle } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug, Shuffle, GraduationCap } from "lucide-react";
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsTeacher } from "@/hooks/useIsTeacher";
 import { GameMode, MODE_LABEL, DEFAULT_MODE } from "@/types/mode";
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -21,6 +22,7 @@ const Index = () => {
   const [selectedVariant, setSelectedVariant] = useState<Variant>(4);
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
   const { isAdmin } = useIsAdmin();
+  const { isTeacher } = useIsTeacher();
   const [bugReportOpen, setBugReportOpen] = useState(false);
 
   // Modus wordt automatisch bepaald op basis van school-koppeling:
@@ -242,8 +244,8 @@ const Index = () => {
               {player.school_id ? " · ingesteld door je docent" : " · standaard voor vrije spelers"}
             </div>
 
-            {/* Variant cards: 4, 5, 6, mix */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+            {/* Variant cards: 4, 5, 6, mix — 2x2 totdat alles ontgrendeld is */}
+            <div className={`grid gap-3 w-full ${is5Unlocked && is6Unlocked && isMixUnlocked ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"}`}>
               {renderLevelCard(4, "Vier letters", true)}
               {renderLevelCard(5, "Vijf letters", is5Unlocked)}
               {renderLevelCard(6, "Zes letters", is6Unlocked)}
@@ -269,6 +271,13 @@ const Index = () => {
                 Spelregels
               </button>
             </div>
+
+            {isTeacher && (
+              <button onClick={() => navigate("/docent")} className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <GraduationCap className="w-4 h-4" />
+                Docent pagina
+              </button>
+            )}
 
             {isAdmin && (
               <button onClick={() => navigate("/admin")} className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">

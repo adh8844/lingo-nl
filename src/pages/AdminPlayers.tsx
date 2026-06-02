@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import { ArrowLeft, Search } from "lucide-react";
 import { toast } from "sonner";
 import SEO from "@/components/SEO";
@@ -38,6 +41,11 @@ const AdminPlayers = () => {
   const [schools, setSchools] = useState<SchoolRow[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [newSchoolOpen, setNewSchoolOpen] = useState(false);
+  const [newSchoolName, setNewSchoolName] = useState("");
+  const [newSchoolCity, setNewSchoolCity] = useState("");
+  const [creatingSchool, setCreatingSchool] = useState(false);
+  const [pendingPlayerId, setPendingPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authReady) return;
@@ -86,6 +94,38 @@ const AdminPlayers = () => {
     if (error) { toast.error("Fout bij opslaan school"); return; }
     setPlayers(prev => prev.map(x => x.id === p.id ? { ...x, school_id } : x));
     toast.success(`School bijgewerkt`);
+  };
+
+  const handleSchoolSelect = (p: PlayerRow, v: string) => {
+    if (v === "__new__") {
+      setPendingPlayerId(p.id);
+      setNewSchoolName("");
+      setNewSchoolCity("");
+      setNewSchoolOpen(true);
+      return;
+    }
+    updateSchool(p, v === "none" ? null : v);
+  };
+
+  const createSchool = async () => {
+    const name = newSchoolName.trim();
+    if (!name) { toast.error("Naam is verplicht"); return; }
+    setCreatingSchool(true);
+    const { data, error } = await supabase
+      .from("schools")
+      .insert({ name, city: newSchoolCity.trim() || null } as any)
+      .select("id, name")
+      .single();
+    setCreatingSchool(false);
+    if (error || !data) { toast.error("Fout bij aanmaken school"); return; }
+    setSchools(prev => [...prev, data as SchoolRow].sort((a, b) => a.name.localeCompare(b.name)));
+    toast.success(`School "${data.name}" aangemaakt`);
+    if (pendingPlayerId) {
+      const p = players.find(x => x.id === pendingPlayerId);
+      if (p) await updateSchool(p, data.id);
+    }
+    setNewSchoolOpen(false);
+    setPendingPlayerId(null);
   };
 
   const updateRole = async (p: PlayerRow, role: RoleLabel) => {
@@ -185,12 +225,13 @@ const AdminPlayers = () => {
                       <label className="text-[10px] uppercase tracking-wider text-muted-foreground">School</label>
                       <Select
                         value={p.school_id || "none"}
-                        onValueChange={(v) => updateSchool(p, v === "none" ? null : v)}
+                        onValueChange={(v) => handleSchoolSelect(p, v)}
                       >
                         <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">— Geen school —</SelectItem>
                           {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          <SelectItem value="__new__" className="text-primary font-bold">+ Nieuwe school…</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -201,6 +242,30 @@ const AdminPlayers = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={newSchoolOpen} onOpenChange={(o) => { setNewSchoolOpen(o); if (!o) setPendingPlayerId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nieuwe school toevoegen</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Naam *</label>
+              <Input value={newSchoolName} onChange={(e) => setNewSchoolName(e.target.value)} placeholder="bv. Basisschool De Regenboog" autoFocus />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Plaats</label>
+              <Input value={newSchoolCity} onChange={(e) => setNewSchoolCity(e.target.value)} placeholder="bv. Amsterdam" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewSchoolOpen(false)} disabled={creatingSchool}>Annuleren</Button>
+            <Button onClick={createSchool} disabled={creatingSchool || !newSchoolName.trim()}>
+              {creatingSchool ? "Aanmaken…" : "Aanmaken"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
