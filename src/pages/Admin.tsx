@@ -443,6 +443,9 @@ const Admin = () => {
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
             Admin — Woordenbeheer
           </h1>
+          <Button size="sm" variant="outline" className="ml-auto" onClick={() => navigate("/admin/spelers")}>
+            Spelers beheren →
+          </Button>
         </div>
 
         {/* Online presence settings */}
