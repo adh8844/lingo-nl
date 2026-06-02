@@ -79,7 +79,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
 
   const { player } = usePlayer();
   const { submitResult } = useGameResult();
-  const wordDef = useWordDefinition(targetWord, wordLength);
+  const wordDef = useWordDefinition(targetWord, activeLength);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
