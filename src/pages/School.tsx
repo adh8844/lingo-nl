@@ -314,12 +314,6 @@ const School = () => {
               <Mail className="w-5 h-5" />
               Vraag schoolaccount aan
             </a>
-            <button
-              onClick={() => navigate("/")}
-              className="px-7 py-4 rounded-2xl bg-secondary text-secondary-foreground font-bold text-lg border border-border"
-            >
-              Terug naar landing
-            </button>
           </div>
         </motion.div>
       </section>
