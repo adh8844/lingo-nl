@@ -272,6 +272,13 @@ const Index = () => {
               </button>
             </div>
 
+            {isTeacher && (
+              <button onClick={() => navigate("/docent")} className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <GraduationCap className="w-4 h-4" />
+                Docent pagina
+              </button>
+            )}
+
             {isAdmin && (
               <button onClick={() => navigate("/admin")} className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <Shield className="w-4 h-4" />
