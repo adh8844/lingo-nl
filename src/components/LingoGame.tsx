@@ -400,9 +400,15 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE }: LingoGameProps) 
             <span className="text-sm font-bold text-primary"><Star className="inline w-4 h-4 mr-0.5" />{gameResult.new_total_points}</span>
           )}
           <span className="text-sm font-bold text-muted-foreground"><Flame className="inline w-4 h-4 mr-0.5" />{gameResult?.current_streak ?? player?.current_streak ?? 0}</span>
-          <div className={`text-lg font-extrabold tabular-nums ${timeLeft <= 10 ? "text-accent animate-pulse" : "text-foreground"}`}>
-            ⏱ {formatTime(timeLeft)}
-          </div>
+          {isUntimed ? (
+            <div className="text-xs font-bold text-muted-foreground px-2 py-1 rounded-md bg-primary/10 text-primary">
+              {MODE_LABEL[mode]} · geen timer
+            </div>
+          ) : (
+            <div className={`text-lg font-extrabold tabular-nums ${timeLeft <= 10 ? "text-accent animate-pulse" : "text-foreground"}`}>
+              ⏱ {formatTime(timeLeft)}
+            </div>
+          )}
         </div>
       </div>
 
