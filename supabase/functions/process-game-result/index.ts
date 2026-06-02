@@ -125,8 +125,10 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points, mode } = await req.json()
+    const { player_id, level, word, attempts, solved, duration_seconds, first_green_attempt, session_id, is_challenger, challenger_points, mode, is_mix } = await req.json()
     const isUntimedMode = mode === 'leren'
+    // Mix-variant: scoor altijd volgens 6-letter regels, ongeacht werkelijke woordlengte
+    const scoringLevel = (is_mix && [4, 5, 6].includes(level)) ? 6 : level
 
     const validLevels = [4, 5, 6, 10, 12, 14]
     if (!player_id || !validLevels.includes(level) || !word || typeof word !== 'string' || typeof solved !== 'boolean') {
@@ -271,18 +273,19 @@ Deno.serve(async (req) => {
       
       await supabase.from('games').update({ points_earned: cPoints }).eq('id', game.id)
     } else {
-      // 3. Base points (normal game)
+      // 3. Base points (normal game) — Mix gebruikt 6-letter scoring
       const baseKey = solved ? String(attempts || 1) : 'fail'
-      const basePoints = BASE_POINTS[level]?.[baseKey] || 0
+      const basePoints = BASE_POINTS[scoringLevel]?.[baseKey] || 0
       let gamePoints = basePoints
-      pts.push({ points: basePoints, reason: solved ? `Geraden in poging ${attempts} (${level}-letter)` : `Deelnamebonus (${level}-letter)` })
+      const mixTag = is_mix ? ' · Mix' : ''
+      pts.push({ points: basePoints, reason: solved ? `Geraden in poging ${attempts} (${level}-letter${mixTag})` : `Deelnamebonus (${level}-letter${mixTag})` })
 
       // 4. Speed bonus — uitgeschakeld in de educatieve "leren"-modus
       if (solved && duration_seconds != null && !isUntimedMode) {
-        for (const [maxTime, bonus] of SPEED_THRESHOLDS[level] || []) {
+        for (const [maxTime, bonus] of SPEED_THRESHOLDS[scoringLevel] || []) {
           if (duration_seconds < maxTime) {
             gamePoints += bonus
-            pts.push({ points: bonus, reason: `Snelheidsbonus (<${maxTime}s)` })
+            pts.push({ points: bonus, reason: `Snelheidsbonus (<${maxTime}s)${mixTag}` })
             break
           }
         }
@@ -316,9 +319,9 @@ Deno.serve(async (req) => {
     // Only apply streak/daily bonuses for normal games
     if (![10, 12, 14].includes(level)) {
       // 6. Streak bonus
-      for (const [minDays, bonus] of STREAK_THRESHOLDS[level] || []) {
+      for (const [minDays, bonus] of STREAK_THRESHOLDS[scoringLevel] || []) {
         if (currentStreak >= minDays) {
-          pts.push({ points: bonus, reason: `Reeksbonus (${currentStreak} dagen)` })
+          pts.push({ points: bonus, reason: `Reeksbonus (${currentStreak} dagen)${is_mix ? ' · Mix' : ''}` })
           break
         }
       }
@@ -436,7 +439,7 @@ Deno.serve(async (req) => {
       }
 
       // Vaardigheid badges
-      if (!earnedIds.has('supersnel') && solved && duration_seconds < SPEED_BADGE[level]) tryAward('supersnel')
+      if (!earnedIds.has('supersnel') && solved && duration_seconds < SPEED_BADGE[scoringLevel]) tryAward('supersnel')
       if (!earnedIds.has('vlekkeloos') && solved && attempts === 1) tryAward('vlekkeloos')
       if (!earnedIds.has('comeback') && solved && first_green_attempt != null && first_green_attempt >= 4) tryAward('comeback')
       if (!earnedIds.has('meesterspeler')) {

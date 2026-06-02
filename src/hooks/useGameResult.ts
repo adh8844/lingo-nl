@@ -31,11 +31,12 @@ export function useGameResult() {
     is_challenger?: boolean;
     challenger_points?: number;
     mode?: string;
+    is_mix?: boolean;
   }): Promise<GameResultData | null> => {
     setLoading(true);
     try {
     const { data, error } = await supabase.functions.invoke("process-game-result", {
-        body: { ...params, session_id: SESSION_ID, is_challenger: params.is_challenger },
+        body: { ...params, session_id: SESSION_ID, is_challenger: params.is_challenger, is_mix: params.is_mix },
       });
       if (error) throw error;
       setResult(data);
