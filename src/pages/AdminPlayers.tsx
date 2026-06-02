@@ -272,7 +272,6 @@ const PlayersTable = ({
             <TableRow key={p.id} className="text-sm">
               <TableCell className="py-1.5 px-2">
                 <div className="font-bold">{p.display_name}</div>
-                <div className="text-[10px] text-muted-foreground">#{p.player_code}</div>
               </TableCell>
               <TableCell className="py-1.5 px-2">
                 <Select value={p.role} onValueChange={(v) => onUpdateRole(p, v as RoleLabel)}>
