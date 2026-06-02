@@ -105,7 +105,11 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
 
   const startNewRound = useCallback(async () => {
     setIsLoading(true);
-    const word = await getRandomWordAsync("nl", wordLength, mode === "leren" ? "educational" : "full");
+    const nextLen: WordLength = mixMode
+      ? (([4, 5, 6] as WordLength[])[Math.floor(Math.random() * 3)])
+      : wordLength;
+    setActiveLength(nextLen);
+    const word = await getRandomWordAsync("nl", nextLen, mode === "leren" ? "educational" : "full");
     setTargetWord(word);
     setCurrentGuess(word[0]);
     setGuesses([]);
@@ -119,10 +123,9 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
     setGameResult(null);
     firstGreenAttemptRef.current = null;
     setIsLoading(false);
-    // Houd starttijd ook in untimed-modus bij, zodat duration_seconds correct is.
     startTimeRef.current = Date.now();
     startTimer();
-  }, [wordLength, startTimer, mode]);
+  }, [wordLength, startTimer, mode, mixMode]);
 
   useEffect(() => {
     startNewRound();
