@@ -158,11 +158,12 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
       duration_seconds: duration,
       first_green_attempt: firstGreenAttemptRef.current,
       mode,
+      is_mix: mixMode,
     });
     if (result) {
       setGameResult(result);
     }
-  }, [player, activeLength, targetWord, submitResult, mode]);
+  }, [player, activeLength, targetWord, submitResult, mode, mixMode]);
 
   const handleRoundEnd = useCallback((playerWon: boolean, attemptCount: number) => {
     stopTimer();
