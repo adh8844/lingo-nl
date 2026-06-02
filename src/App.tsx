@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
 import School from "./pages/School";
+import Teacher from "./pages/Teacher";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
 import { PlayerProvider } from "@/hooks/usePlayerContext";
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/" element={<School />} />
             <Route path="/klassiek" element={<Landing />} />
             <Route path="/school" element={<School />} />
+            <Route path="/docent" element={<Teacher />} />
             <Route path="/spelen" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
