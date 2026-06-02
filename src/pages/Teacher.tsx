@@ -92,6 +92,26 @@ const Teacher = () => {
     toast.success(`${p.display_name} → ${MODE_LABEL[mode]}`);
   };
 
+  const [pupilToDelete, setPupilToDelete] = useState<Pupil | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const deletePupil = async () => {
+    if (!pupilToDelete) return;
+    setDeleting(true);
+    const { data, error } = await supabase.functions.invoke("teacher-delete-pupil", {
+      body: { player_id: pupilToDelete.id },
+    });
+    setDeleting(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Verwijderen mislukt");
+      return;
+    }
+    toast.success(`${pupilToDelete.display_name} verwijderd`);
+    setPupils(prev => prev.filter(x => x.id !== pupilToDelete.id));
+    setCreds(prev => { const n = { ...prev }; delete n[pupilToDelete.id]; return n; });
+    setPupilToDelete(null);
+  };
+
   const resetAddForm = () => {
     setAddFirstName(""); setAddLastName(""); setAddAge(""); setAddGroup(""); setAddMode("leren");
   };
