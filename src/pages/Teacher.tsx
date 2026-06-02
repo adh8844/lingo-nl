@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy } from "lucide-react";
+import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy, UserPlus, Copy, Check } from "lucide-react";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { GameMode, MODE_LABEL } from "@/types/mode";
