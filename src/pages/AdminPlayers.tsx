@@ -157,7 +157,7 @@ const AdminPlayers = () => {
   return (
     <div className="min-h-screen flex flex-col items-center py-4 sm:py-8 px-4">
       <SEO title="Spelers beheren — Admin" description="Beheer rollen, scholen en speelmodi van alle DingoLingo-spelers." path="/admin/spelers" />
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-6xl">
         <div className="flex items-center gap-3 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")}>
             <ArrowLeft className="w-5 h-5" />
