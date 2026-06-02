@@ -9,6 +9,7 @@ import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, B
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { GameMode, MODE_LABEL, MODE_DESCRIPTION, DEFAULT_MODE } from "@/types/mode";
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -16,6 +17,13 @@ const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
+  const [selectedMode, setSelectedMode] = useState<GameMode>(() => {
+    try {
+      const saved = localStorage.getItem("lingo_preferred_mode") as GameMode | null;
+      if (saved && ["leren", "oefenen", "klassiek", "uitdaging"].includes(saved)) return saved;
+    } catch {}
+    return DEFAULT_MODE;
+  });
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
   const { isAdmin } = useIsAdmin();
   const [bugReportOpen, setBugReportOpen] = useState(false);
@@ -98,7 +106,7 @@ const Index = () => {
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 sm:mb-6">
           <span className="text-primary">Dingo</span><span className="text-primary">Lingo</span>
         </h1>
-        <LingoGame wordLength={selectedLevel} onBack={handleBack} />
+        <LingoGame wordLength={selectedLevel} mode={selectedMode} onBack={handleBack} />
       </div>
     );
   }
