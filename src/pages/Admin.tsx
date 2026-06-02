@@ -39,6 +39,7 @@ interface PendingWord {
   suggestor_name?: string;
   approved: boolean;
   appropriate: boolean;
+  educational: boolean;
 }
 
 interface WordRecord {
@@ -54,6 +55,7 @@ interface FullWord {
   approved: boolean;
   appropriate: boolean;
   rejected: boolean;
+  educational: boolean;
   suggested_by: string | null;
   created_at: string;
 }
