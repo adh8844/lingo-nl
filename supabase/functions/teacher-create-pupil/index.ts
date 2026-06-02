@@ -159,6 +159,15 @@ Deno.serve(async (req) => {
       playerId = inserted?.id ?? null;
     }
 
+    if (playerId) {
+      await admin.from("pupil_credentials").insert({
+        player_id: playerId,
+        username,
+        password,
+        created_by: teacherPlayer.id,
+      });
+    }
+
     return new Response(
       JSON.stringify({ username, password, player_id: playerId, display_name: displayName }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
