@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  ArrowLeft,
   Sparkles,
   ShieldCheck,
   GraduationCap,
@@ -12,12 +11,15 @@ import {
   Mail,
 } from "lucide-react";
 import SEO from "@/components/SEO";
+import { usePlayer } from "@/hooks/usePlayer";
 import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
 const SCHOOL_CONTACT_EMAIL = "denheijera@icloud.com";
 
 const School = () => {
   const navigate = useNavigate();
+  const { session } = usePlayer();
+  const ctaTarget = session ? "/spelen" : "/auth?mode=register";
 
   const mailto =
     `mailto:${SCHOOL_CONTACT_EMAIL}` +
@@ -29,34 +31,47 @@ const School = () => {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="DingoLingo voor scholen — Lingo voor Groep 3 t/m 8"
-        description="DingoLingo voor de basisschool: woordenschat, spelling en plezier voor leerlingen uit Groep 3 t/m 8. Eigen schoolomgeving, vanaf €1 per leerling per jaar."
-        path="/school"
+        title="DingoLingo voor scholen — woordenschat voor Groep 3 t/m 8"
+        description="DingoLingo: educatieve Nederlandse woordenschat-tool voor de basisschool. Eigen schoolomgeving, vanaf €1 per leerling per jaar. Veilig, geen reclame."
+        path="/"
       />
 
-      {/* Floating header */}
+      {/* Floating nav (transplanted from old landing) */}
       <motion.header
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed top-3 inset-x-0 mx-auto w-fit z-40 flex items-center gap-2 px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg"
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="fixed top-3 inset-x-0 mx-auto w-fit z-40 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-full bg-card/70 backdrop-blur-xl border border-border shadow-lg max-w-[calc(100vw-1rem)]"
       >
+        <div className="flex items-center gap-0.5 pl-1 sm:pl-2 pr-2 sm:pr-3">
+          <span className="text-base sm:text-lg font-extrabold text-primary leading-none">DingoLingo</span>
+        </div>
         <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-1 text-xs font-bold text-foreground/80 hover:text-foreground transition-colors"
+          onClick={() => navigate("/auth")}
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/80 hover:text-foreground transition-colors whitespace-nowrap"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Terug
+          Inloggen
         </button>
-        <span className="text-base font-extrabold text-primary leading-none px-2">
-          DingoLingo
-        </span>
-        <a
-          href={mailto}
-          className="text-[11px] sm:text-xs font-extrabold px-3 py-1.5 rounded-full bg-primary text-primary-foreground"
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate(ctaTarget)}
+          className="text-[11px] sm:text-xs font-extrabold px-2 sm:px-3 py-1.5 rounded-full bg-primary text-primary-foreground whitespace-nowrap"
         >
-          Vraag aan
-        </a>
+          {session ? "Spelen" : "Start gratis"}
+        </motion.button>
+        <button
+          onClick={() => navigate("/docent")}
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/70 hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          Docenten
+        </button>
+        <button
+          onClick={() => navigate("/klassiek")}
+          className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-1.5 rounded-full text-foreground/70 hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          Klassiek spelen
+        </button>
       </motion.header>
 
       {/* Hero */}
@@ -111,12 +126,6 @@ const School = () => {
               Vraag schoolaccount aan
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </motion.a>
-            <button
-              onClick={() => navigate("/")}
-              className="px-7 py-4 rounded-2xl bg-secondary text-secondary-foreground font-bold text-lg border border-border"
-            >
-              Naar de homepagina
-            </button>
           </div>
         </motion.div>
       </section>
@@ -311,12 +320,6 @@ const School = () => {
               <Mail className="w-5 h-5" />
               Vraag schoolaccount aan
             </a>
-            <button
-              onClick={() => navigate("/")}
-              className="px-7 py-4 rounded-2xl bg-secondary text-secondary-foreground font-bold text-lg border border-border"
-            >
-              Terug naar landing
-            </button>
           </div>
         </motion.div>
       </section>
