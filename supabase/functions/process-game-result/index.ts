@@ -319,9 +319,9 @@ Deno.serve(async (req) => {
     // Only apply streak/daily bonuses for normal games
     if (![10, 12, 14].includes(level)) {
       // 6. Streak bonus
-      for (const [minDays, bonus] of STREAK_THRESHOLDS[level] || []) {
+      for (const [minDays, bonus] of STREAK_THRESHOLDS[scoringLevel] || []) {
         if (currentStreak >= minDays) {
-          pts.push({ points: bonus, reason: `Reeksbonus (${currentStreak} dagen)` })
+          pts.push({ points: bonus, reason: `Reeksbonus (${currentStreak} dagen)${is_mix ? ' · Mix' : ''}` })
           break
         }
       }
