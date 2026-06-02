@@ -5,12 +5,11 @@ import BugReportModal from "@/components/BugReportModal";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug, Shuffle } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug, Shuffle, GraduationCap } from "lucide-react";
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
-import { GraduationCap } from "lucide-react";
 import { GameMode, MODE_LABEL, DEFAULT_MODE } from "@/types/mode";
 
 declare const __BUILD_TIMESTAMP__: string;
