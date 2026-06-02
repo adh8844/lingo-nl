@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy, UserPlus, Copy, Check, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, GraduationCap, Mail, Users, BarChart3, Trophy, UserPlus, Copy, Check, Eye, EyeOff, Trash2 } from "lucide-react";
 import SEO from "@/components/SEO";
 import { usePlayer } from "@/hooks/usePlayer";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
