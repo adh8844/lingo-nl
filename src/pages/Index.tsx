@@ -5,29 +5,30 @@ import BugReportModal from "@/components/BugReportModal";
 import { usePlayer } from "@/hooks/usePlayer";
 import { WordLength } from "@/data/words";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug } from "lucide-react";
+import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, Bug, Shuffle } from "lucide-react";
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { GameMode, MODE_LABEL, MODE_DESCRIPTION, DEFAULT_MODE } from "@/types/mode";
+import { GameMode, MODE_LABEL, DEFAULT_MODE } from "@/types/mode";
 
 declare const __BUILD_TIMESTAMP__: string;
+
+type Variant = 4 | 5 | 6 | "mix";
 
 const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
-  const [selectedMode, setSelectedMode] = useState<GameMode>(() => {
-    try {
-      const saved = localStorage.getItem("lingo_preferred_mode") as GameMode | null;
-      if (saved && ["leren", "oefenen", "klassiek", "uitdaging"].includes(saved)) return saved;
-    } catch {}
-    return DEFAULT_MODE;
-  });
+  const [selectedVariant, setSelectedVariant] = useState<Variant>(4);
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
   const { isAdmin } = useIsAdmin();
   const [bugReportOpen, setBugReportOpen] = useState(false);
 
+  // Modus wordt automatisch bepaald op basis van school-koppeling:
+  // - leerling in school → docent bepaalt via preferred_mode
+  // - geen school → altijd "klassiek"
+  const activeMode: GameMode = player?.school_id
+    ? ((player.preferred_mode as GameMode) || DEFAULT_MODE)
+    : "klassiek";
 
   const [unlockProgress, setUnlockProgress] = useState({
     fourLetterPoints: 0,
@@ -38,13 +39,11 @@ const Index = () => {
     rareBadgeCount: 0,
     normalBadgeCount: 0,
     hasOpDreef: false,
+    hasNietTeStoppen: false,
   });
 
   const loadUnlockProgress = useCallback(async () => {
     if (!player) return;
-    // Skip heavy queries when both levels are already unlocked — progress UI not shown.
-    if (player.unlocked_5letter && player.unlocked_6letter) return;
-
     const [fgRes, badgesRes, defsRes, faRes] = await Promise.all([
       supabase.from("games" as any).select("points_earned").eq("player_id", player.id).eq("level", 4),
       supabase.from("player_badges" as any).select("badge_id").eq("player_id", player.id),
@@ -68,11 +67,11 @@ const Index = () => {
       badgeCount: badgeIds.size,
       badgeCategories: cats.size,
       firstAttemptWins: faRes.count || 0,
-
       totalPoints: player.points || 0,
       rareBadgeCount: rare,
       normalBadgeCount: normal,
       hasOpDreef: badgeIds.has("op_dreef"),
+      hasNietTeStoppen: badgeIds.has("niet_te_stoppen"),
     });
   }, [player]);
 
@@ -101,31 +100,35 @@ const Index = () => {
   }
 
   if (gameStarted) {
+    const isMix = selectedVariant === "mix";
+    const wl: WordLength = isMix ? 4 : (selectedVariant as WordLength);
     return (
       <div className="min-h-screen flex flex-col items-center py-4 sm:py-8">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 sm:mb-6">
           <span className="text-primary">Dingo</span><span className="text-primary">Lingo</span>
         </h1>
-        <LingoGame wordLength={selectedLevel} mode={selectedMode} onBack={handleBack} />
+        <LingoGame wordLength={wl} mode={activeMode} mixMode={isMix} onBack={handleBack} />
       </div>
     );
   }
 
   const is5Unlocked = player?.unlocked_5letter ?? false;
   const is6Unlocked = player?.unlocked_6letter ?? false;
+  const isMixUnlocked = (unlockProgress.totalPoints >= 1000)
+    && (unlockProgress.badgeCount >= 12)
+    && unlockProgress.hasNietTeStoppen;
 
-  const renderLevelCard = (level: WordLength, label: string, unlocked: boolean) => {
+  const startVariant = (v: Variant) => {
+    setSelectedVariant(v);
+    setGameStarted(true);
+  };
+
+  const renderLevelCard = (level: 4 | 5 | 6, label: string, unlocked: boolean) => {
     const canPlay = level === 4 || unlocked;
-
     return (
       <button
         key={level}
-        onClick={() => {
-          if (canPlay) {
-            setSelectedLevel(level);
-            setGameStarted(true);
-          }
-        }}
+        onClick={() => { if (canPlay) startVariant(level); }}
         disabled={!canPlay}
         className={`relative flex flex-col items-center gap-2 p-5 sm:p-6 rounded-2xl border-2 transition-all w-full ${
           canPlay
@@ -139,7 +142,6 @@ const Index = () => {
         </span>
         <span className={`text-sm font-bold ${canPlay ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
 
-        {/* Unlock progress for level 5 — duidelijke OR-logica */}
         {level === 5 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
             <p className="font-bold text-foreground/70">Eén van deze is genoeg:</p>
@@ -149,7 +151,6 @@ const Index = () => {
           </div>
         )}
 
-        {/* Unlock progress for level 6 — duidelijke AND-logica */}
         {level === 6 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
             <p className="font-bold text-foreground/70">Je hebt alles hiervan nodig:</p>
@@ -162,11 +163,41 @@ const Index = () => {
     );
   };
 
+  const renderMixCard = () => {
+    const canPlay = isMixUnlocked;
+    return (
+      <button
+        onClick={() => { if (canPlay) startVariant("mix"); }}
+        disabled={!canPlay}
+        className={`relative flex flex-col items-center gap-2 p-5 sm:p-6 rounded-2xl border-2 transition-all w-full ${
+          canPlay
+            ? "bg-card border-accent/40 hover:border-accent hover:shadow-lg hover:shadow-accent/20 active:scale-95 cursor-pointer"
+            : "bg-card/50 border-border opacity-70 cursor-not-allowed"
+        }`}
+      >
+        {!canPlay && <Lock className="absolute top-3 right-3 w-5 h-5 text-muted-foreground" />}
+        <Shuffle className={`w-10 h-10 ${canPlay ? "text-accent" : "text-muted-foreground"}`} />
+        <span className={`text-sm font-bold ${canPlay ? "text-foreground" : "text-muted-foreground"}`}>Mix (4·5·6)</span>
+        {!canPlay && player && (
+          <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
+            <p className="font-bold text-foreground/70">Alles nodig:</p>
+            <p>{unlockProgress.totalPoints >= 1000 ? "✓" : "○"} {unlockProgress.totalPoints}/1000 punten</p>
+            <p>{unlockProgress.badgeCount >= 12 ? "✓" : "○"} {unlockProgress.badgeCount}/12 badges</p>
+            <p>{unlockProgress.hasNietTeStoppen ? "✓" : "○"} Badge "Niet te stoppen"</p>
+          </div>
+        )}
+        {canPlay && (
+          <span className="text-[10px] text-muted-foreground">Punten als 6-letter</span>
+        )}
+      </button>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-0">
       <SEO
         title="Spelen — DingoLingo Lingo online in het Nederlands"
-        description="Speel DingoLingo Lingo online: kies 4, 5 of 6 letters, raad het Nederlandse woord, verdien badges en klim op de ranglijst."
+        description="Speel DingoLingo Lingo online: kies 4, 5, 6 letters of de Mix-variant en raad het Nederlandse woord."
         path="/spelen"
       />
       <div className="flex flex-col items-center gap-5 sm:gap-8 animate-bounce-in w-full max-w-md">
@@ -186,7 +217,6 @@ const Index = () => {
           <div className="text-muted-foreground">Profiel laden...</div>
         ) : (
           <>
-            {/* Player info */}
             <div className="flex items-center justify-between w-full px-2">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-muted-foreground">Welkom terug,</p>
@@ -206,102 +236,53 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Mode selector */}
-            <div className="w-full">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                Speelmodus
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {(["leren", "oefenen", "klassiek", "uitdaging"] as GameMode[]).map((m) => {
-                  const active = selectedMode === m;
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => {
-                        setSelectedMode(m);
-                        try { localStorage.setItem("lingo_preferred_mode", m); } catch {}
-                      }}
-                      className={`text-left px-3 py-2 rounded-xl border-2 transition-all ${
-                        active
-                          ? "bg-primary/10 border-primary text-foreground"
-                          : "bg-card border-border hover:border-primary/50 text-muted-foreground"
-                      }`}
-                    >
-                      <div className={`text-sm font-extrabold ${active ? "text-primary" : "text-foreground"}`}>
-                        {MODE_LABEL[m]}
-                      </div>
-                      <div className="text-[10px] leading-tight mt-0.5">
-                        {MODE_DESCRIPTION[m]}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Mode info (read-only) */}
+            <div className="w-full text-center text-xs text-muted-foreground">
+              Modus: <span className="font-extrabold text-primary">{MODE_LABEL[activeMode]}</span>
+              {player.school_id ? " · ingesteld door je docent" : " · standaard voor vrije spelers"}
             </div>
 
-            {/* Level cards */}
-            <div className="grid grid-cols-3 gap-3 w-full">
+            {/* Variant cards: 4, 5, 6, mix */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
               {renderLevelCard(4, "Vier letters", true)}
               {renderLevelCard(5, "Vijf letters", is5Unlocked)}
               {renderLevelCard(6, "Zes letters", is6Unlocked)}
+              {renderMixCard()}
             </div>
 
             {/* Navigation */}
             <div className="grid grid-cols-2 gap-2 w-full">
-              <button
-                onClick={() => navigate("/profile")}
-                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
-              >
+              <button onClick={() => navigate("/profile")} className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95">
                 <User className="w-5 h-5" />
                 Profiel
               </button>
-              <button
-                onClick={() => navigate("/rankings")}
-                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
-              >
+              <button onClick={() => navigate("/rankings")} className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95">
                 <Trophy className="w-5 h-5" />
                 Ranglijst
               </button>
-              <button
-                onClick={() => navigate("/statistics")}
-                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
-              >
+              <button onClick={() => navigate("/statistics")} className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95">
                 <BarChart3 className="w-5 h-5" />
                 Statistieken
               </button>
-              <button
-                onClick={() => navigate("/spelregels")}
-                className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95"
-              >
+              <button onClick={() => navigate("/spelregels")} className="flex flex-col items-center gap-1 px-3 py-3 bg-secondary text-secondary-foreground font-bold text-xs rounded-xl hover:brightness-110 transition-all active:scale-95">
                 <BookOpen className="w-5 h-5" />
                 Spelregels
               </button>
             </div>
 
-            {/* Admin link */}
             {isAdmin && (
-              <button
-                onClick={() => navigate("/admin")}
-                className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={() => navigate("/admin")} className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <Shield className="w-4 h-4" />
                 Admin
               </button>
             )}
 
-            {/* Support + Uitloggen */}
             <div className="flex gap-2 w-full">
-              <button
-                onClick={() => setBugReportOpen(true)}
-                className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={() => setBugReportOpen(true)} className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <Bug className="w-4 h-4" />
                 Werkt iets niet?
               </button>
-              <button
-                onClick={signOut}
-                className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={signOut} className="flex items-center justify-center gap-2 flex-1 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
                 <LogOut className="w-4 h-4" />
                 Uitloggen
               </button>
