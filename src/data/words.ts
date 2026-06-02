@@ -34,11 +34,13 @@ const dutch6 = [
 
 export type WordLength = 4 | 5 | 6 | 10 | 12 | 14;
 export type Language = "nl";
+export type WordPool = "educational" | "full";
 
 const wordLists: Record<number, string[]> = { 4: dutch4, 5: dutch5, 6: dutch6 };
 
-let dbWordsCache: Record<number, string[]> = {};
-let dbWordsCacheTime = 0;
+// Cache per (length, pool) — educatieve en volledige pool gescheiden.
+let dbWordsCache: Record<string, string[]> = {};
+let dbWordsCacheTime: Record<string, number> = {};
 const CACHE_TTL = 60000;
 
 const RECENT_WORDS_KEY = "lingo_recent_words";
@@ -67,28 +69,39 @@ function pickNonRecentWord(words: string[], length: WordLength): string {
   return chosen;
 }
 
-export async function loadDutchWordsFromDB(length: WordLength): Promise<string[]> {
+export async function loadDutchWordsFromDB(length: WordLength, pool: WordPool = "full"): Promise<string[]> {
+  const cacheKey = `${length}_${pool}`;
   const now = Date.now();
-  if (dbWordsCache[length] && now - dbWordsCacheTime < CACHE_TTL) {
-    return dbWordsCache[length];
+  if (dbWordsCache[cacheKey] && now - (dbWordsCacheTime[cacheKey] || 0) < CACHE_TTL) {
+    return dbWordsCache[cacheKey];
   }
-  const { data, error } = await supabase
+  let query = supabase
     .from("dutch_words")
     .select("word")
     .eq("length", length)
     .eq("approved", true)
     .eq("appropriate", true);
+  if (pool === "educational") {
+    query = query.eq("educational", true);
+  }
+  const { data, error } = await query;
+
+  // Educatieve pool nog niet gecureerd? Val terug op de volledige pool zodat
+  // de "Leren"-modus altijd speelbaar blijft.
+  if (pool === "educational" && (!data || data.length === 0)) {
+    return loadDutchWordsFromDB(length, "full");
+  }
   if (error || !data || data.length === 0) {
     return wordLists[length].filter(w => w.length === length);
   }
   const words = data.map(r => r.word.toLowerCase());
-  dbWordsCache[length] = words;
-  dbWordsCacheTime = now;
+  dbWordsCache[cacheKey] = words;
+  dbWordsCacheTime[cacheKey] = now;
   return words;
 }
 
-export async function getRandomWordAsync(language: Language, length: WordLength): Promise<string> {
-  const words = await loadDutchWordsFromDB(length);
+export async function getRandomWordAsync(language: Language, length: WordLength, pool: WordPool = "full"): Promise<string> {
+  const words = await loadDutchWordsFromDB(length, pool);
   return pickNonRecentWord(words, length);
 }
 

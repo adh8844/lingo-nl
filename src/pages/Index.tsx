@@ -9,6 +9,7 @@ import { Lock, Star, Flame, Trophy, User, BarChart3, BookOpen, LogOut, Shield, B
 import DingoMascot from "@/components/DingoMascot";
 import SEO from "@/components/SEO";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { GameMode, MODE_LABEL, MODE_DESCRIPTION, DEFAULT_MODE } from "@/types/mode";
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -16,6 +17,13 @@ const Index = () => {
   const navigate = useNavigate();
   const [gameStarted, setGameStarted] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<WordLength>(4);
+  const [selectedMode, setSelectedMode] = useState<GameMode>(() => {
+    try {
+      const saved = localStorage.getItem("lingo_preferred_mode") as GameMode | null;
+      if (saved && ["leren", "oefenen", "klassiek", "uitdaging"].includes(saved)) return saved;
+    } catch {}
+    return DEFAULT_MODE;
+  });
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
   const { isAdmin } = useIsAdmin();
   const [bugReportOpen, setBugReportOpen] = useState(false);
@@ -98,7 +106,7 @@ const Index = () => {
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mb-4 sm:mb-6">
           <span className="text-primary">Dingo</span><span className="text-primary">Lingo</span>
         </h1>
-        <LingoGame wordLength={selectedLevel} onBack={handleBack} />
+        <LingoGame wordLength={selectedLevel} mode={selectedMode} onBack={handleBack} />
       </div>
     );
   }
@@ -131,28 +139,23 @@ const Index = () => {
         </span>
         <span className={`text-sm font-bold ${canPlay ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
 
-        {/* Unlock progress for level 5 */}
+        {/* Unlock progress for level 5 — duidelijke OR-logica */}
         {level === 5 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
-            <p>{unlockProgress.fourLetterPoints}/250 punten</p>
-            <p>
-              {unlockProgress.badgeCount}/4 badges ({unlockProgress.badgeCategories}/2 cat.)
-            </p>
-            <p>{unlockProgress.firstAttemptWins}/5 eerste pogingen</p>
+            <p className="font-bold text-foreground/70">Eén van deze is genoeg:</p>
+            <p>• {unlockProgress.fourLetterPoints}/250 punten in 4-letter</p>
+            <p>• {unlockProgress.badgeCount}/4 badges uit 2 categorieën</p>
+            <p>• {unlockProgress.firstAttemptWins}/5 keer in 1e poging geraden</p>
           </div>
         )}
 
-        {/* Unlock progress for level 6 */}
+        {/* Unlock progress for level 6 — duidelijke AND-logica */}
         {level === 6 && !unlocked && player && (
           <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5 w-full text-left">
-            <p>
-              {unlockProgress.totalPoints >= 600 ? "✓" : "✗"} {unlockProgress.totalPoints}/600 punten
-            </p>
-            <p>
-              {unlockProgress.rareBadgeCount >= 1 || unlockProgress.normalBadgeCount >= 8 ? "✓" : "✗"}{" "}
-              {unlockProgress.rareBadgeCount}★ zeldzaam / {unlockProgress.normalBadgeCount}/8 normaal
-            </p>
-            <p>{unlockProgress.hasOpDreef ? "✓" : "✗"} Op dreef badge</p>
+            <p className="font-bold text-foreground/70">Je hebt alles hiervan nodig:</p>
+            <p>{unlockProgress.totalPoints >= 600 ? "✓" : "○"} {unlockProgress.totalPoints}/600 punten totaal</p>
+            <p>{unlockProgress.rareBadgeCount >= 1 || unlockProgress.normalBadgeCount >= 8 ? "✓" : "○"} 1★ zeldzaam óf 8 gewone badges</p>
+            <p>{unlockProgress.hasOpDreef ? "✓" : "○"} Op-dreef-badge</p>
           </div>
         )}
       </button>
@@ -176,7 +179,7 @@ const Index = () => {
             <DingoMascot size={44} className="mx-[-3px] mb-[2px] block sm:hidden" />
             <span className="text-primary">ngo</span>
           </h1>
-          <p className="text-muted-foreground text-lg">Raad het woord</p>
+          <p className="text-muted-foreground text-lg">Woordenschat oefenen op jouw tempo</p>
         </div>
 
         {!player ? (
@@ -200,6 +203,39 @@ const Index = () => {
                   <Flame className="inline w-4 h-4 mr-0.5" />
                   {player.current_streak}
                 </span>
+              </div>
+            </div>
+
+            {/* Mode selector */}
+            <div className="w-full">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                Speelmodus
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(["leren", "oefenen", "klassiek", "uitdaging"] as GameMode[]).map((m) => {
+                  const active = selectedMode === m;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        setSelectedMode(m);
+                        try { localStorage.setItem("lingo_preferred_mode", m); } catch {}
+                      }}
+                      className={`text-left px-3 py-2 rounded-xl border-2 transition-all ${
+                        active
+                          ? "bg-primary/10 border-primary text-foreground"
+                          : "bg-card border-border hover:border-primary/50 text-muted-foreground"
+                      }`}
+                    >
+                      <div className={`text-sm font-extrabold ${active ? "text-primary" : "text-foreground"}`}>
+                        {MODE_LABEL[m]}
+                      </div>
+                      <div className="text-[10px] leading-tight mt-0.5">
+                        {MODE_DESCRIPTION[m]}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

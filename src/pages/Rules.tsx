@@ -18,8 +18,8 @@ const Rules = () => {
   return (
     <div className="min-h-screen flex flex-col items-center px-3 sm:px-4 py-6 sm:py-10">
       <SEO
-        title="Spelregels — DingoLingo woordspel"
-        description="Lees de spelregels van DingoLingo: hoe je woorden raadt, punten verdient, badges ontgrendelt en niveaus van 4, 5 en 6 letters speelt."
+        title="Spelregels — DingoLingo woordenschat oefenen"
+        description="Lees hoe DingoLingo werkt: kies een speelmodus (Leren zonder timer, Oefenen, Klassiek of Uitdaging), raad het Nederlandse woord en bouw je woordenschat op."
         path="/spelregels"
       />
       <div className="w-full max-w-3xl">
@@ -32,7 +32,7 @@ const Rules = () => {
         </button>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary mb-8">
-          Spelregels — Lingo
+          Zo werkt DingoLingo
         </h1>
 
         <div className="space-y-5">
@@ -76,6 +76,51 @@ const Rules = () => {
             </CardContent>
           </Card>
 
+          {/* Kaart 1b — Speelmodi */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Speelmodi</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Kies een modus die bij jou past. Voor leerlingen en beginners raden we{" "}
+                <strong className="text-foreground">Leren</strong> aan — geen tijdsdruk, zodat je rustig
+                kunt nadenken over het juiste woord.
+              </p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Modus</TableHead>
+                    <TableHead>Timer</TableHead>
+                    <TableHead>Voor wie</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-semibold">Leren</TableCell>
+                    <TableCell>geen</TableCell>
+                    <TableCell>Leerlingen en beginners. Geen snelheidsbonus.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Oefenen</TableCell>
+                    <TableCell>3:00</TableCell>
+                    <TableCell>Rustig oefenen met meer tijd dan klassiek.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Klassiek</TableCell>
+                    <TableCell>1:30</TableCell>
+                    <TableCell>De originele DingoLingo-uitdaging.</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-semibold">Uitdaging</TableCell>
+                    <TableCell>1:00</TableCell>
+                    <TableCell>Voor wie écht snel wil zijn.</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
           {/* Kaart 2 — Niveaus */}
           <Card>
             <CardHeader>
@@ -104,9 +149,10 @@ const Rules = () => {
                       <Lock className="w-5 h-5 text-muted-foreground" />
                     </TableCell>
                     <TableCell>
+                      <p className="font-semibold text-foreground mb-1">Eén van deze is genoeg:</p>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>250 punten in 4-letter, of</li>
-                        <li>3 badges uit min. 2 categorieën, of</li>
+                        <li>250 punten in 4-letter</li>
+                        <li>3 badges uit minstens 2 categorieën</li>
                         <li>5 woorden op rij geraden in 1e poging</li>
                       </ul>
                     </TableCell>
@@ -117,9 +163,10 @@ const Rules = () => {
                       <Lock className="w-5 h-5 text-muted-foreground" />
                     </TableCell>
                     <TableCell>
+                      <p className="font-semibold text-foreground mb-1">Je hebt alles hiervan nodig:</p>
                       <ul className="list-disc pl-5 space-y-1">
-                        <li>600 punten totaal (alle niveaus), én</li>
-                        <li>1 zeldzame badge ★ of 8 gewone badges, én</li>
+                        <li>600 punten totaal (alle niveaus)</li>
+                        <li>1 zeldzame badge ★ óf 8 gewone badges</li>
                         <li>"Op dreef"-badge (3 dagen op rij gespeeld)</li>
                       </ul>
                     </TableCell>

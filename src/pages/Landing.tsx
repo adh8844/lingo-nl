@@ -60,8 +60,8 @@ const Landing = () => {
   return (
     <div ref={containerRef} className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       <SEO
-        title="DingoLingo — Speel Lingo online in het Nederlands"
-        description="Speel DingoLingo, het gratis Nederlandse Lingo woordspel online. Raad woorden van 4, 5 of 6 letters, verdien badges en klim op de ranglijst."
+        title="DingoLingo — Nederlandse woordenschat oefenen"
+        description="DingoLingo is een educatieve woordenschattool voor leerlingen en taalliefhebbers. Oefen Nederlandse woorden van 4, 5 of 6 letters op jouw tempo — gratis, geen reclame."
         path="/"
       />
 
@@ -205,8 +205,8 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
           transition={{ duration: 0.6, delay: 0.75 }}
           className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl"
         >
-          5 pogingen. 90 seconden. Eindeloos verslavend. Speel solo, jaag op badges of daag
-          vrienden uit voor een live duel.
+          Oefen Nederlandse woordenschat op jouw tempo. Vier speelmodi — van rustig leren
+          zonder timer tot scherpe uitdaging. Geschikt voor leerlingen, taalcursisten en klassen.
         </motion.p>
 
         <motion.div
@@ -241,8 +241,8 @@ const Hero = ({ ctaTarget, ctaLabel }: { ctaTarget: string; ctaLabel: string }) 
           className="mt-10 flex items-center gap-6 text-xs text-muted-foreground"
         >
           <Stat icon={<Users className="w-4 h-4 text-primary" />} value="100%" label="Nederlands" />
-          <Stat icon={<Zap className="w-4 h-4 text-primary" />} value="90s" label="per ronde" />
-          <Stat icon={<Trophy className="w-4 h-4 text-primary" />} value="∞" label="badges" />
+          <Stat icon={<Zap className="w-4 h-4 text-primary" />} value="4" label="speelmodi" />
+          <Stat icon={<Trophy className="w-4 h-4 text-primary" />} value="op tempo" label="leren" />
         </motion.div>
       </motion.div>
 

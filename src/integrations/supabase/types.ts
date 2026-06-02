@@ -63,7 +63,10 @@ export type Database = {
         Row: {
           appropriate: boolean
           approved: boolean
+          cefr_level: string | null
           created_at: string
+          educational: boolean
+          frequency_band: number | null
           id: string
           length: number
           rejected: boolean
@@ -73,7 +76,10 @@ export type Database = {
         Insert: {
           appropriate?: boolean
           approved?: boolean
+          cefr_level?: string | null
           created_at?: string
+          educational?: boolean
+          frequency_band?: number | null
           id?: string
           length: number
           rejected?: boolean
@@ -83,7 +89,10 @@ export type Database = {
         Update: {
           appropriate?: boolean
           approved?: boolean
+          cefr_level?: string | null
           created_at?: string
+          educational?: boolean
+          frequency_band?: number | null
           id?: string
           length?: number
           rejected?: boolean
@@ -686,6 +695,7 @@ export type Database = {
         Row: {
           best_streak: number
           birthdate: string | null
+          cefr_level: string | null
           created_at: string
           current_streak: number
           display_name: string
@@ -693,6 +703,8 @@ export type Database = {
           last_played_date: string | null
           player_code: string
           points: number
+          preferred_mode: string
+          school_group: number | null
           school_id: string | null
           total_games_played: number
           total_hours_played: number
@@ -704,6 +716,7 @@ export type Database = {
         Insert: {
           best_streak?: number
           birthdate?: string | null
+          cefr_level?: string | null
           created_at?: string
           current_streak?: number
           display_name: string
@@ -711,6 +724,8 @@ export type Database = {
           last_played_date?: string | null
           player_code: string
           points?: number
+          preferred_mode?: string
+          school_group?: number | null
           school_id?: string | null
           total_games_played?: number
           total_hours_played?: number
@@ -722,6 +737,7 @@ export type Database = {
         Update: {
           best_streak?: number
           birthdate?: string | null
+          cefr_level?: string | null
           created_at?: string
           current_streak?: number
           display_name?: string
@@ -729,6 +745,8 @@ export type Database = {
           last_played_date?: string | null
           player_code?: string
           points?: number
+          preferred_mode?: string
+          school_group?: number | null
           school_id?: string | null
           total_games_played?: number
           total_hours_played?: number
@@ -849,6 +867,27 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -1162,6 +1201,7 @@ export type Database = {
         Returns: {
           best_streak: number
           birthdate: string | null
+          cefr_level: string | null
           created_at: string
           current_streak: number
           display_name: string
@@ -1169,6 +1209,8 @@ export type Database = {
           last_played_date: string | null
           player_code: string
           points: number
+          preferred_mode: string
+          school_group: number | null
           school_id: string | null
           total_games_played: number
           total_hours_played: number
@@ -1211,15 +1253,23 @@ export type Database = {
           total_points: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_match_participant: { Args: { p_match_id: string }; Returns: boolean }
+      is_teacher: { Args: never; Returns: boolean }
       players_in_same_circle: {
         Args: { p1: string; p2: string }
         Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "teacher" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1346,6 +1396,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "teacher", "student"],
+    },
   },
 } as const
