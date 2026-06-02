@@ -22,6 +22,7 @@ const Index = () => {
   const [selectedVariant, setSelectedVariant] = useState<Variant>(4);
   const { player, session, loading, refreshPlayer, signOut } = usePlayer();
   const { isAdmin } = useIsAdmin();
+  const { isTeacher } = useIsTeacher();
   const [bugReportOpen, setBugReportOpen] = useState(false);
 
   // Modus wordt automatisch bepaald op basis van school-koppeling:
