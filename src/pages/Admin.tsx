@@ -179,7 +179,7 @@ const Admin = () => {
     setLoadingWords(true);
     const { data } = await supabase
       .from("dutch_words")
-      .select("id, word, length, created_at, suggested_by, approved, appropriate")
+      .select("id, word, length, created_at, suggested_by, approved, appropriate, educational")
       .eq("rejected", false)
       .eq("approved", false)
       .order("created_at", { ascending: false });
