@@ -259,6 +259,13 @@ const Auth = () => {
             >
               {isLogin ? "Nog geen account? Registreer hier" : "Al een account? Log hier in"}
             </button>
+
+            <button
+              onClick={() => navTo("/leerling")}
+              className="text-sm font-semibold text-primary hover:brightness-110 transition-colors"
+            >
+              Ben je een leerling? Log hier in →
+            </button>
           </>
         )}
       </div>
