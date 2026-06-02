@@ -15,4 +15,6 @@ export interface Player {
   user_id?: string | null;
   school_id?: string | null;
   preferred_mode?: string | null;
+  username?: string | null;
+  school_group?: number | null;
 }
