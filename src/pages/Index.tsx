@@ -244,8 +244,8 @@ const Index = () => {
               {player.school_id ? " · ingesteld door je docent" : " · standaard voor vrije spelers"}
             </div>
 
-            {/* Variant cards: 4, 5, 6, mix */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+            {/* Variant cards: 4, 5, 6, mix — 2x2 totdat alles ontgrendeld is */}
+            <div className={`grid gap-3 w-full ${is5Unlocked && is6Unlocked && isMixUnlocked ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"}`}>
               {renderLevelCard(4, "Vier letters", true)}
               {renderLevelCard(5, "Vijf letters", is5Unlocked)}
               {renderLevelCard(6, "Zes letters", is6Unlocked)}
