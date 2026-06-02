@@ -29,7 +29,9 @@ const App = () => (
         <BrowserRouter>
           <GlobalOnlineManager />
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<School />} />
+            <Route path="/klassiek" element={<Landing />} />
+            <Route path="/school" element={<School />} />
             <Route path="/spelen" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
