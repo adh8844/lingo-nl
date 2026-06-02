@@ -14,4 +14,5 @@ export interface Player {
   created_at: string;
   user_id?: string | null;
   school_id?: string | null;
+  preferred_mode?: string | null;
 }
