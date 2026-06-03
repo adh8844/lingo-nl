@@ -109,7 +109,7 @@ const School = () => {
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl whitespace-pre-line">
-            {"Woordenschat en spelling. Oefeningen waar leerlingen naar uitkijken.\nEen veilige, besloten leeromgeving voor de hele school.\nVanaf €1 per leerling per jaar."}
+            {"Woordenschat en spelling. Oefeningen waar leerlingen naar uitkijken.\nEen veilige, besloten leeromgeving voor de hele klas.\nVanaf €1 per leerling per jaar."}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
@@ -267,7 +267,7 @@ const School = () => {
             {
               n: "03",
               title: "Leerlingen spelen",
-              body: "Jij maakt in de schoolomgeving accounts voor de leerlingen.",
+              body: "Jij maakt in de schoolomgeving accounts voor de leerlingen. Zij kunnen direct aan de slag.",
               icon: <Users className="w-8 h-8" />,
             },
           ].map((s, i) => (
