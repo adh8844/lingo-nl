@@ -148,7 +148,7 @@ const PupilAuth = () => {
           className="text-center mb-6"
         >
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary via-accent-foreground to-primary bg-clip-text text-transparent">
-            Hoi leerling!
+            Hoi ik ben Dingo!
           </h1>
           <p className="text-muted-foreground mt-2">Log in om te spelen 🎮</p>
         </motion.div>
