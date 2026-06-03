@@ -107,7 +107,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
     setIsLoading(true);
     const nextLen: WordLength = mixMode
       ? (([4, 5, 6] as WordLength[])[Math.floor(Math.random() * 3)])
-      : activeLength;
+      : wordLength;
     setActiveLength(nextLen);
     const word = await getRandomWordAsync("nl", nextLen, mode === "leren" ? "educational" : "full");
     setTargetWord(word);
@@ -125,7 +125,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
     setIsLoading(false);
     startTimeRef.current = Date.now();
     startTimer();
-  }, [activeLength, startTimer, mode, mixMode]);
+  }, [wordLength, startTimer, mode, mixMode]);
 
   useEffect(() => {
     startNewRound();
