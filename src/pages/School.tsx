@@ -107,13 +107,11 @@ const School = () => {
           <h1 className="font-extrabold tracking-tighter leading-[0.9] text-4xl sm:text-6xl md:text-7xl">
             <span className="text-primary">DingoLingo</span>
             <br />
-            voor de basisschool
+            voor in de klas
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl">
-            Woordenschat en spelling waar leerlingen <span className="text-foreground font-bold">naar uitkijken</span>.
-            Een veilige, besloten leeromgeving voor uw hele school — vanaf{" "}
-            <span className="text-primary font-extrabold">€1 per leerling per jaar</span>.
+          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl whitespace-pre-line">
+            {"Woordenschat en spelling. Oefeningen waar leerlingen naar uitkijken.\nEen veilige, besloten leeromgeving voor de hele school.\nVanaf €1 per leerling per jaar."}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-3">
@@ -133,19 +131,19 @@ const School = () => {
       {/* Waarom */}
       <Section
         kicker="Waarom DingoLingo"
-        title="Spelend leren, écht effectief."
+        title="Spelend leren, en heel effectief."
       >
         <div className="max-w-5xl mx-auto mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             {
               icon: <Sparkles className="w-7 h-7" />,
               title: "Woordenschat & spelling",
-              body: "Honderden Nederlandse woorden, afgestemd op niveau 4, 5 en 6 letters.",
+              body: "Duizenden Nederlandse 4-5-6-letterwoorden",
             },
             {
               icon: <Trophy className="w-7 h-7" />,
               title: "Motiverend",
-              body: "Badges, streaks en dagklassementen houden leerlingen scherp én betrokken.",
+              body: "Badges, reeksen en dagklassementen houden leerlingen scherp én betrokken.",
             },
             {
               icon: <ShieldCheck className="w-7 h-7" />,
@@ -155,7 +153,7 @@ const School = () => {
             {
               icon: <GraduationCap className="w-7 h-7" />,
               title: "Groep 3 t/m 8",
-              body: "Geschikt voor de hele onderbouw én bovenbouw. Speelt op tablet en chromebook.",
+              body: "Geschikt voor onderbouw én bovenbouw. Speelt op tablet en chromebook.",
             },
           ].map((f, i) => (
             <motion.div
@@ -179,7 +177,7 @@ const School = () => {
       {/* Eigen schoolomgeving */}
       <Section
         kicker="Eigen schoolomgeving"
-        title="Uw school. Uw kring."
+        title="Uw school. Uw omgeving."
       >
         <div className="max-w-3xl mx-auto mt-10 grid gap-4">
           {[
@@ -259,19 +257,19 @@ const School = () => {
             {
               n: "01",
               title: "Aanmelden",
-              body: "U stuurt een korte aanvraag. Wij nemen binnen 2 werkdagen contact op.",
+              body: "Vraag een schoolaccount aan per e-mail. Leraar maakt een account aan.",
               icon: <Mail className="w-8 h-8" />,
             },
             {
               n: "02",
-              title: "School krijgt code",
-              body: "We maken uw schoolomgeving aan en sturen u een unieke schoolcode.",
+              title: "School wordt aangemaakt",
+              body: "We maken uw schoolomgeving aan en koppelen deze aan het lerarenprofiel.",
               icon: <ShieldCheck className="w-8 h-8" />,
             },
             {
               n: "03",
               title: "Leerlingen spelen",
-              body: "Leerlingen registreren met de schoolcode en kunnen direct beginnen.",
+              body: "Leraar maakt accounts voor leerlingen aan. Leerlingen kunnen direct van start.",
               icon: <Users className="w-8 h-8" />,
             },
           ].map((s, i) => (
@@ -309,7 +307,7 @@ const School = () => {
             Klaar om DingoLingo in de klas te brengen?
           </h2>
           <p className="mt-4 text-muted-foreground text-base sm:text-lg">
-            Schrijf uw school in en geef leerlingen van Groep 3 t/m 8 een
+            Schrijf je school in en geef leerlingen van Groep 3 t/m 8 een
             woordspel waar ze écht plezier in hebben.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
