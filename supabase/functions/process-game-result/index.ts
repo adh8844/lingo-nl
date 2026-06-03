@@ -162,8 +162,9 @@ Deno.serve(async (req) => {
         .from('dutch_words')
         .select('id')
         .eq('word', word.toLowerCase())
+        .eq('length', level)
         .eq('approved', true)
-        .eq('appropriate', true)
+        .eq('rejected', false)
         .maybeSingle()
       if (!wordCheck) {
         return new Response(JSON.stringify({ error: 'Ongeldig woord' }), {
