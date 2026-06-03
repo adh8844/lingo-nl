@@ -255,19 +255,19 @@ const School = () => {
             {
               n: "01",
               title: "Aanmelden",
-              body: "Vraag een schoolaccount aan per e-mail. Leraar maakt een account aan.",
+              body: "Vraag een schoolaccount aan per e-mail. Maak een leraaraccount.",
               icon: <Mail className="w-8 h-8" />,
             },
             {
               n: "02",
               title: "School wordt aangemaakt",
-              body: "We maken uw schoolomgeving aan en koppelen deze aan het lerarenprofiel.",
+              body: "We maken je schoolomgeving aan en koppelen deze aan je leraaraccount.",
               icon: <ShieldCheck className="w-8 h-8" />,
             },
             {
               n: "03",
               title: "Leerlingen spelen",
-              body: "Leraar maakt accounts voor leerlingen aan. Leerlingen kunnen direct van start.",
+              body: "Leraar maakt accounts voor leerlingen. Leerlingen kunnen direct van start.",
               icon: <Users className="w-8 h-8" />,
             },
           ].map((s, i) => (
