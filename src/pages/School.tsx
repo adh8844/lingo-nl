@@ -105,9 +105,7 @@ const School = () => {
           />
 
           <h1 className="font-extrabold tracking-tighter leading-[0.9] text-4xl sm:text-6xl md:text-7xl">
-            <span className="text-primary">DingoLingo</span>
-            <br />
-            voor in de klas
+            <span className="text-primary">DingoLingo</span>{"\u00A0"}in de klas
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl whitespace-pre-line">
