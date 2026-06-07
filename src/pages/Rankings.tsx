@@ -347,6 +347,8 @@ const Rankings = () => {
     const base = `font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`;
     return canView(id) ? `${base} cursor-pointer hover:underline` : base;
   };
+
+  const renderRow = (entry: RankEntry, i: number, icon: string) => {
     const isMe = player?.id === entry.id;
     const op = onlineMap.get(entry.id);
     const isOnline = !!op;
