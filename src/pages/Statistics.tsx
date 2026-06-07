@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import SEO from "@/components/SEO";
+import { toast } from "sonner";
+import { useCanViewPlayer } from "@/hooks/useCanViewPlayer";
 
 interface LevelStats {
   level: number;
