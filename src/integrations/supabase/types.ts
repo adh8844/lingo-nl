@@ -1057,6 +1057,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_view_player: { Args: { _target: string }; Returns: boolean }
       current_player_id: { Args: never; Returns: string }
       current_player_school_id: { Args: never; Returns: string }
       get_badges_count_in_range: {
