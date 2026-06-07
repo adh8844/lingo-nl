@@ -11,6 +11,8 @@ import SEO from "@/components/SEO";
 import ChampionshipDetailDialog, {
   type ChampionshipDetail,
 } from "@/components/ChampionshipDetailDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info } from "lucide-react";
 
 type Tab = "championship" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
