@@ -84,6 +84,8 @@ const amsterdamYesterdayRangeISO = () => {
 const Rankings = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
+  const { isAdmin } = useIsAdmin();
+  const { isTeacher } = useIsTeacher();
   const [tab, setTab] = useState<Tab>("overview");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
