@@ -8,8 +8,11 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
 import ChallengeDialog from "@/components/ChallengeDialog";
 import SEO from "@/components/SEO";
+import ChampionshipDetailDialog, {
+  type ChampionshipDetail,
+} from "@/components/ChampionshipDetailDialog";
 
-type Tab = "points" | "streak" | "games" | "badges" | "challenges";
+type Tab = "championship" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
 type GamesSub = "total" | "today";
 type StreakSub = "max" | "current";
@@ -64,7 +67,7 @@ const Rankings = () => {
   const { player, loading } = usePlayer();
   const { isAdmin } = useIsAdmin();
   const { isTeacher } = useIsTeacher();
-  const [tab, setTab] = useState<Tab>("points");
+  const [tab, setTab] = useState<Tab>("championship");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
   const [streakSub, setStreakSub] = useState<StreakSub>("max");
@@ -75,6 +78,9 @@ const Rankings = () => {
   const [gamesToday, setGamesToday] = useState<RankEntry[]>([]);
   const [badgesList, setBadgesList] = useState<RankEntry[]>([]);
   const [challengesList, setChallengesList] = useState<RankEntry[]>([]);
+  const [championshipList, setChampionshipList] = useState<ChampionshipDetail[]>([]);
+  const [championshipUpdatedAt, setChampionshipUpdatedAt] = useState<string | null>(null);
+  const [championshipDetail, setChampionshipDetail] = useState<ChampionshipDetail | null>(null);
 
   const { onlinePlayers } = usePresence(player?.id);
   const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
@@ -190,6 +196,25 @@ const Rankings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mySchoolId]);
 
+  const loadChampionship = useCallback(async () => {
+    const { data } = await supabase.rpc("get_championship_standings");
+    const rows: ChampionshipDetail[] = (data || []).map((r: any) => ({
+      id: r.player_id,
+      display_name: r.display_name,
+      score: Number(r.score),
+      ranks: {
+        points: r.rank_points,
+        streak: r.rank_streak,
+        games: r.rank_games,
+        badges: r.rank_badges,
+        challenges: r.rank_challenges,
+      },
+      fallback_rank: r.fallback_rank,
+    }));
+    setChampionshipList(rows);
+    if (data && data.length > 0) setChampionshipUpdatedAt(data[0].updated_at);
+  }, []);
+
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [loadingSection, setLoadingSection] = useState<Record<string, boolean>>({});
 
@@ -209,7 +234,10 @@ const Rankings = () => {
 
   // Load data only when a tab is selected — first paint, then fetch.
   useEffect(() => {
-    if (tab === "points") {
+    if (tab === "championship") {
+      void ensureLoaded("players", loadAllPlayers);
+      void ensureLoaded("championship", loadChampionship);
+    } else if (tab === "points") {
       void ensureLoaded("players", loadAllPlayers);
       void ensureLoaded("pointsToday", loadPointsToday);
     } else if (tab === "streak") {
@@ -377,6 +405,7 @@ const Rankings = () => {
   };
 
   const tabs: { key: Tab; icon: string; title: string }[] = [
+    { key: "championship", icon: "🏆", title: "Kampioenschap" },
     { key: "points", icon: "⭐", title: "Aantal punten" },
     { key: "streak", icon: "🔥", title: "Reeks" },
     { key: "games", icon: "🎯", title: "Aantal spellen" },
@@ -386,39 +415,57 @@ const Rankings = () => {
   const currentTabTitle = tabs.find((t) => t.key === tab)?.title ?? "";
 
   const activeList: RankEntry[] =
-    tab === "points"
-      ? pointsSub === "total"
-        ? pointsTotalList
-        : pointsToday
-      : tab === "streak"
-        ? streakSub === "max"
-          ? maxStreakList
-          : currentStreakList
-        : tab === "games"
-          ? gamesSub === "total"
-            ? gamesTotal
-            : gamesToday
-          : tab === "badges"
-            ? badgesList
-            : challengesList;
+    tab === "championship"
+      ? championshipList.map((c) => ({
+          id: c.id,
+          display_name: c.display_name,
+          value: c.score,
+        }))
+      : tab === "points"
+        ? pointsSub === "total"
+          ? pointsTotalList
+          : pointsToday
+        : tab === "streak"
+          ? streakSub === "max"
+            ? maxStreakList
+            : currentStreakList
+          : tab === "games"
+            ? gamesSub === "total"
+              ? gamesTotal
+              : gamesToday
+            : tab === "badges"
+              ? badgesList
+              : challengesList;
 
   const valueIcon =
-    tab === "points" ? "⭐" : tab === "streak" ? "🔥" : tab === "games" ? "🎮" : tab === "badges" ? "🏅" : "⚔️";
+    tab === "championship"
+      ? "🏆"
+      : tab === "points"
+        ? "⭐"
+        : tab === "streak"
+          ? "🔥"
+          : tab === "games"
+            ? "🎮"
+            : tab === "badges"
+              ? "🏅"
+              : "⚔️";
 
   const tabLoadingKey =
-    tab === "points"
-      ? pointsSub === "total"
-        ? "players"
-        : "pointsToday"
-      : tab === "streak"
-        ? "players"
-        : tab === "games"
-          ? gamesSub === "total"
-            ? "gamesTotal"
-            : "gamesToday"
-          : tab === "badges"
-            ? "badges"
-            : "challenges";
+    tab === "championship"
+      ? "championship"
+      : tab === "points"
+        ? pointsSub === "total"
+          ? "players"
+          : "pointsToday"
+        : tab === "streak"
+          ? "players"
+          : tab === "games"
+            ? gamesSub === "total"
+              ? "gamesTotal"
+              : "gamesToday"
+            : tab === "badges"
+              ? "badges"
+              : "challenges";
   const isTabLoading = !!loadingSection[tabLoadingKey] && !loaded[tabLoadingKey];
 
   const totalPages = Math.max(1, Math.ceil(activeList.length / PAGE_SIZE));
@@ -532,7 +579,40 @@ const Rankings = () => {
           <p className="text-center text-muted-foreground py-8">Nog geen data</p>
         ) : (
           <>
-            {pageItems.map((e, i) => renderRow(e, pageStart + i, valueIcon))}
+            {tab === "championship"
+              ? pageItems.map((e, i) => {
+                  const idx = pageStart + i;
+                  const isMe = player?.id === e.id;
+                  const detail = championshipList.find((c) => c.id === e.id);
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => detail && setChampionshipDetail(detail)}
+                      className={`flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-lg text-sm text-left hover:brightness-110 transition-all ${
+                        isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span className="text-muted-foreground font-bold w-6 sm:w-8 text-right shrink-0">
+                          {medal(idx)}
+                        </span>
+                        <span
+                          className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`}
+                          translate="no"
+                        >
+                          {e.display_name}
+                          {isMe && (
+                            <span className="text-xs text-muted-foreground ml-1">(jij)</span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="font-extrabold shrink-0">
+                        🏆 {Number(e.value).toFixed(3)}
+                      </span>
+                    </button>
+                  );
+                })
+              : pageItems.map((e, i) => renderRow(e, pageStart + i, valueIcon))}
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between gap-2 pt-2">
@@ -555,6 +635,17 @@ const Rankings = () => {
                 </button>
               </div>
             )}
+
+            {tab === "championship" && championshipUpdatedAt && (
+              <p className="text-xs text-muted-foreground text-center pt-1">
+                Bijgewerkt:{" "}
+                {new Intl.DateTimeFormat("nl-NL", {
+                  timeZone: "Europe/Amsterdam",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(championshipUpdatedAt))}
+              </p>
+            )}
           </>
         )}
       </div>
@@ -567,6 +658,16 @@ const Rankings = () => {
           onClose={() => setChallengeTarget(null)}
         />
       )}
+
+      <ChampionshipDetailDialog
+        detail={championshipDetail}
+        onClose={() => setChampionshipDetail(null)}
+        canView={championshipDetail ? canView(championshipDetail.id) : false}
+        onOpenProfile={(id) => {
+          setChampionshipDetail(null);
+          goToProfile(id);
+        }}
+      />
     </div>
   );
 };
