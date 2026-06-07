@@ -405,6 +405,7 @@ const Rankings = () => {
   };
 
   const tabs: { key: Tab; icon: string; title: string }[] = [
+    { key: "championship", icon: "🏆", title: "Kampioenschap" },
     { key: "points", icon: "⭐", title: "Aantal punten" },
     { key: "streak", icon: "🔥", title: "Reeks" },
     { key: "games", icon: "🎯", title: "Aantal spellen" },
@@ -414,39 +415,57 @@ const Rankings = () => {
   const currentTabTitle = tabs.find((t) => t.key === tab)?.title ?? "";
 
   const activeList: RankEntry[] =
-    tab === "points"
-      ? pointsSub === "total"
-        ? pointsTotalList
-        : pointsToday
-      : tab === "streak"
-        ? streakSub === "max"
-          ? maxStreakList
-          : currentStreakList
-        : tab === "games"
-          ? gamesSub === "total"
-            ? gamesTotal
-            : gamesToday
-          : tab === "badges"
-            ? badgesList
-            : challengesList;
+    tab === "championship"
+      ? championshipList.map((c) => ({
+          id: c.id,
+          display_name: c.display_name,
+          value: c.score,
+        }))
+      : tab === "points"
+        ? pointsSub === "total"
+          ? pointsTotalList
+          : pointsToday
+        : tab === "streak"
+          ? streakSub === "max"
+            ? maxStreakList
+            : currentStreakList
+          : tab === "games"
+            ? gamesSub === "total"
+              ? gamesTotal
+              : gamesToday
+            : tab === "badges"
+              ? badgesList
+              : challengesList;
 
   const valueIcon =
-    tab === "points" ? "⭐" : tab === "streak" ? "🔥" : tab === "games" ? "🎮" : tab === "badges" ? "🏅" : "⚔️";
+    tab === "championship"
+      ? "🏆"
+      : tab === "points"
+        ? "⭐"
+        : tab === "streak"
+          ? "🔥"
+          : tab === "games"
+            ? "🎮"
+            : tab === "badges"
+              ? "🏅"
+              : "⚔️";
 
   const tabLoadingKey =
-    tab === "points"
-      ? pointsSub === "total"
-        ? "players"
-        : "pointsToday"
-      : tab === "streak"
-        ? "players"
-        : tab === "games"
-          ? gamesSub === "total"
-            ? "gamesTotal"
-            : "gamesToday"
-          : tab === "badges"
-            ? "badges"
-            : "challenges";
+    tab === "championship"
+      ? "championship"
+      : tab === "points"
+        ? pointsSub === "total"
+          ? "players"
+          : "pointsToday"
+        : tab === "streak"
+          ? "players"
+          : tab === "games"
+            ? gamesSub === "total"
+              ? "gamesTotal"
+              : "gamesToday"
+            : tab === "badges"
+              ? "badges"
+              : "challenges";
   const isTabLoading = !!loadingSection[tabLoadingKey] && !loaded[tabLoadingKey];
 
   const totalPages = Math.max(1, Math.ceil(activeList.length / PAGE_SIZE));
