@@ -32,7 +32,7 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
   comeback: <Swords className="w-6 h-6" />,
   meesterspeler: <Trophy className="w-6 h-6" />,
   fair_play: <HandshakeIcon className="w-6 h-6" />,
-  werver: <Users className="w-6 h-6" />,
+  
   feestbeest: <PartyPopper className="w-6 h-6" />,
   uitdager: <Medal className="w-6 h-6" />,
   marathonloper: <Footprints className="w-6 h-6" />,
