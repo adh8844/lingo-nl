@@ -578,7 +578,7 @@ const BadgesSection = () => {
     { icon: <Target className="w-7 h-7" />, name: "Vlekkeloos", desc: "Geraden in 1 poging", points: 75, rare: true },
     { icon: <Crown className="w-7 h-7" />, name: "Maandmaster", desc: "Een maand lang elke dag gespeeld", points: 200, rare: true },
     { icon: <Trophy className="w-7 h-7" />, name: "Meesterspeler", desc: "1000 spellen gewonnen", points: 250, rare: true },
-    { icon: <Users className="w-7 h-7" />, name: "Werver", desc: "5 vrienden uitgenodigd", points: 100, rare: false },
+    
     { icon: <Brain className="w-7 h-7" />, name: "Onvermoeibaar", desc: "50 spellen in één dag", points: 80, rare: false },
     { icon: <Star className="w-7 h-7" />, name: "Legend", desc: "Top 10 van Nederland", points: 500, rare: true },
   ];
