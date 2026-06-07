@@ -59,6 +59,15 @@ const Profile = () => {
 
   const isOwnProfile = !playerId || playerId === currentPlayer?.id;
   const displayPlayer = isOwnProfile ? currentPlayer : viewPlayer;
+  const targetId = isOwnProfile ? currentPlayer?.id : playerId;
+  const { allowed, checking: permChecking } = useCanViewPlayer(targetId);
+
+  useEffect(() => {
+    if (!permChecking && allowed === false) {
+      toast.error("Geen toegang tot dit profiel");
+      navigate("/profile", { replace: true });
+    }
+  }, [allowed, permChecking, navigate]);
 
   const startEditName = () => {
     setNameInput(displayPlayer?.display_name || "");
