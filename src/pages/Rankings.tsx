@@ -232,10 +232,16 @@ const Rankings = () => {
     [loaded, loadingSection],
   );
 
+  // Preload championship immediately on mount — it's the default tab and the
+  // data comes from a cached table, so we don't want to wait on the tab effect.
+  useEffect(() => {
+    void ensureLoaded("championship", loadChampionship);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Load data only when a tab is selected — first paint, then fetch.
   useEffect(() => {
     if (tab === "championship") {
-      void ensureLoaded("players", loadAllPlayers);
       void ensureLoaded("championship", loadChampionship);
     } else if (tab === "points") {
       void ensureLoaded("players", loadAllPlayers);
@@ -252,6 +258,7 @@ const Rankings = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+
 
   const sameCircle = (p: PlayerRow) => (p.school_id ?? null) === mySchoolId;
 
