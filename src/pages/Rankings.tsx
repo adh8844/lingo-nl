@@ -8,8 +8,11 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useIsTeacher } from "@/hooks/useIsTeacher";
 import ChallengeDialog from "@/components/ChallengeDialog";
 import SEO from "@/components/SEO";
+import ChampionshipDetailDialog, {
+  type ChampionshipDetail,
+} from "@/components/ChampionshipDetailDialog";
 
-type Tab = "points" | "streak" | "games" | "badges" | "challenges";
+type Tab = "championship" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
 type GamesSub = "total" | "today";
 type StreakSub = "max" | "current";
