@@ -78,6 +78,9 @@ const Rankings = () => {
   const [gamesToday, setGamesToday] = useState<RankEntry[]>([]);
   const [badgesList, setBadgesList] = useState<RankEntry[]>([]);
   const [challengesList, setChallengesList] = useState<RankEntry[]>([]);
+  const [championshipList, setChampionshipList] = useState<ChampionshipDetail[]>([]);
+  const [championshipUpdatedAt, setChampionshipUpdatedAt] = useState<string | null>(null);
+  const [championshipDetail, setChampionshipDetail] = useState<ChampionshipDetail | null>(null);
 
   const { onlinePlayers } = usePresence(player?.id);
   const { activeMatch, sendChallenge } = useOnlineMatch(player?.id);
