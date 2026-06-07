@@ -97,7 +97,7 @@ const Statistics = () => {
       date: date.slice(5),
       points,
     })));
-  }, [targetId, playerId, currentPlayer?.id]);
+  }, [targetId, playerId, currentPlayer?.id, allowed]);
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
