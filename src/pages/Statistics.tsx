@@ -26,9 +26,18 @@ const Statistics = () => {
   const [playerName, setPlayerName] = useState<string>("");
 
   const targetId = playerId || currentPlayer?.id;
+  const { allowed, checking: permChecking } = useCanViewPlayer(targetId);
+
+  useEffect(() => {
+    if (!permChecking && allowed === false) {
+      toast.error("Geen toegang tot deze statistieken");
+      navigate("/statistics", { replace: true });
+    }
+  }, [allowed, permChecking, navigate]);
 
   const loadStats = useCallback(async () => {
     if (!targetId) return;
+    if (allowed !== true) return;
 
     // Load player name if viewing another player
     if (playerId && playerId !== currentPlayer?.id) {
