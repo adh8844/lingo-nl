@@ -319,7 +319,34 @@ const Rankings = () => {
   const medal = (i: number) =>
     i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
 
-  const renderRow = (entry: RankEntry, i: number, icon: string) => {
+  const playerSchoolMap = useMemo(() => {
+    const m = new Map<string, string | null>();
+    allPlayers.forEach((p) => m.set(p.id, p.school_id));
+    return m;
+  }, [allPlayers]);
+
+  const canView = useCallback(
+    (id: string) => {
+      if (!player) return false;
+      if (id === player.id) return true;
+      if (isAdmin) return true;
+      if (isTeacher && player.school_id) {
+        const s = playerSchoolMap.get(id);
+        return !!s && s === player.school_id;
+      }
+      return false;
+    },
+    [player, isAdmin, isTeacher, playerSchoolMap]
+  );
+
+  const goToProfile = (id: string) => {
+    if (canView(id)) navigate(`/profile/${id}`);
+  };
+
+  const nameClass = (id: string, isMe: boolean) => {
+    const base = `font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`;
+    return canView(id) ? `${base} cursor-pointer hover:underline` : base;
+  };
     const isMe = player?.id === entry.id;
     const op = onlineMap.get(entry.id);
     const isOnline = !!op;
