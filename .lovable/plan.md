@@ -1,53 +1,39 @@
-# Toegang tot Profiel & Statistieken beperken
+## Probleem
 
-## Regels
-- Eigen profiel/statistieken: iedereen.
-- Admin (`is_admin()`): alle profielen en statistieken.
-- Docent (`has_role(...,'teacher')`): alleen profielen/statistieken van leerlingen in **dezelfde school** (`players.school_id` matcht docent's `school_id`).
-- Normale gebruikers en leerlingen: alleen zichzelf.
+In de mix-modus (`LingoGame.tsx`) wisselt elke ronde de woordlengte (4/5/6). De `useWordDefinition(targetWord, activeLength)` hook draait elke render. In `startNewRound` gebeurt nu:
 
-## Backend (RLS + helper)
+```ts
+setActiveLength(nextLen);           // render 1: (OUD targetWord, NIEUWE lengte) ← mismatch!
+const word = await getRandomWordAsync(...);
+setTargetWord(word);                // render 2: (nieuw word, nieuwe lengte) ✓
+```
 
-Nieuwe migratie met:
+Tussen `setActiveLength` en `setTargetWord` zit een `await`, dus React batcht ze niet. Render 1 stuurt het oude woord met de nieuwe lengte naar de edge function → upsert in `word_definitions` met verkeerde `length`. Daarom staat bv. "liepen" (6 letters) opgeslagen met `length=4`.
 
-1. SECURITY DEFINER helper `public.can_view_player(target uuid)`:
-   ```
-   self  OR is_admin()
-        OR (has_role(auth.uid(),'teacher')
-            AND target.school_id IS NOT NULL
-            AND target.school_id = current_player_school_id())
-   ```
-2. RLS-policies bijwerken:
-   - `games`: SELECT → `can_view_player(player_id)` (vervangt huidige own/admin).
-   - `points_log`: idem.
-   - `player_badges`: SELECT → `can_view_player(player_id)` (vervangt `true`).
-3. RPC's `get_own_games` en `get_player_daily_points` → autorisatiecheck via `can_view_player` (i.p.v. alleen self/admin), zodat docent statistieken van leerling kan ophalen.
+## Wijzigingen
 
-`players` SELECT blijft `true` (rankings/multiplayer hebben namen nodig).
+### 1. Code-fix in `src/components/LingoGame.tsx`
 
-## Frontend
+In `startNewRound`: eerst het woord laden, dan `activeLength` en `targetWord` na elkaar zetten — zonder await ertussen — zodat de hook nooit een mismatched paar ziet.
 
-1. Nieuw hookje `src/hooks/useCanViewPlayer.ts`:
-   - input: `targetPlayerId`
-   - resolve via huidige sessie: own ✓ / admin ✓ / teacher + zelfde `school_id` ✓.
-   - Doet één lichte query naar `players` om `school_id` van target te halen wanneer nodig.
+```ts
+const word = await getRandomWordAsync("nl", nextLen, mode === "leren" ? "educational" : "full");
+setActiveLength(nextLen);
+setTargetWord(word);
+```
 
-2. `src/pages/Profile.tsx` en `src/pages/Statistics.tsx`:
-   - Als `playerId` gezet en gebruiker niet bevoegd → `toast.error("Geen toegang")` en `navigate("/profile", { replace: true })` (resp. `/statistics`).
-   - Tijdens check: spinner/placeholder; geen data laden.
+(`ChallengerGame.tsx` heeft een vaste `challengerLevel` en wordt niet aangepast.)
 
-3. `src/pages/Rankings.tsx`:
-   - Bouw set `viewableIds` op basis van rol:
-     - admin → alle `id`s in dataset
-     - teacher → eigen id + alle spelers met zelfde `school_id`
-     - anders → alleen eigen id
-   - Alle `onClick={() => navigate(\`/profile/${id}\`)}` op rij/naam:
-     - wrap in `if (viewableIds.has(id)) navigate(...)` of render zonder klikgedrag (geen `cursor-pointer`, geen hover) wanneer niet toegestaan. Naam blijft zichtbaar.
-   - Geldt voor alle plekken in Rankings (overview, points, streak, games, badges, challenges – ~6 locaties).
+### 2. Database migratie
 
-4. `src/pages/Teacher.tsx`: bestaande nav naar `/profile/:id` en `/statistics/:id` blijft werken — backend laat docent door.
+- Verwijder alle rijen uit `word_definitions` waar `char_length(word) <> length` (≈ 92 rijen).
+- Voeg een `CHECK (char_length(word) = length)` constraint toe op `word_definitions` zodat dit nooit meer kan gebeuren.
 
-## Niet wijzigen
-- `players` SELECT-policy (namen blijven publiek voor rankings).
-- Schoolcode / pupil_credentials logica.
-- Andere edge functions.
+### 3. Extra defensieve check in `supabase/functions/get-word-definition/index.ts`
+
+Valideer dat `word.length === length`; zo niet → 400-response, geen lookup/insert. Voorkomt dat een verkeerd paar überhaupt bij de DB komt, mocht een andere client deze fout maken.
+
+## Niet aangeraakt
+
+- Bestaande definities met correcte (word, length) blijven staan.
+- Geen wijzigingen aan `useWordDefinition` hook, `WordDefinitionBubble`, of overige game-logica.

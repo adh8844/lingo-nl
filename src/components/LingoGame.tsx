@@ -109,8 +109,11 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
     const nextLen: WordLength = mixMode
       ? (([4, 5, 6] as WordLength[])[Math.floor(Math.random() * 3)])
       : wordLength;
-    setActiveLength(nextLen);
+    // Reset targetWord eerst, zodat de useWordDefinition hook geen mismatched
+    // (oud woord, nieuwe lengte) paar ziet tijdens de await hieronder.
+    setTargetWord("");
     const word = await getRandomWordAsync("nl", nextLen, mode === "leren" ? "educational" : "full");
+    setActiveLength(nextLen);
     setTargetWord(word);
     setCurrentGuess(word[0]);
     setGuesses([]);
