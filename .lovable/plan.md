@@ -1,33 +1,29 @@
-## Probleem
+## Wat er echt gebeurt
 
-De Mix-kaart op de spelenpagina flikkert kort als "vergrendeld" voordat hij beschikbaar wordt. Oorzaak: de ontgrendeling wordt asynchroon berekend uit meerdere queries (`games`, `player_badges`, `badges`) in `loadUnlockProgress`, terwijl 5- en 6-letter direct uit de al geladen `player` komen (`unlocked_5letter`, `unlocked_6letter`).
+De architectuur klopt al: er bestaat een tabel `public.championship_standings` met 22 rijen, een index op `(school_id, rank_position)`, en een `pg_cron` job `refresh_championship_standings_3min` die elke 3 minuten succesvol draait (laatste runs: succeeded, ~0,5s). De RPC `get_championship_standings()` is een simpele lookup en doet geen berekening.
 
-## Oplossing
+De ervaren ~5s komt dus **niet** uit het berekenen van de lijst. Het komt uit hoe `Rankings.tsx` de tab inlaadt:
 
-Een persistente `unlocked_mix` kolom toevoegen op `players`, automatisch onderhouden door de backend, zodat de Mix-kaart meteen — net als de andere kaarten — uit het `player`-object gelezen kan worden.
+1. Het laden start pas in een `useEffect` ná het mounten van de pagina, ná dat `PlayerProvider` klaar is met sessie/profiel ophalen — een ketting van wachtrondes.
+2. Bij de "Kampioenschap"-tab wordt náást de RPC óók `loadAllPlayers` aangeroepen (`ensureLoaded("players", loadAllPlayers)`), terwijl die data voor deze tab niet nodig is (de RPC levert al `display_name` mee). Dat is een extra ronde over de `players`-tabel die nergens voor gebruikt wordt.
+3. De RPC wordt pas afgevuurd nadat React de tab heeft geactiveerd — niet meteen bij paginabezoek.
 
-### 1. Database migratie
+## Plan
 
-- Kolom `unlocked_mix boolean NOT NULL DEFAULT false` toevoegen op `public.players`.
-- `guard_player_protected_columns` trigger uitbreiden zodat `unlocked_mix` net als `unlocked_5letter`/`unlocked_6letter` alleen via service_role / admin geschreven mag worden.
-- Eenmalige backfill: alle bestaande spelers die nu al voldoen aan de Mix-criteria (≥1000 punten totaal, ≥12 badges, badge `niet_te_stoppen`) krijgen `true`. Voor leerlingen in een school: altijd `true` (school-users hebben alles ontgrendeld, zie huidige logica in `Index.tsx`).
-- De bestaande edge function `process-game-result` (die punten/badges toekent) wordt aangevuld zodat hij na elke game ook `unlocked_mix` herevalueert en bij het bereiken van de criteria op `true` zet. Eenmaal `true` blijft het `true`.
+### Frontend (`src/pages/Rankings.tsx`)
 
-### 2. Frontend wijziging (`src/pages/Index.tsx`)
+1. **Verwijder de overbodige players-call voor de kampioenschapstab.** In de tab-effect blok laten we voor `championship` alleen `ensureLoaded("championship", loadChampionship)` staan. Geen `loadAllPlayers` meer voor deze tab.
+2. **Start `loadChampionship` direct bij mount**, zodra de sessie er is — niet pas via de tab-effect. Aangezien Kampioenschap toch de default tab is, mag deze data parallel met `PlayerProvider` al onderweg zijn. We zetten een aparte `useEffect` met `[]` (of `[session]`) deps die meteen `ensureLoaded("championship", loadChampionship)` aanroept.
+3. **Eerste paint zonder blokkade**: toon een lichte skeleton (lege rijen of een dunne "Bijwerken…" tekst) zo lang `loadingSection.championship` waar is, in plaats van een leeg blok. Geen visuele wachttijd zonder feedback.
 
-- `isMixUnlocked` berekenen analoog aan 5/6:
-  ```ts
-  const isMixUnlocked = isSchoolUser || (player?.unlocked_mix ?? false);
-  ```
-- `loadUnlockProgress` blijft staan voor het tonen van de voortgangsregels (`totalPoints / badgeCount / hasNietTeStoppen`) op de vergrendelde kaart, maar bepaalt niet meer de klikbaarheid. Resultaat: zodra `player` geladen is, krijgt de Mix-kaart direct de juiste status — geen flikker meer.
+### Backend
 
-### 3. Types (`src/types/player.ts` + auto-generated `src/integrations/supabase/types.ts`)
+Geen schemawijzigingen nodig. De cache + cron werken; we doen niets extra's.
 
-- `unlocked_mix: boolean` toevoegen aan de `Player` interface. De Supabase types worden automatisch geregenereerd na de migratie.
+### Optioneel (alleen vermelden)
+
+Mocht het probleem na de bovenstaande fix terugkomen, dan kunnen we de RPC nog versnellen door `current_player_school_id()` in de RPC te vervangen door een direct subqueryresultaat op `auth.uid()` zodat er één functie-call minder is — maar gezien 22 rijen en de bestaande index is dat waarschijnlijk niet merkbaar.
 
 ## Bestanden
 
-- Nieuwe migratie (kolom + trigger-update + backfill)
-- `supabase/functions/process-game-result/index.ts` (Mix-criteria check toevoegen)
-- `src/pages/Index.tsx` (gebruik `player.unlocked_mix`)
-- `src/types/player.ts` (`unlocked_mix` veld)
+- `src/pages/Rankings.tsx` — kleinere tab-effect, extra mount-effect, optionele skeleton.
