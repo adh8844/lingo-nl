@@ -776,9 +776,9 @@ const Rankings = () => {
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                           <span
-                            className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                            className={nameClass(p.id, isMe)}
                             translate="no"
-                            onClick={() => navigate(`/profile/${p.id}`)}
+                            onClick={() => goToProfile(p.id)}
                           >
                             {p.display_name}
                             {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
