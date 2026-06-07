@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayerContext } from "@/hooks/usePlayerContext";
 import { toast } from "sonner";
+import { useCanViewPlayer } from "@/hooks/useCanViewPlayer";
 import type { Player } from "@/types/player";
 import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library, Pencil, Check, X } from "lucide-react";
 import SEO from "@/components/SEO";
@@ -58,6 +59,15 @@ const Profile = () => {
 
   const isOwnProfile = !playerId || playerId === currentPlayer?.id;
   const displayPlayer = isOwnProfile ? currentPlayer : viewPlayer;
+  const targetId = isOwnProfile ? currentPlayer?.id : playerId;
+  const { allowed, checking: permChecking } = useCanViewPlayer(targetId);
+
+  useEffect(() => {
+    if (!permChecking && allowed === false) {
+      toast.error("Geen toegang tot dit profiel");
+      navigate("/profile", { replace: true });
+    }
+  }, [allowed, permChecking, navigate]);
 
   const startEditName = () => {
     setNameInput(displayPlayer?.display_name || "");

@@ -1,32 +1,53 @@
-## Doel
+# Toegang tot Profiel & Statistieken beperken
 
-Tabellen `groups`, `group_members` en `friends` volledig verwijderen, samen met alle bijbehorende frontend- en edge-functioncode. Schools-functionaliteit blijft ongewijzigd.
+## Regels
+- Eigen profiel/statistieken: iedereen.
+- Admin (`is_admin()`): alle profielen en statistieken.
+- Docent (`has_role(...,'teacher')`): alleen profielen/statistieken van leerlingen in **dezelfde school** (`players.school_id` matcht docent's `school_id`).
+- Normale gebruikers en leerlingen: alleen zichzelf.
 
-## Database migratie
+## Backend (RLS + helper)
 
-Eén migratie die het volgende doet:
+Nieuwe migratie met:
 
-- `DROP TABLE IF EXISTS public.group_members CASCADE;`
-- `DROP TABLE IF EXISTS public.groups CASCADE;`
-- `DROP TABLE IF EXISTS public.friends CASCADE;`
-- Verwijder de bijbehorende badge `werver` uit `public.badges` (en `player_badges` via cascade of expliciete DELETE), aangezien deze badge afhankelijk is van de friends-tabel.
+1. SECURITY DEFINER helper `public.can_view_player(target uuid)`:
+   ```
+   self  OR is_admin()
+        OR (has_role(auth.uid(),'teacher')
+            AND target.school_id IS NOT NULL
+            AND target.school_id = current_player_school_id())
+   ```
+2. RLS-policies bijwerken:
+   - `games`: SELECT → `can_view_player(player_id)` (vervangt huidige own/admin).
+   - `points_log`: idem.
+   - `player_badges`: SELECT → `can_view_player(player_id)` (vervangt `true`).
+3. RPC's `get_own_games` en `get_player_daily_points` → autorisatiecheck via `can_view_player` (i.p.v. alleen self/admin), zodat docent statistieken van leerling kan ophalen.
+
+`players` SELECT blijft `true` (rankings/multiplayer hebben namen nodig).
 
 ## Frontend
 
-- Verwijder bestand `src/components/Leaderboard.tsx` (geen imports gevonden — component is ongebruikt).
-- Geen andere componenten gebruiken `friends`/`groups`/`group_members`.
-- Pas het getal van het totaal aantal badges aan naar 23 op badges pagina en spelregel pagina.
+1. Nieuw hookje `src/hooks/useCanViewPlayer.ts`:
+   - input: `targetPlayerId`
+   - resolve via huidige sessie: own ✓ / admin ✓ / teacher + zelfde `school_id` ✓.
+   - Doet één lichte query naar `players` om `school_id` van target te halen wanneer nodig.
 
-## Edge function
+2. `src/pages/Profile.tsx` en `src/pages/Statistics.tsx`:
+   - Als `playerId` gezet en gebruiker niet bevoegd → `toast.error("Geen toegang")` en `navigate("/profile", { replace: true })` (resp. `/statistics`).
+   - Tijdens check: spinner/placeholder; geen data laden.
 
-- `supabase/functions/process-game-result/index.ts`: verwijder het volledige `werver`-badge-blok (regels rond 460–470) dat `from('friends')` query't. Rest van de badge-logica blijft ongewijzigd.
+3. `src/pages/Rankings.tsx`:
+   - Bouw set `viewableIds` op basis van rol:
+     - admin → alle `id`s in dataset
+     - teacher → eigen id + alle spelers met zelfde `school_id`
+     - anders → alleen eigen id
+   - Alle `onClick={() => navigate(\`/profile/${id}\`)}` op rij/naam:
+     - wrap in `if (viewableIds.has(id)) navigate(...)` of render zonder klikgedrag (geen `cursor-pointer`, geen hover) wanneer niet toegestaan. Naam blijft zichtbaar.
+   - Geldt voor alle plekken in Rankings (overview, points, streak, games, badges, challenges – ~6 locaties).
 
-## Niet aangeraakt
+4. `src/pages/Teacher.tsx`: bestaande nav naar `/profile/:id` en `/statistics/:id` blijft werken — backend laat docent door.
 
-- Alle `school_id` / `schools` / `school_details` / `school_group` code blijft staan.
-- `pupil_credentials`, `players.school_id`, teacher-flow blijven ongewijzigd.
-- Oude migratiebestanden in `supabase/migrations/` blijven staan (history); alleen de nieuwe drop-migratie wordt toegevoegd.
-
-## Opmerking
-
-De `werver`-badge wordt uit de DB en uit de toekenning verwijderd. Spelers die hem al hadden verliezen hun toekenning (via cascade op `player_badges`).
+## Niet wijzigen
+- `players` SELECT-policy (namen blijven publiek voor rankings).
+- Schoolcode / pupil_credentials logica.
+- Andere edge functions.

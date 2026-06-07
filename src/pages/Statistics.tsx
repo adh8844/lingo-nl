@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import SEO from "@/components/SEO";
+import { toast } from "sonner";
+import { useCanViewPlayer } from "@/hooks/useCanViewPlayer";
 
 interface LevelStats {
   level: number;
@@ -24,9 +26,18 @@ const Statistics = () => {
   const [playerName, setPlayerName] = useState<string>("");
 
   const targetId = playerId || currentPlayer?.id;
+  const { allowed, checking: permChecking } = useCanViewPlayer(targetId);
+
+  useEffect(() => {
+    if (!permChecking && allowed === false) {
+      toast.error("Geen toegang tot deze statistieken");
+      navigate("/statistics", { replace: true });
+    }
+  }, [allowed, permChecking, navigate]);
 
   const loadStats = useCallback(async () => {
     if (!targetId) return;
+    if (allowed !== true) return;
 
     // Load player name if viewing another player
     if (playerId && playerId !== currentPlayer?.id) {
@@ -86,7 +97,7 @@ const Statistics = () => {
       date: date.slice(5),
       points,
     })));
-  }, [targetId, playerId, currentPlayer?.id]);
+  }, [targetId, playerId, currentPlayer?.id, allowed]);
 
   useEffect(() => { loadStats(); }, [loadStats]);
 

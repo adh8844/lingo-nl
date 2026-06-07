@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsTeacher } from "@/hooks/useIsTeacher";
 import ChallengeDialog from "@/components/ChallengeDialog";
 import SEO from "@/components/SEO";
 
@@ -82,6 +84,8 @@ const amsterdamYesterdayRangeISO = () => {
 const Rankings = () => {
   const navigate = useNavigate();
   const { player, loading } = usePlayer();
+  const { isAdmin } = useIsAdmin();
+  const { isTeacher } = useIsTeacher();
   const [tab, setTab] = useState<Tab>("overview");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
@@ -315,6 +319,35 @@ const Rankings = () => {
   const medal = (i: number) =>
     i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
 
+  const playerSchoolMap = useMemo(() => {
+    const m = new Map<string, string | null>();
+    allPlayers.forEach((p) => m.set(p.id, p.school_id));
+    return m;
+  }, [allPlayers]);
+
+  const canView = useCallback(
+    (id: string) => {
+      if (!player) return false;
+      if (id === player.id) return true;
+      if (isAdmin) return true;
+      if (isTeacher && player.school_id) {
+        const s = playerSchoolMap.get(id);
+        return !!s && s === player.school_id;
+      }
+      return false;
+    },
+    [player, isAdmin, isTeacher, playerSchoolMap]
+  );
+
+  const goToProfile = (id: string) => {
+    if (canView(id)) navigate(`/profile/${id}`);
+  };
+
+  const nameClass = (id: string, isMe: boolean) => {
+    const base = `font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`;
+    return canView(id) ? `${base} cursor-pointer hover:underline` : base;
+  };
+
   const renderRow = (entry: RankEntry, i: number, icon: string) => {
     const isMe = player?.id === entry.id;
     const op = onlineMap.get(entry.id);
@@ -334,9 +367,9 @@ const Rankings = () => {
           <div className="flex items-center gap-1.5 min-w-0">
             {isOnline && <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />}
             <span
-              className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+              className={nameClass(entry.id, isMe)}
               translate="no"
-              onClick={() => navigate(`/profile/${entry.id}`)}
+              onClick={() => goToProfile(entry.id)}
             >
               {entry.display_name}
               {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
@@ -413,9 +446,9 @@ const Rankings = () => {
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
                   {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
                   <span
-                    className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                    className={nameClass(e.id, isMe)}
                     translate="no"
-                    onClick={() => navigate(`/profile/${e.id}`)}
+                    onClick={() => goToProfile(e.id)}
                   >
                     {e.display_name}
                   </span>
@@ -494,9 +527,9 @@ const Rankings = () => {
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
                   {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
                   <span
-                    className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                    className={nameClass(e.id, isMe)}
                     translate="no"
-                    onClick={() => navigate(`/profile/${e.id}`)}
+                    onClick={() => goToProfile(e.id)}
                   >
                     {e.display_name}
                   </span>
@@ -631,9 +664,9 @@ const Rankings = () => {
                 <span className="w-5 text-right shrink-0">{medal(i)}</span>
                 {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
                 <span
-                  className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                  className={nameClass(e.id, isMe)}
                   translate="no"
-                  onClick={(ev) => { ev.stopPropagation(); navigate(`/profile/${e.id}`); }}
+                  onClick={(ev) => { ev.stopPropagation(); goToProfile(e.id); }}
                 >
                   {e.display_name}
                 </span>
@@ -743,9 +776,9 @@ const Rankings = () => {
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                           <span
-                            className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                            className={nameClass(p.id, isMe)}
                             translate="no"
-                            onClick={() => navigate(`/profile/${p.id}`)}
+                            onClick={() => goToProfile(p.id)}
                           >
                             {p.display_name}
                             {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
@@ -814,9 +847,9 @@ const Rankings = () => {
                         {c.entry ? (
                           <span className="flex items-center gap-1 min-w-0">
                             <span
-                              className="font-bold truncate cursor-pointer hover:underline text-foreground"
+                              className={`${canView(c.entry!.id) ? "cursor-pointer hover:underline" : ""} font-bold truncate text-foreground`}
                               translate="no"
-                              onClick={() => navigate(`/profile/${c.entry!.id}`)}
+                              onClick={() => goToProfile(c.entry!.id)}
                             >
                               {c.entry.display_name}
                             </span>
