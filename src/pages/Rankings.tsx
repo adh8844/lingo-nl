@@ -847,9 +847,9 @@ const Rankings = () => {
                         {c.entry ? (
                           <span className="flex items-center gap-1 min-w-0">
                             <span
-                              className="font-bold truncate cursor-pointer hover:underline text-foreground"
+                              className={`${canView(c.entry!.id) ? "cursor-pointer hover:underline" : ""} font-bold truncate text-foreground`}
                               translate="no"
-                              onClick={() => navigate(`/profile/${c.entry!.id}`)}
+                              onClick={() => goToProfile(c.entry!.id)}
                             >
                               {c.entry.display_name}
                             </span>
