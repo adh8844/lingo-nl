@@ -607,7 +607,7 @@ const Rankings = () => {
                         </span>
                       </div>
                       <span className="font-extrabold shrink-0">
-                        🏆 {Number(e.value).toFixed(3)}
+                        🏆 {Number(e.value).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </button>
                   );
