@@ -67,7 +67,7 @@ const Rankings = () => {
   const { player, loading } = usePlayer();
   const { isAdmin } = useIsAdmin();
   const { isTeacher } = useIsTeacher();
-  const [tab, setTab] = useState<Tab>("points");
+  const [tab, setTab] = useState<Tab>("championship");
   const [pointsSub, setPointsSub] = useState<PointsSub>("total");
   const [gamesSub, setGamesSub] = useState<GamesSub>("total");
   const [streakSub, setStreakSub] = useState<StreakSub>("max");
