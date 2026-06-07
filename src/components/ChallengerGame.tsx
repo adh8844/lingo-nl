@@ -8,6 +8,7 @@ import { usePlayer } from "@/hooks/usePlayer";
 import { useGameResult } from "@/hooks/useGameResult";
 import { Star, Zap, Plus } from "lucide-react";
 import WordDefinitionBubble from "./WordDefinitionBubble";
+import PointsBreakdownCard from "./PointsBreakdownCard";
 import { useWordDefinition } from "@/hooks/useWordDefinition";
 
 const CHALLENGER_TIMER = 60;
@@ -53,7 +54,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [tileStatuses, setTileStatuses] = useState<TileStatus[]>([]);
-  const [pointsEarned, setPointsEarned] = useState(0);
+  const [gameResult, setGameResult] = useState<import("@/hooks/useGameResult").GameResultData | null>(null);
   const [extraLettersUsed, setExtraLettersUsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
@@ -166,7 +167,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
       challenger_points: earnedPoints,
     });
     if (result) {
-      setPointsEarned(result.points_earned);
+      setGameResult(result);
     }
   }, [submitted, player, guessArr, challengerLevel, extraLettersUsed, submitResult, stopTimer]);
 
@@ -337,9 +338,6 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
           {won ? (
             <div className="text-center">
               <p className="text-2xl font-extrabold text-tile-correct">🎉 Challenger gewonnen!</p>
-              <p className="text-lg font-bold text-primary mt-1">
-                <Star className="inline w-5 h-5" /> +{POINTS_TABLE[Math.min(extraLettersUsed, POINTS_TABLE.length - 1)]} punten!
-              </p>
               {extraLettersUsed > 0 && (
                 <p className="text-xs text-muted-foreground mt-1">{extraLettersUsed} extra letter{extraLettersUsed > 1 ? "s" : ""} gebruikt</p>
               )}
@@ -350,6 +348,7 @@ const ChallengerGame = ({ onComplete }: ChallengerGameProps) => {
               <p className="text-muted-foreground mt-1">Het woord was: <span className="font-bold text-foreground uppercase">{targetWord}</span></p>
             </div>
           )}
+          {gameResult && <PointsBreakdownCard gameResult={gameResult} />}
           <WordDefinitionBubble
             word={targetWord}
             definition={wordDef.definition}
