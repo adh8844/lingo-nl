@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/hooks/usePlayer";
 import { usePresence } from "@/hooks/usePresence";
 import { useOnlineMatch } from "@/hooks/useOnlineMatch";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsTeacher } from "@/hooks/useIsTeacher";
 import ChallengeDialog from "@/components/ChallengeDialog";
 import SEO from "@/components/SEO";
 
