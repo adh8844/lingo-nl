@@ -1050,6 +1050,19 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_players_with_user_id: {
+        Args: never
+        Returns: {
+          display_name: string
+          id: string
+          player_code: string
+          points: number
+          preferred_mode: string
+          school_id: string
+          total_games_played: number
+          user_id: string
+        }[]
+      }
       assign_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

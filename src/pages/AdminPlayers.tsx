@@ -58,10 +58,7 @@ const AdminPlayers = () => {
   const loadAll = async () => {
     setLoading(true);
     const [pRes, rRes, sRes] = await Promise.all([
-      supabase
-        .from("players")
-        .select("id, user_id, display_name, player_code, points, preferred_mode, school_id, total_games_played")
-        .order("display_name"),
+      supabase.rpc("admin_list_players_with_user_id" as any),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("schools").select("id, name").order("name"),
     ]);
