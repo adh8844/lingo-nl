@@ -1,83 +1,33 @@
+## Probleem
 
-# Kampioenschap-tab op de rankingspagina
+De Mix-kaart op de spelenpagina flikkert kort als "vergrendeld" voordat hij beschikbaar wordt. Oorzaak: de ontgrendeling wordt asynchroon berekend uit meerdere queries (`games`, `player_badges`, `badges`) in `loadUnlockProgress`, terwijl 5- en 6-letter direct uit de al geladen `player` komen (`unlocked_5letter`, `unlocked_6letter`).
 
-## Doel
-Nieuwe tab **"Kampioenschap"** (eerste tab, standaard geopend) die spelers rangschikt op basis van hun positie in de 5 andere klassementen. Lager = beter.
+## Oplossing
 
-Score-formule:
-```
-score = (rang_punten + rang_reeks * 2 + rang_spellen * 4 + rang_badges * 4 + rang_uitdagingen * 4) / 15
-```
+Een persistente `unlocked_mix` kolom toevoegen op `players`, automatisch onderhouden door de backend, zodat de Mix-kaart meteen — net als de andere kaarten — uit het `player`-object gelezen kan worden.
 
-### Omgang met "geen rang"
-Spelers die in een sublijst geen rang hebben (waarde 0 of niet aanwezig), krijgen voor die categorie **rang = N**, waarbij **N = totaal aantal spelers in `players`-tabel** (per kring/school, om consistent te blijven met hoe de andere lijsten gefilterd worden).
+### 1. Database migratie
 
-Dit straft afwezigheid in een lijst exact zo zwaar als "laatst staan" — geen voordeel meer voor spelers die nergens punten hebben gehaald.
+- Kolom `unlocked_mix boolean NOT NULL DEFAULT false` toevoegen op `public.players`.
+- `guard_player_protected_columns` trigger uitbreiden zodat `unlocked_mix` net als `unlocked_5letter`/`unlocked_6letter` alleen via service_role / admin geschreven mag worden.
+- Eenmalige backfill: alle bestaande spelers die nu al voldoen aan de Mix-criteria (≥1000 punten totaal, ≥12 badges, badge `niet_te_stoppen`) krijgen `true`. Voor leerlingen in een school: altijd `true` (school-users hebben alles ontgrendeld, zie huidige logica in `Index.tsx`).
+- De bestaande edge function `process-game-result` (die punten/badges toekent) wordt aangevuld zodat hij na elke game ook `unlocked_mix` herevalueert en bij het bereiken van de criteria op `true` zet. Eenmaal `true` blijft het `true`.
 
-## Voorbeeld (kring met N spelers)
-Stel N = 16. Speler "Pieter" met punten rang 15, geen reeks (→ 16), geen spellen (→ 16), geen badges (→ 16), geen uitdagingen (→ 16):
+### 2. Frontend wijziging (`src/pages/Index.tsx`)
 
-score = (15 + 16·2 + 16·4 + 16·4 + 16·4) / 15 = (15 + 32 + 64 + 64 + 64) / 15 = 239/15 = **15.933**
-
-Horse lover (4, 1, 2, 1, 4): (4 + 2 + 8 + 4 + 16)/15 = 34/15 = **2.267**
-
-## UI
-
-- Tab "Kampioenschap" 🏆, eerste positie, default actief.
-- Lijst toont **alleen positie + naam + score** (compact). Geen extra cijfers inline.
-- **Klik op een naam → popup** (shadcn `Dialog`) met de opbouw:
+- `isMixUnlocked` berekenen analoog aan 5/6:
+  ```ts
+  const isMixUnlocked = isSchoolUser || (player?.unlocked_mix ?? false);
   ```
-  Horse lover — score 2.267
+- `loadUnlockProgress` blijft staan voor het tonen van de voortgangsregels (`totalPoints / badgeCount / hasNietTeStoppen`) op de vergrendelde kaart, maar bepaalt niet meer de klikbaarheid. Resultaat: zodra `player` geladen is, krijgt de Mix-kaart direct de juiste status — geen flikker meer.
 
-  Punten       rang 4   × 1  =  4
-  Reeks        rang 1   × 2  =  2
-  Spellen      rang 2   × 4  =  8
-  Badges       rang 1   × 4  =  4
-  Uitdagingen  rang 4   × 4  = 16
-  ─────────────────────────────
-  Totaal      34 / 15  = 2.267
-  ```
-  Een ingevulde fallback-rang wordt weergegeven als "rang N (geen score)" zodat duidelijk is dat de speler in die categorie nog niets gedaan heeft.
-- **Paginatie**: hergebruik bestaand `PAGE_SIZE = 10` mechanisme met "Vorige / Volgende" knoppen, identiek aan andere tabs.
-- "Profiel openen" knop in de popup, alleen zichtbaar als `canView` true is.
-- Kleine "Bijgewerkt: HH:MM" timestamp onder de lijst.
+### 3. Types (`src/types/player.ts` + auto-generated `src/integrations/supabase/types.ts`)
 
-## Backend (performance)
-
-Cache-tabel + pg_cron refresh elke 3 minuten.
-
-1. **Tabel `public.championship_standings`**:
-   - `player_id uuid PK`, `school_id uuid null`, `rank_points`, `rank_streak`, `rank_games`, `rank_badges`, `rank_challenges` (int), `score numeric(8,3)`, `position int`, `updated_at timestamptz`.
-   - RLS: `SELECT` voor `authenticated` met `players_in_same_circle(player_id, current_player_id())`. Geen client-writes.
-   - GRANT SELECT aan `authenticated`, ALL aan `service_role`.
-
-2. **Functie `public.refresh_championship_standings()`** (SECURITY DEFINER):
-   - Per `school_id`-groep:
-     - Bereken `N` = aantal spelers in die kring (`COUNT(*) FROM players WHERE school_id IS NOT DISTINCT FROM <groep>`).
-     - `RANK()` over 5 bronlijsten alleen voor spelers met `value > 0`.
-     - Spelers zonder rang in een lijst → fallback-rang = `N`.
-     - Score = `(pr + sr*2 + gr*4 + br*4 + cr*4) / 15.0`.
-     - `position` via `RANK() OVER (PARTITION BY school_id ORDER BY score ASC)`.
-   - `TRUNCATE` + `INSERT` in één transactie.
-
-3. **RPC `public.get_championship_standings()`** (STABLE, SECURITY DEFINER): geeft cache-rijen terug voor eigen kring, joined met `display_name`. Pure lookup.
-
-4. **`pg_cron`**: elke 3 minuten `SELECT refresh_championship_standings();`.
-
-5. Eénmalige `SELECT refresh_championship_standings();` aan het eind van de migratie.
-
-## Frontend (`src/pages/Rankings.tsx`)
-
-- Type `Tab` uitbreiden met `"championship"`. Default `tab` = `"championship"`. Eerste in `tabs`-array.
-- State `championshipList: ChampionshipEntry[]` met `{ id, display_name, score, ranks: {points, streak, games, badges, challenges}, fallback_rank: number }` (zodat de popup kan tonen welke fallback-waarde gebruikt is).
-- `loadChampionship` → `supabase.rpc("get_championship_standings")`, via bestaand `ensureLoaded`/`loadingSection`-mechanisme (lazy bij tab-open).
-- Compacte rij-render: `medal(i) + naam + score`. Klik opent dialog.
-- Nieuw component `src/components/ChampionshipDetailDialog.tsx` met shadcn `Dialog`.
-- Paginatie via bestaande `pageMap` (key = `"championship"`).
+- `unlocked_mix: boolean` toevoegen aan de `Player` interface. De Supabase types worden automatisch geregenereerd na de migratie.
 
 ## Bestanden
 
-- **Nieuwe migratie**: tabel, RLS, GRANTs, refresh-functie (met fallback-rang = N-logica), RPC, cron-schedule, initiële refresh.
-- **`src/pages/Rankings.tsx`**: nieuwe tab, default, lazy loader, compacte render, dialog-open handler.
-- **`src/components/ChampionshipDetailDialog.tsx`** (nieuw).
-- **`src/integrations/supabase/types.ts`**: auto-regenereerd.
+- Nieuwe migratie (kolom + trigger-update + backfill)
+- `supabase/functions/process-game-result/index.ts` (Mix-criteria check toevoegen)
+- `src/pages/Index.tsx` (gebruik `player.unlocked_mix`)
+- `src/types/player.ts` (`unlocked_mix` veld)

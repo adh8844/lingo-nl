@@ -635,6 +635,7 @@ export type Database = {
           total_hours_played: number
           unlocked_5letter: boolean
           unlocked_6letter: boolean
+          unlocked_mix: boolean
           updated_at: string
           user_id: string | null
           username: string | null
@@ -657,6 +658,7 @@ export type Database = {
           total_hours_played?: number
           unlocked_5letter?: boolean
           unlocked_6letter?: boolean
+          unlocked_mix?: boolean
           updated_at?: string
           user_id?: string | null
           username?: string | null
@@ -679,6 +681,7 @@ export type Database = {
           total_hours_played?: number
           unlocked_5letter?: boolean
           unlocked_6letter?: boolean
+          unlocked_mix?: boolean
           updated_at?: string
           user_id?: string | null
           username?: string | null
@@ -1208,6 +1211,7 @@ export type Database = {
           total_hours_played: number
           unlocked_5letter: boolean
           unlocked_6letter: boolean
+          unlocked_mix: boolean
           updated_at: string
           user_id: string | null
           username: string | null

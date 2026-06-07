@@ -581,6 +581,16 @@ Deno.serve(async (req) => {
 
     const bestStreak = Math.max(player.best_streak || 0, currentStreak)
 
+    // Mix unlock: school pupils always; otherwise ≥1000 pts + ≥12 badges + "niet_te_stoppen"
+    let unlockedMix = player.unlocked_mix || false
+    if (!unlockedMix) {
+      if (player.school_id) {
+        unlockedMix = true
+      } else if (newTotalPoints >= 1000 && earnedIds.size >= 12 && earnedIds.has('niet_te_stoppen')) {
+        unlockedMix = true
+      }
+    }
+
     // Check if challenger should be triggered (every 25 games)
     const shouldTriggerChallenger = newTotalGames > 0 && newTotalGames % 25 === 0 && ![10, 12, 14].includes(level)
 
@@ -593,7 +603,9 @@ Deno.serve(async (req) => {
       last_played_date: today,
       unlocked_5letter: unlocked5,
       unlocked_6letter: unlocked6,
+      unlocked_mix: unlockedMix,
     }).eq('id', player_id)
+
 
     return new Response(JSON.stringify({
       game_id: game.id,
