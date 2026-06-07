@@ -196,6 +196,25 @@ const Rankings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mySchoolId]);
 
+  const loadChampionship = useCallback(async () => {
+    const { data } = await supabase.rpc("get_championship_standings");
+    const rows: ChampionshipDetail[] = (data || []).map((r: any) => ({
+      id: r.player_id,
+      display_name: r.display_name,
+      score: Number(r.score),
+      ranks: {
+        points: r.rank_points,
+        streak: r.rank_streak,
+        games: r.rank_games,
+        badges: r.rank_badges,
+        challenges: r.rank_challenges,
+      },
+      fallback_rank: r.fallback_rank,
+    }));
+    setChampionshipList(rows);
+    if (data && data.length > 0) setChampionshipUpdatedAt(data[0].updated_at);
+  }, []);
+
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [loadingSection, setLoadingSection] = useState<Record<string, boolean>>({});
 
