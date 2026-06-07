@@ -46,7 +46,7 @@ const ChampionshipDetailDialog = ({ detail, onClose, canView, onOpenProfile }: P
           <DialogTitle>
             <span translate="no">{detail.display_name}</span>
             <span className="text-muted-foreground font-normal text-sm ml-2">
-              score {detail.score.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              score {detail.score}
             </span>
           </DialogTitle>
         </DialogHeader>
