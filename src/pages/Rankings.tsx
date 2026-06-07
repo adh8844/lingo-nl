@@ -234,7 +234,10 @@ const Rankings = () => {
 
   // Load data only when a tab is selected — first paint, then fetch.
   useEffect(() => {
-    if (tab === "points") {
+    if (tab === "championship") {
+      void ensureLoaded("players", loadAllPlayers);
+      void ensureLoaded("championship", loadChampionship);
+    } else if (tab === "points") {
       void ensureLoaded("players", loadAllPlayers);
       void ensureLoaded("pointsToday", loadPointsToday);
     } else if (tab === "streak") {
