@@ -59,6 +59,63 @@ export type Database = {
         }
         Relationships: []
       }
+      championship_standings: {
+        Row: {
+          fallback_rank: number
+          player_id: string
+          rank_badges: number
+          rank_challenges: number
+          rank_games: number
+          rank_points: number
+          rank_position: number
+          rank_streak: number
+          school_id: string | null
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          fallback_rank: number
+          player_id: string
+          rank_badges: number
+          rank_challenges: number
+          rank_games: number
+          rank_points: number
+          rank_position: number
+          rank_streak: number
+          school_id?: string | null
+          score: number
+          updated_at?: string
+        }
+        Update: {
+          fallback_rank?: number
+          player_id?: string
+          rank_badges?: number
+          rank_challenges?: number
+          rank_games?: number
+          rank_points?: number
+          rank_position?: number
+          rank_streak?: number
+          school_id?: string | null
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "championship_standings_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "championship_standings_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dutch_words: {
         Row: {
           appropriate: boolean
@@ -1087,6 +1144,22 @@ export type Database = {
           player_id: string
         }[]
       }
+      get_championship_standings: {
+        Args: never
+        Returns: {
+          display_name: string
+          fallback_rank: number
+          player_id: string
+          rank_badges: number
+          rank_challenges: number
+          rank_games: number
+          rank_points: number
+          rank_position: number
+          rank_streak: number
+          score: number
+          updated_at: string
+        }[]
+      }
       get_completed_matches_count_in_range: {
         Args: { p_end?: string; p_start: string }
         Returns: {
@@ -1187,6 +1260,7 @@ export type Database = {
         Args: { p1: string; p2: string }
         Returns: boolean
       }
+      refresh_championship_standings: { Args: never; Returns: undefined }
       remove_user_role: { Args: { _user_id: string }; Returns: undefined }
       teacher_set_pupil_mode: {
         Args: { _mode: string; _player_id: string }
