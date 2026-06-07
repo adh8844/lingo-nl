@@ -46,7 +46,7 @@ const ChampionshipDetailDialog = ({ detail, onClose, canView, onOpenProfile }: P
           <DialogTitle>
             <span translate="no">{detail.display_name}</span>
             <span className="text-muted-foreground font-normal text-sm ml-2">
-              score {detail.score.toFixed(3)}
+              score {detail.score.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </DialogTitle>
         </DialogHeader>
@@ -72,7 +72,7 @@ const ChampionshipDetailDialog = ({ detail, onClose, canView, onOpenProfile }: P
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <span className="font-bold">Totaal</span>
             <span className="font-bold">
-              {total} / 15 = {detail.score.toFixed(3)}
+              {total} / 15 = {detail.score.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
