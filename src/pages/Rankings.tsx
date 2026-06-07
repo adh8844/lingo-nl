@@ -11,6 +11,8 @@ import SEO from "@/components/SEO";
 import ChampionshipDetailDialog, {
   type ChampionshipDetail,
 } from "@/components/ChampionshipDetailDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info } from "lucide-react";
 
 type Tab = "championship" | "points" | "streak" | "games" | "badges" | "challenges";
 type PointsSub = "total" | "today";
@@ -520,8 +522,26 @@ const Rankings = () => {
 
       <div className="w-full max-w-lg flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2 px-1">
-          <h2 className="text-lg font-bold text-foreground">
-            {tabs.find((t) => t.key === tab)?.icon} {currentTabTitle}
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-1.5">
+            <span>{tabs.find((t) => t.key === tab)?.icon} {currentTabTitle}</span>
+            {tab === "championship" && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Uitleg kampioenschap"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Info className="w-4 h-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="text-sm max-w-xs">
+                  In deze lijst gaat het erom een zo <strong>laag</strong> mogelijke score te halen.
+                  Het laagst haalbare aantal is <strong>15</strong>.
+                  Klik op de naam van een speler om de exacte berekening te zien.
+                </PopoverContent>
+              </Popover>
+            )}
           </h2>
           {tab === "points" && (
             <div className="flex gap-1">
@@ -614,7 +634,7 @@ const Rankings = () => {
                         </span>
                       </div>
                       <span className="font-extrabold shrink-0">
-                        🏆 {Number(e.value).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        🏆 {Number(e.value)}
                       </span>
                     </button>
                   );
