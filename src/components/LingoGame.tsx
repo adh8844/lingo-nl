@@ -3,6 +3,7 @@ import LingoBoard from "./LingoBoard";
 import Keyboard from "./Keyboard";
 import WordSuggestionDialog from "./WordSuggestionDialog";
 import ChallengerGame from "./ChallengerGame";
+import PointsBreakdownCard from "./PointsBreakdownCard";
 import { TileStatus } from "./LingoTile";
 import { getRandomWordAsync, isValidWordAsync, suggestWord, checkWordRejected, rejectWordSuggestion, WordLength } from "@/data/words";
 import { toast } from "sonner";
