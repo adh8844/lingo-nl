@@ -37,7 +37,7 @@ const ROWS: { key: keyof ChampionshipDetail["ranks"]; label: string; weight: num
 const ChampionshipDetailDialog = ({ detail, onClose, canView, onOpenProfile }: Props) => {
   if (!detail) return null;
 
-  const total = ROWS.reduce((s, r) => s + detail.ranks[r.key] * r.weight, 0);
+  
 
   return (
     <Dialog open={!!detail} onOpenChange={(o) => !o && onClose()}>
