@@ -11,6 +11,8 @@ export interface Player {
   last_played_date?: string | null;
   unlocked_5letter: boolean;
   unlocked_6letter: boolean;
+  unlocked_mix: boolean;
+
   created_at: string;
   user_id?: string | null;
   school_id?: string | null;
