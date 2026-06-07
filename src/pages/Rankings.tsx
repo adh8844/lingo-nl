@@ -367,9 +367,9 @@ const Rankings = () => {
           <div className="flex items-center gap-1.5 min-w-0">
             {isOnline && <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />}
             <span
-              className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+              className={nameClass(entry.id, isMe)}
               translate="no"
-              onClick={() => navigate(`/profile/${entry.id}`)}
+              onClick={() => goToProfile(entry.id)}
             >
               {entry.display_name}
               {isMe && <span className="text-xs text-muted-foreground ml-1">(jij)</span>}
