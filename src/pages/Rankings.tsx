@@ -527,9 +527,9 @@ const Rankings = () => {
                   <span className="w-5 text-right shrink-0">{medal(i)}</span>
                   {isOnline && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />}
                   <span
-                    className={`font-bold truncate cursor-pointer hover:underline ${isMe ? "text-primary" : "text-foreground"}`}
+                    className={nameClass(e.id, isMe)}
                     translate="no"
-                    onClick={() => navigate(`/profile/${e.id}`)}
+                    onClick={() => goToProfile(e.id)}
                   >
                     {e.display_name}
                   </span>
