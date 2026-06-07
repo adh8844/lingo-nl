@@ -60,7 +60,7 @@ const ChampionshipDetailDialog = ({ detail, onClose, canView, onOpenProfile }: P
               <div key={r.key} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
                 <span className="text-foreground">{r.label}</span>
                 <span className={isFallback ? "text-muted-foreground italic" : ""}>
-                  rang {rank}
+                  plaats {rank}
                   {isFallback ? " *" : ""}
                 </span>
                 <span className="text-muted-foreground">× {r.weight}</span>
@@ -72,9 +72,10 @@ const ChampionshipDetailDialog = ({ detail, onClose, canView, onOpenProfile }: P
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <span className="font-bold">Totaal</span>
             <span className="font-bold">
-              {total} / 15 = {detail.score.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {detail.score.toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
+
         </div>
 
         <p className="text-xs text-muted-foreground">
