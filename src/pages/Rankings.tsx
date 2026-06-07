@@ -579,7 +579,40 @@ const Rankings = () => {
           <p className="text-center text-muted-foreground py-8">Nog geen data</p>
         ) : (
           <>
-            {pageItems.map((e, i) => renderRow(e, pageStart + i, valueIcon))}
+            {tab === "championship"
+              ? pageItems.map((e, i) => {
+                  const idx = pageStart + i;
+                  const isMe = player?.id === e.id;
+                  const detail = championshipList.find((c) => c.id === e.id);
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => detail && setChampionshipDetail(detail)}
+                      className={`flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-lg text-sm text-left hover:brightness-110 transition-all ${
+                        isMe ? "bg-primary/15 border border-primary/30" : "bg-secondary/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span className="text-muted-foreground font-bold w-6 sm:w-8 text-right shrink-0">
+                          {medal(idx)}
+                        </span>
+                        <span
+                          className={`font-bold truncate ${isMe ? "text-primary" : "text-foreground"}`}
+                          translate="no"
+                        >
+                          {e.display_name}
+                          {isMe && (
+                            <span className="text-xs text-muted-foreground ml-1">(jij)</span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="font-extrabold shrink-0">
+                        🏆 {Number(e.value).toFixed(3)}
+                      </span>
+                    </button>
+                  );
+                })
+              : pageItems.map((e, i) => renderRow(e, pageStart + i, valueIcon))}
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between gap-2 pt-2">
@@ -602,6 +635,17 @@ const Rankings = () => {
                 </button>
               </div>
             )}
+
+            {tab === "championship" && championshipUpdatedAt && (
+              <p className="text-xs text-muted-foreground text-center pt-1">
+                Bijgewerkt:{" "}
+                {new Intl.DateTimeFormat("nl-NL", {
+                  timeZone: "Europe/Amsterdam",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(championshipUpdatedAt))}
+              </p>
+            )}
           </>
         )}
       </div>
@@ -614,6 +658,16 @@ const Rankings = () => {
           onClose={() => setChallengeTarget(null)}
         />
       )}
+
+      <ChampionshipDetailDialog
+        detail={championshipDetail}
+        onClose={() => setChampionshipDetail(null)}
+        canView={championshipDetail ? canView(championshipDetail.id) : false}
+        onOpenProfile={(id) => {
+          setChampionshipDetail(null);
+          goToProfile(id);
+        }}
+      />
     </div>
   );
 };
