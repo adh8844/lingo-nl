@@ -238,11 +238,14 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Mode info (read-only) */}
-            <div className="w-full text-center text-xs text-muted-foreground">
-              Modus: <span className="font-extrabold text-primary">{MODE_LABEL[activeMode]}</span>
-              {player.school_id ? " · ingesteld door je docent" : " · standaard voor vrije spelers"}
-            </div>
+            {/* Mode info (read-only) — alleen voor docenten en leerlingen */}
+            {(isSchoolUser || isTeacher) && (
+              <div className="w-full text-center text-xs text-muted-foreground">
+                Modus: <span className="font-extrabold text-primary">{MODE_LABEL[activeMode]}</span>
+                {player.school_id ? " · ingesteld door je docent" : ""}
+              </div>
+            )}
+
 
             {/* Variant cards: 4, 5, 6, mix — 2x2 totdat alles ontgrendeld is */}
             <div className={`grid gap-3 w-full ${is5Unlocked && is6Unlocked && isMixUnlocked ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2"}`}>
