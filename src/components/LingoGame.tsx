@@ -444,20 +444,7 @@ const LingoGame = ({ wordLength, onBack, mode = DEFAULT_MODE, mixMode = false }:
           />
 
           {/* Points breakdown */}
-          {gameResult && (
-            <div className="w-full max-w-xs bg-card rounded-xl border border-border p-3 space-y-1.5">
-              {gameResult.points_breakdown.map((p, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">{p.reason}</span>
-                  <span className={`font-bold ${p.points >= 0 ? "text-primary" : "text-accent"}`}>{p.points >= 0 ? "+" : ""}{p.points}</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-sm font-extrabold pt-1.5 border-t border-border">
-                <span>Totaal</span>
-                <span className={`${gameResult.points_earned >= 0 ? "text-primary" : "text-accent"}`}>{gameResult.points_earned >= 0 ? "+" : ""}{gameResult.points_earned} <Star className="inline w-3 h-3" /></span>
-              </div>
-            </div>
-          )}
+          {gameResult && <PointsBreakdownCard gameResult={gameResult} />}
 
           {/* Badges earned */}
           {gameResult?.badges_earned && gameResult.badges_earned.length > 0 && (
