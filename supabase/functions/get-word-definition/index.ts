@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     const wordRaw = typeof body.word === 'string' ? body.word.trim().toLowerCase() : ''
     const length = Number(body.length)
 
-    if (!wordRaw || !Number.isInteger(length) || length < 2 || length > 20) {
+    if (!wordRaw || !Number.isInteger(length) || length < 2 || length > 20 || wordRaw.length !== length) {
       return new Response(JSON.stringify({ error: 'Invalid input' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
