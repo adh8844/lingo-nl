@@ -362,7 +362,7 @@ const Rules = () => {
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold mb-3">24 badges in 6 categorieën</h3>
+                  <h3 className="font-semibold mb-3">23 badges in 6 categorieën</h3>
                   <div className="flex flex-wrap gap-2">
                     {["Tijd", "Reeks", "Vaardigheid", "Sociaal", "Uithoudingsvermogen", "Prestige"].map(
                       (c) => (

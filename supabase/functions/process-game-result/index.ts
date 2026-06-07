@@ -456,17 +456,6 @@ Deno.serve(async (req) => {
           if (cp && (new Date(ch.created_at).getTime() - new Date(cp.created_at).getTime()) / 86400000 <= 2) { tryAward('fair_play'); break }
         }
       }
-      if (!earnedIds.has('werver')) {
-        const { data: fl } = await supabase.from('friends').select('friend_id').eq('player_id', player_id)
-        if (fl && fl.length >= 3) {
-          let af = 0
-          for (const f of fl) {
-            const { count } = await supabase.from('games').select('id', { count: 'exact', head: true }).eq('player_id', f.friend_id)
-            if ((count || 0) >= 1) af++
-            if (af >= 3) { tryAward('werver'); break }
-          }
-        }
-      }
       if (!earnedIds.has('feestbeest') && player.birthdate) {
         const bd = new Date(player.birthdate), td = new Date(today)
         if (bd.getMonth() === td.getMonth() && bd.getDate() === td.getDate()) tryAward('feestbeest')

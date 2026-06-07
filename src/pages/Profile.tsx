@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayerContext } from "@/hooks/usePlayerContext";
 import { toast } from "sonner";
 import type { Player } from "@/types/player";
-import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, Users, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library, Pencil, Check, X } from "lucide-react";
+import { Star, Flame, Trophy, Award, Clock, Moon, Sun, Sparkles, Calendar, Swords, Zap, Target, Crown, HandshakeIcon, PartyPopper, Medal, Footprints, Waves, Brain, Timer, Gem, ShieldCheck, ScrollText, Library, Pencil, Check, X } from "lucide-react";
 import SEO from "@/components/SEO";
 
 interface Badge {
@@ -32,7 +32,7 @@ const BADGE_ICONS: Record<string, React.ReactNode> = {
   comeback: <Swords className="w-6 h-6" />,
   meesterspeler: <Trophy className="w-6 h-6" />,
   fair_play: <HandshakeIcon className="w-6 h-6" />,
-  werver: <Users className="w-6 h-6" />,
+  
   feestbeest: <PartyPopper className="w-6 h-6" />,
   uitdager: <Medal className="w-6 h-6" />,
   marathonloper: <Footprints className="w-6 h-6" />,
