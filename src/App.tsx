@@ -19,6 +19,7 @@ import Rules from "./pages/Rules";
 import School from "./pages/School";
 import Teacher from "./pages/Teacher";
 import GlobalOnlineManager from "./components/GlobalOnlineManager";
+import SchoolpleinHeader from "./components/SchoolpleinHeader";
 import { PlayerProvider } from "@/hooks/usePlayerContext";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <SchoolpleinHeader />
           <GlobalOnlineManager />
           <Routes>
             <Route path="/" element={<School />} />
