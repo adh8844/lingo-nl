@@ -30,7 +30,7 @@ const School = () => {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
-      <SchoolpleinHeader />
+      
       <SEO
         title="DingoLingo voor scholen — woordenschat voor Groep 3 t/m 8"
         description="DingoLingo: educatieve Nederlandse woordenschat-tool voor de basisschool. Eigen schoolomgeving, vanaf €1 per leerling per jaar. Veilig, geen reclame."
