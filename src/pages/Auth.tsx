@@ -265,7 +265,7 @@ const Auth = () => {
                 spellCheck={false}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder={mode === "register" || mode === "forgot" ? "naam@voorbeeld.nl" : "gebruikersnaam"}
+                placeholder=""
                 className="w-full px-4 py-3 rounded-xl border-2 border-border bg-background/50 focus:border-primary focus:bg-background focus:outline-none transition-all text-lg"
                 whileFocus={{ scale: 1.03 }}
               />
@@ -280,7 +280,7 @@ const Auth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     minLength={4}
-                    placeholder="••••"
+                    placeholder=""
                     className="w-full px-4 py-3 pr-12 rounded-xl border-2 border-border bg-background/50 focus:border-primary focus:bg-background focus:outline-none transition-all text-lg tracking-widest"
                     whileFocus={{ scale: 1.03 }}
                   />
