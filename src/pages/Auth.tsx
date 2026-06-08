@@ -265,7 +265,7 @@ const Auth = () => {
                 spellCheck={false}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder={mode === "register" || mode === "forgot" ? "naam@voorbeeld.nl" : "naam@voorbeeld.nl of anna123"}
+                placeholder={mode === "register" || mode === "forgot" ? "naam@voorbeeld.nl" : "gebruikersnaam"}
                 className="w-full px-4 py-3 rounded-xl border-2 border-border bg-background/50 focus:border-primary focus:bg-background focus:outline-none transition-all text-lg"
                 whileFocus={{ scale: 1.03 }}
               />
