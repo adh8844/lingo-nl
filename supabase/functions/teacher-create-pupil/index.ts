@@ -166,10 +166,10 @@ Deno.serve(async (req) => {
         password,
         created_by: teacherPlayer.id,
       });
-      // Assign 'leerling' role
+      // Assign 'student' role
       await admin.from("user_roles").insert({
         user_id: createdAuth.id,
-        role: "leerling",
+        role: "student",
       });
     }
 
