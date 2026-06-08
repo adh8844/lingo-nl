@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
-import PupilAuth from "./pages/PupilAuth";
+
 import ResetPassword from "./pages/ResetPassword";
 import Rankings from "./pages/Rankings";
 import Profile from "./pages/Profile";
