@@ -256,7 +256,7 @@ const Auth = () => {
 
             <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
               <label className="block text-sm font-semibold mb-2 text-foreground">
-                {mode === "register" ? "E-mailadres" : "E-mail of gebruikersnaam"}
+                {mode === "register" ? "E-mailadres" : "Gebruikersnaam"}
               </label>
               <motion.input
                 type={mode === "register" || mode === "forgot" ? "email" : "text"}
@@ -265,7 +265,7 @@ const Auth = () => {
                 spellCheck={false}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder={mode === "register" || mode === "forgot" ? "naam@voorbeeld.nl" : "naam@voorbeeld.nl of anna123"}
+                placeholder={mode === "register" || mode === "forgot" ? "naam@voorbeeld.nl" : "gebruikersnaam"}
                 className="w-full px-4 py-3 rounded-xl border-2 border-border bg-background/50 focus:border-primary focus:bg-background focus:outline-none transition-all text-lg"
                 whileFocus={{ scale: 1.03 }}
               />
