@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import SEO from "@/components/SEO";
 import { GameMode, MODE_LABEL } from "@/types/mode";
 
-type RoleLabel = "speler" | "leerling" | "teacher" | "admin";
+type RoleLabel = "speler" | "student" | "teacher" | "admin";
 
 interface PlayerRow {
   id: string;
