@@ -10,16 +10,24 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: undefined,
-    storageKey: 'sb-session',
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    cookieOptions: {
-      domain: '.najra.app',
-      sameSite: 'Lax',
-      secure: true,
+    storage: {
+      getItem: (key: string) => {
+        if (typeof document === 'undefined') return null;
+        const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : null;
+      },
+      setItem: (key: string, value: string) => {
+        if (typeof document === 'undefined') return;
+        document.cookie = `${key}=${encodeURIComponent(value)}; domain=.najra.app; path=/; max-age=604800; SameSite=Lax; Secure`;
+      },
+      removeItem: (key: string) => {
+        if (typeof document === 'undefined') return;
+        document.cookie = `${key}=; domain=.najra.app; path=/; max-age=0`;
+      },
     },
-  } as any,
+  },
 });
