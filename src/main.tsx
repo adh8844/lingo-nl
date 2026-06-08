@@ -3,11 +3,22 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
 
-// Capture schoolplein referrer flag before app boots
+// Capture Schoolplein-origin flag before app boots
 try {
   const params = new URLSearchParams(window.location.search);
-  if (params.get("ref") === "schoolplein") {
+  const host = window.location.hostname.toLowerCase();
+  const referrerHost = document.referrer
+    ? new URL(document.referrer).hostname.toLowerCase()
+    : "";
+  const hasSchoolpleinRef = params.get("ref") === "schoolplein";
+  const cameFromSchoolplein = referrerHost === "schoolplein.najra.app";
+  const isNajraSubdomain = host === "najra.app" || host.endsWith(".najra.app");
+
+  if (hasSchoolpleinRef || cameFromSchoolplein || isNajraSubdomain) {
     sessionStorage.setItem("fromSchoolplein", "true");
+  }
+
+  if (hasSchoolpleinRef) {
     params.delete("ref");
     const qs = params.toString();
     window.history.replaceState(
