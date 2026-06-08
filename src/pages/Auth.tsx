@@ -256,7 +256,7 @@ const Auth = () => {
 
             <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
               <label className="block text-sm font-semibold mb-2 text-foreground">
-                {mode === "register" ? "E-mailadres" : "E-mail of gebruikersnaam"}
+                {mode === "register" ? "E-mailadres" : "Gebruikersnaam"}
               </label>
               <motion.input
                 type={mode === "register" || mode === "forgot" ? "email" : "text"}
