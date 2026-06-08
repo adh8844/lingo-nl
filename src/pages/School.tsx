@@ -11,6 +11,7 @@ import {
   Mail,
 } from "lucide-react";
 import SEO from "@/components/SEO";
+import SchoolpleinHeader from "@/components/SchoolpleinHeader";
 import { usePlayer } from "@/hooks/usePlayer";
 import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
@@ -30,6 +31,7 @@ const School = () => {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <SchoolpleinHeader />
       <SEO
         title="DingoLingo voor scholen — woordenschat voor Groep 3 t/m 8"
         description="DingoLingo: educatieve Nederlandse woordenschat-tool voor de basisschool. Eigen schoolomgeving, vanaf €1 per leerling per jaar. Veilig, geen reclame."
