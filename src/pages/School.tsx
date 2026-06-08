@@ -11,7 +11,6 @@ import {
   Mail,
 } from "lucide-react";
 import SEO from "@/components/SEO";
-import SchoolpleinHeader from "@/components/SchoolpleinHeader";
 import { usePlayer } from "@/hooks/usePlayer";
 import dingoLogo from "@/assets/dingo-final-zittend-cool.png";
 
