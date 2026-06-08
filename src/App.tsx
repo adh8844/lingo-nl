@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
-import PupilAuth from "./pages/PupilAuth";
+
 import ResetPassword from "./pages/ResetPassword";
 import Rankings from "./pages/Rankings";
 import Profile from "./pages/Profile";
@@ -40,8 +40,8 @@ const App = () => (
             <Route path="/docent" element={<Teacher />} />
             <Route path="/spelen" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/leerling" element={<PupilAuth />} />
-            <Route path="/leerling-login" element={<PupilAuth />} />
+            <Route path="/leerling" element={<Auth />} />
+            <Route path="/leerling-login" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/profile" element={<Profile />} />
