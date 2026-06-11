@@ -8,26 +8,80 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+
+const isNajraHost = () => {
+  if (!isBrowser) return false;
+  const h = window.location.hostname;
+  return h === 'najra.app' || h.endsWith('.najra.app');
+};
+
+const readCookie = (key: string): string | null => {
+  if (!isBrowser) return null;
+  const match = document.cookie.match(new RegExp('(^| )' + key.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&') + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+};
+
+const writeCookie = (key: string, value: string) => {
+  if (!isBrowser) return;
+  const encoded = encodeURIComponent(value);
+  const baseFlags = 'path=/; max-age=604800; SameSite=Lax';
+  if (isNajraHost()) {
+    document.cookie = `${key}=${encoded}; domain=.najra.app; ${baseFlags}; Secure`;
+  } else {
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${key}=${encoded}; ${baseFlags}${secure}`;
+  }
+};
+
+const deleteCookie = (key: string) => {
+  if (!isBrowser) return;
+  // Clear both domain-scoped and host-only variants to avoid stuck cookies.
+  document.cookie = `${key}=; domain=.najra.app; path=/; max-age=0`;
+  document.cookie = `${key}=; path=/; max-age=0`;
+};
+
+const hybridStorage = {
+  getItem: (key: string): string | null => {
+    if (!isBrowser) return null;
+    try {
+      const local = window.localStorage.getItem(key);
+      if (local) return local;
+    } catch {
+      // localStorage may be unavailable (private mode, etc.) — fall through to cookie.
+    }
+    return readCookie(key);
+  },
+  setItem: (key: string, value: string) => {
+    if (!isBrowser) return;
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // ignore
+    }
+    try {
+      writeCookie(key, value);
+    } catch {
+      // Cookie write can fail (e.g. value too large); localStorage already has it.
+    }
+  },
+  removeItem: (key: string) => {
+    if (!isBrowser) return;
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+    deleteCookie(key);
+  },
+};
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    storage: {
-      getItem: (key: string) => {
-        if (typeof document === 'undefined') return null;
-        const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
-        return match ? decodeURIComponent(match[2]) : null;
-      },
-      setItem: (key: string, value: string) => {
-        if (typeof document === 'undefined') return;
-        document.cookie = `${key}=${encodeURIComponent(value)}; domain=.najra.app; path=/; max-age=604800; SameSite=Lax; Secure`;
-      },
-      removeItem: (key: string) => {
-        if (typeof document === 'undefined') return;
-        document.cookie = `${key}=; domain=.najra.app; path=/; max-age=0`;
-      },
-    },
+    storage: hybridStorage,
   },
 });

@@ -1,29 +1,47 @@
-## Wat er echt gebeurt
+## Probleem
 
-De architectuur klopt al: er bestaat een tabel `public.championship_standings` met 22 rijen, een index op `(school_id, rank_position)`, en een `pg_cron` job `refresh_championship_standings_3min` die elke 3 minuten succesvol draait (laatste runs: succeeded, ~0,5s). De RPC `get_championship_standings()` is een simpele lookup en doet geen berekening.
+`src/integrations/supabase/client.ts` schrijft álle sessie-cookies met `domain=.najra.app; Secure`. Dit werkt op productie alleen als álles perfect klopt, maar veroorzaakt in de praktijk uitlog-problemen — ook in gewone browsersessies op `lingo.najra.app`:
 
-De ervaren ~5s komt dus **niet** uit het berekenen van de lijst. Het komt uit hoe `Rankings.tsx` de tab inlaadt:
+- Sommige browsers (vooral Safari/iOS en strikte tracking-preventie) accepteren of bewaren third-party-achtige domain-cookies inconsistent.
+- Na de Google/Apple OAuth-redirect schrijft Supabase meerdere keys (`sb-*-auth-token`, code-verifier, etc.). Als één daarvan niet terugleesbaar is, mislukt de PKCE-uitwisseling → sessie verdwijnt direct.
+- Er is geen fallback: zodra de cookie niet wordt geaccepteerd, is er geen alternatieve opslag → user lijkt "niet ingelogd".
+- In preview/localhost werkt het sowieso niet, waardoor je het niet kunt reproduceren/debuggen.
 
-1. Het laden start pas in een `useEffect` ná het mounten van de pagina, ná dat `PlayerProvider` klaar is met sessie/profiel ophalen — een ketting van wachtrondes.
-2. Bij de "Kampioenschap"-tab wordt náást de RPC óók `loadAllPlayers` aangeroepen (`ensureLoaded("players", loadAllPlayers)`), terwijl die data voor deze tab niet nodig is (de RPC levert al `display_name` mee). Dat is een extra ronde over de `players`-tabel die nergens voor gebruikt wordt.
-3. De RPC wordt pas afgevuurd nadat React de tab heeft geactiveerd — niet meteen bij paginabezoek.
+## Oplossing: robuuste hybride storage
 
-## Plan
+Eén bestand aanpassen: `src/integrations/supabase/client.ts`.
 
-### Frontend (`src/pages/Rankings.tsx`)
+Strategie — **schrijf naar zowel cookies als `localStorage`, lees met fallback**. Zo werkt SSO via cookies tussen `*.najra.app`, en blijft de sessie altijd lokaal beschikbaar als backup, zelfs als de browser de cookie weigert.
 
-1. **Verwijder de overbodige players-call voor de kampioenschapstab.** In de tab-effect blok laten we voor `championship` alleen `ensureLoaded("championship", loadChampionship)` staan. Geen `loadAllPlayers` meer voor deze tab.
-2. **Start `loadChampionship` direct bij mount**, zodra de sessie er is — niet pas via de tab-effect. Aangezien Kampioenschap toch de default tab is, mag deze data parallel met `PlayerProvider` al onderweg zijn. We zetten een aparte `useEffect` met `[]` (of `[session]`) deps die meteen `ensureLoaded("championship", loadChampionship)` aanroept.
-3. **Eerste paint zonder blokkade**: toon een lichte skeleton (lege rijen of een dunne "Bijwerken…" tekst) zo lang `loadingSection.championship` waar is, in plaats van een leeg blok. Geen visuele wachttijd zonder feedback.
+### Gedrag
 
-### Backend
+1. **`setItem(key, value)`**:
+   - Altijd schrijven naar `localStorage` (primaire, betrouwbare opslag).
+   - Daarnaast: cookie zetten. Bepaal scope dynamisch:
+     - Hostname eindigt op `najra.app` → `domain=.najra.app; Secure` (voor SSO tussen subdomeinen).
+     - Anders → host-only cookie zonder `domain`, `Secure` alleen als `https:`.
+   - Cookie-flags: `path=/; max-age=604800; SameSite=Lax`.
 
-Geen schemawijzigingen nodig. De cache + cron werken; we doen niets extra's.
+2. **`getItem(key)`**:
+   - Eerst `localStorage` proberen.
+   - Als leeg, fallback naar cookie (zodat een sessie die op een ander subdomein is gestart via SSO wordt opgepikt en daarna ook lokaal wordt gecached bij de volgende `setItem`).
 
-### Optioneel (alleen vermelden)
+3. **`removeItem(key)`**:
+   - Verwijder uit `localStorage`.
+   - Verwijder cookie zowel met `domain=.najra.app` als host-only (om "stuck" cookies van eerdere configs op te ruimen).
 
-Mocht het probleem na de bovenstaande fix terugkomen, dan kunnen we de RPC nog versnellen door `current_player_school_id()` in de RPC te vervangen door een direct subqueryresultaat op `auth.uid()` zodat er één functie-call minder is — maar gezien 22 rijen en de bestaande index is dat waarschijnlijk niet merkbaar.
+4. **SSR-safety**: `typeof window === 'undefined'` checks behouden.
 
-## Bestanden
+### Waarom dit het probleem oplost
 
-- `src/pages/Rankings.tsx` — kleinere tab-effect, extra mount-effect, optionele skeleton.
+- **Op `lingo.najra.app` in een normale browser**: ook als de domain-cookie geweigerd of niet meteen teruggelezen wordt, vindt Supabase de tokens via `localStorage` → login en sessie-refresh werken betrouwbaar.
+- **Cross-subdomein SSO**: blijft werken via de cookie. Eerste bezoek aan een nieuw subdomein leest de cookie en spiegelt 'm naar `localStorage`.
+- **Preview/localhost**: werkt automatisch via `localStorage` + host-only cookie.
+- **Geen wijzigingen** aan `Auth.tsx`, OAuth-flow, `redirect_uri` of Supabase-config nodig.
+
+## Verificatie
+
+1. Op `lingo.najra.app` (normale browser, ook Safari): uitloggen, cookies wissen, opnieuw inloggen met Google → moet ingelogd blijven na refresh.
+2. Op `schoolplein.najra.app` ingelogd → naar `lingo.najra.app` → automatisch herkend (SSO via cookie, daarna gespiegeld naar localStorage).
+3. In preview: Google-login moet ook werken (sessie via localStorage).
+4. DevTools → Application controleren: zowel `localStorage` `sb-*-auth-token` als cookie aanwezig op productie.
