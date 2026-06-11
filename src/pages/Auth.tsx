@@ -146,11 +146,14 @@ const Auth = () => {
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: `${window.location.origin}/auth`,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth`,
+      },
     });
     if (error) {
-      toast({ title: "Fout", description: String(error), variant: "destructive" });
+      toast({ title: "Fout", description: String(error?.message ?? error), variant: "destructive" });
       setLoading(false);
     }
   };
