@@ -1,83 +1,47 @@
-## Doel
-Google- en Apple-login moeten weer starten én daarna dezelfde SSO-sessie delen tussen Lingo, Schoolplein en Mevrouw de Uil, zonder de bestaande e-mail/leerling-login te breken.
+## Probleem
 
-## Belangrijk uitgangspunt
-Een browsercookie kan alleen automatisch gedeeld worden tussen subdomeinen van hetzelfde hoofddomein, bijvoorbeeld:
+`src/integrations/supabase/client.ts` schrijft álle sessie-cookies met `domain=.najra.app; Secure`. Dit werkt op productie alleen als álles perfect klopt, maar veroorzaakt in de praktijk uitlog-problemen — ook in gewone browsersessies op `lingo.najra.app`:
 
-```text
-lingo.najra.app
-schoolplein.najra.app
-mevrouwdeuil.najra.app
-→ gedeelde cookie: .najra.app
-```
+- Sommige browsers (vooral Safari/iOS en strikte tracking-preventie) accepteren of bewaren third-party-achtige domain-cookies inconsistent.
+- Na de Google/Apple OAuth-redirect schrijft Supabase meerdere keys (`sb-*-auth-token`, code-verifier, etc.). Als één daarvan niet terugleesbaar is, mislukt de PKCE-uitwisseling → sessie verdwijnt direct.
+- Er is geen fallback: zodra de cookie niet wordt geaccepteerd, is er geen alternatieve opslag → user lijkt "niet ingelogd".
+- In preview/localhost werkt het sowieso niet, waardoor je het niet kunt reproduceren/debuggen.
 
-Als Mevrouw de Uil op een ander hoofddomein staat, kan dezelfde cookie daar technisch niet werken. Dan moet SSO via een centrale login-redirect lopen, niet via directe cookie-sharing.
+## Oplossing: robuuste hybride storage
 
-## Plan
+Eén bestand aanpassen: `src/integrations/supabase/client.ts`.
 
-### 1. Lovable Cloud social auth opnieuw laten configureren
-Ik gebruik de officiële social-auth configuratie voor Google en Apple opnieuw, zodat de OAuth-broker en gegenereerde auth-module weer overeenkomen met de huidige gekoppelde apps/domeinen.
+Strategie — **schrijf naar zowel cookies als `localStorage`, lees met fallback**. Zo werkt SSO via cookies tussen `*.najra.app`, en blijft de sessie altijd lokaal beschikbaar als backup, zelfs als de browser de cookie weigert.
 
-Waarom dit eerst:
-- de huidige code gebruikt `@lovable.dev/cloud-auth-js`, maar de gegenereerde module is oud/gevoelig voor domeinwijzigingen;
-- Google/Apple falen al bij de start van de flow, dus provider/broker-configuratie moet worden hersteld voordat we nog meer client-side workarounds toevoegen;
-- dit is de correcte route voor Lovable Cloud OAuth, niet `supabase.auth.signInWithOAuth()`.
+### Gedrag
 
-### 2. Eén centrale SSO-cookie-strategie maken
-Ik vervang de ad-hoc `isNajraHost()`-logica door expliciete SSO-domainlogica:
+1. **`setItem(key, value)`**:
+   - Altijd schrijven naar `localStorage` (primaire, betrouwbare opslag).
+   - Daarnaast: cookie zetten. Bepaal scope dynamisch:
+     - Hostname eindigt op `najra.app` → `domain=.najra.app; Secure` (voor SSO tussen subdomeinen).
+     - Anders → host-only cookie zonder `domain`, `Secure` alleen als `https:`.
+   - Cookie-flags: `path=/; max-age=604800; SameSite=Lax`.
 
-```text
-Als host eindigt op .najra.app of exact najra.app:
-  schrijf auth-sessie óók als .najra.app cookie
+2. **`getItem(key)`**:
+   - Eerst `localStorage` proberen.
+   - Als leeg, fallback naar cookie (zodat een sessie die op een ander subdomein is gestart via SSO wordt opgepikt en daarna ook lokaal wordt gecached bij de volgende `setItem`).
 
-Anders:
-  gebruik host-only cookie/localStorage
-```
+3. **`removeItem(key)`**:
+   - Verwijder uit `localStorage`.
+   - Verwijder cookie zowel met `domain=.najra.app` als host-only (om "stuck" cookies van eerdere configs op te ruimen).
 
-Daarbij blijft localStorage bestaan als primaire opslag per app, maar de `.najra.app` cookie blijft de gedeelde SSO-brug tussen subdomeinen.
+4. **SSR-safety**: `typeof window === 'undefined'` checks behouden.
 
-### 3. OAuth-callback betrouwbaar laten landen
-De OAuth-start blijft met:
+### Waarom dit het probleem oplost
 
-```ts
-redirect_uri: window.location.origin
-```
+- **Op `lingo.najra.app` in een normale browser**: ook als de domain-cookie geweigerd of niet meteen teruggelezen wordt, vindt Supabase de tokens via `localStorage` → login en sessie-refresh werken betrouwbaar.
+- **Cross-subdomein SSO**: blijft werken via de cookie. Eerste bezoek aan een nieuw subdomein leest de cookie en spiegelt 'm naar `localStorage`.
+- **Preview/localhost**: werkt automatisch via `localStorage` + host-only cookie.
+- **Geen wijzigingen** aan `Auth.tsx`, OAuth-flow, `redirect_uri` of Supabase-config nodig.
 
-Maar ik controleer de callback-afhandeling op twee punten:
-- na terugkomst van Google/Apple moet de sessie echt in de Supabase client terechtkomen;
-- daarna moet dezelfde sessie direct naar de gedeelde `.najra.app` cookie geschreven worden.
+## Verificatie
 
-Als nodig voeg ik een kleine `syncAuthSessionToSharedCookie` stap toe na OAuth, zodat Google/Apple exact dezelfde SSO-route krijgen als e-mail-login.
-
-### 4. Cross-app SSO bij app-start herstellen
-Bij het laden van Lingo/Schoolplein/Mevrouw de Uil moet de app:
-- eerst normale localStorage proberen;
-- daarna de gedeelde `.najra.app` cookie proberen;
-- bij een geldige cookie de sessie herstellen en lokaal opslaan.
-
-Hierdoor geldt:
-- login op Schoolplein → Lingo ziet sessie;
-- login op Lingo → Schoolplein ziet sessie;
-- Google/Apple-gebruikers krijgen hetzelfde gedrag als e-mailgebruikers.
-
-### 5. Mevrouw de Uil afhankelijk van domein
-Ik bouw dit zo dat Mevrouw de Uil automatisch meedoet als die onder `.najra.app` draait, bijvoorbeeld `mevrouwdeuil.najra.app`.
-
-Als Mevrouw de Uil op een ander hoofddomein staat, noteer ik in de code/plan expliciet dat browsercookies daar niet gedeeld kunnen worden. Dan is de juiste oplossing een centrale auth-host, bijvoorbeeld:
-
-```text
-login.najra.app → OAuth → terug naar gewenste app
-```
-
-Die centrale login kan dan SSO via redirects leveren, maar niet via één gedeelde cookie over verschillende hoofddomeinen.
-
-## Niet doen
-Ik ga niet:
-- overstappen op directe `supabase.auth.signInWithOAuth()`;
-- meer willekeurige redirect-varianten proberen;
-- Apple/Google workarounds toevoegen buiten de Lovable Cloud OAuth-flow;
-- e-mail/leerling-login wijzigen;
-- rollen, spelers of bestaande database-logica aanpassen.
-
-## Verwacht resultaat
-Na implementatie moet een klik op **Doorgaan met Google** of **Doorgaan met Apple** weer naar de provider sturen. Na succesvolle login moet de sessie gedeeld worden tussen alle apps op `.najra.app`, inclusief Google- en Apple-gebruikers.
+1. Op `lingo.najra.app` (normale browser, ook Safari): uitloggen, cookies wissen, opnieuw inloggen met Google → moet ingelogd blijven na refresh.
+2. Op `schoolplein.najra.app` ingelogd → naar `lingo.najra.app` → automatisch herkend (SSO via cookie, daarna gespiegeld naar localStorage).
+3. In preview: Google-login moet ook werken (sessie via localStorage).
+4. DevTools → Application controleren: zowel `localStorage` `sb-*-auth-token` als cookie aanwezig op productie.
