@@ -849,6 +849,152 @@ export type Database = {
         }
         Relationships: []
       }
+      wk_bonus: {
+        Row: {
+          group_winners: Json
+          id: string
+          points: number
+          top_scorer: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          group_winners?: Json
+          id?: string
+          points?: number
+          top_scorer?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          group_winners?: Json
+          id?: string
+          points?: number
+          top_scorer?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wk_bonus_answers: {
+        Row: {
+          group_winners: Json
+          id: number
+          top_scorer: string | null
+          updated_at: string
+        }
+        Insert: {
+          group_winners?: Json
+          id?: number
+          top_scorer?: string | null
+          updated_at?: string
+        }
+        Update: {
+          group_winners?: Json
+          id?: number
+          top_scorer?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wk_matches: {
+        Row: {
+          actual_score1: number | null
+          actual_score2: number | null
+          grp: string | null
+          id: string
+          kickoff_utc: string
+          location: string
+          match_no: number
+          stage: string
+          team1: string
+          team2: string
+          updated_at: string
+        }
+        Insert: {
+          actual_score1?: number | null
+          actual_score2?: number | null
+          grp?: string | null
+          id?: string
+          kickoff_utc: string
+          location: string
+          match_no: number
+          stage: string
+          team1: string
+          team2: string
+          updated_at?: string
+        }
+        Update: {
+          actual_score1?: number | null
+          actual_score2?: number | null
+          grp?: string | null
+          id?: string
+          kickoff_utc?: string
+          location?: string
+          match_no?: number
+          stage?: string
+          team1?: string
+          team2?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wk_predictions: {
+        Row: {
+          id: string
+          match_id: string
+          points: number
+          score1: number
+          score2: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          points?: number
+          score1: number
+          score2: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          points?: number
+          score1?: number
+          score2?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wk_predictions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "wk_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wk_profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
       word_definitions: {
         Row: {
           created_at: string
