@@ -1,47 +1,82 @@
-## Probleem
+## Probleemdiagnose
 
-`src/integrations/supabase/client.ts` schrijft álle sessie-cookies met `domain=.najra.app; Secure`. Dit werkt op productie alleen als álles perfect klopt, maar veroorzaakt in de praktijk uitlog-problemen — ook in gewone browsersessies op `lingo.najra.app`:
+De eerdere cookie/localStorage-aanpassing zit pas aan het einde van de login-flow, wanneer tokens/sessies worden opgeslagen. Jouw nieuwe observatie is belangrijker: in Safari én Firefox gebeurt het al mis bij het klikken op **Doorgaan met Google** of **Doorgaan met Apple**. Omdat inloggen met gebruikersnaam/e-mail wel werkt, is de backend-auth zelf niet stuk.
 
-- Sommige browsers (vooral Safari/iOS en strikte tracking-preventie) accepteren of bewaren third-party-achtige domain-cookies inconsistent.
-- Na de Google/Apple OAuth-redirect schrijft Supabase meerdere keys (`sb-*-auth-token`, code-verifier, etc.). Als één daarvan niet terugleesbaar is, mislukt de PKCE-uitwisseling → sessie verdwijnt direct.
-- Er is geen fallback: zodra de cookie niet wordt geaccepteerd, is er geen alternatieve opslag → user lijkt "niet ingelogd".
-- In preview/localhost werkt het sowieso niet, waardoor je het niet kunt reproduceren/debuggen.
+De meest waarschijnlijke oorzaak zit dus in de OAuth-startflow in `Auth.tsx`:
 
-## Oplossing: robuuste hybride storage
+```ts
+lovable.auth.signInWithOAuth(provider, {
+  redirect_uri: `${window.location.origin}/auth`,
+});
+```
 
-Eén bestand aanpassen: `src/integrations/supabase/client.ts`.
+Voor Lovable Cloud OAuth hoort de standaard `redirect_uri` normaal de origin te zijn:
 
-Strategie — **schrijf naar zowel cookies als `localStorage`, lees met fallback**. Zo werkt SSO via cookies tussen `*.najra.app`, en blijft de sessie altijd lokaal beschikbaar als backup, zelfs als de browser de cookie weigert.
+```ts
+redirect_uri: window.location.origin
+```
 
-### Gedrag
+De OAuth-proxy gebruikt eigen routes zoals `/~oauth/initiate` en `/~oauth/callback`. Door `/auth` als redirect target mee te geven kan de flow op custom domains zoals `lingo.najra.app` niet betrouwbaar starten of afronden. Dat verklaart waarom wachtwoord-login werkt, maar Google/Apple niet.
 
-1. **`setItem(key, value)`**:
-   - Altijd schrijven naar `localStorage` (primaire, betrouwbare opslag).
-   - Daarnaast: cookie zetten. Bepaal scope dynamisch:
-     - Hostname eindigt op `najra.app` → `domain=.najra.app; Secure` (voor SSO tussen subdomeinen).
-     - Anders → host-only cookie zonder `domain`, `Secure` alleen als `https:`.
-   - Cookie-flags: `path=/; max-age=604800; SameSite=Lax`.
+## Oplossing
 
-2. **`getItem(key)`**:
-   - Eerst `localStorage` proberen.
-   - Als leeg, fallback naar cookie (zodat een sessie die op een ander subdomein is gestart via SSO wordt opgepikt en daarna ook lokaal wordt gecached bij de volgende `setItem`).
+### 1. OAuth-start in `Auth.tsx` corrigeren
 
-3. **`removeItem(key)`**:
-   - Verwijder uit `localStorage`.
-   - Verwijder cookie zowel met `domain=.najra.app` als host-only (om "stuck" cookies van eerdere configs op te ruimen).
+Pas `handleOAuth` aan zodat Google/Apple exact de Lovable Cloud OAuth-flow gebruiken:
 
-4. **SSR-safety**: `typeof window === 'undefined'` checks behouden.
+```ts
+const result = await lovable.auth.signInWithOAuth(provider, {
+  redirect_uri: window.location.origin,
+});
 
-### Waarom dit het probleem oplost
+if (result.error) {
+  toast(...);
+  setLoading(false);
+  return;
+}
 
-- **Op `lingo.najra.app` in een normale browser**: ook als de domain-cookie geweigerd of niet meteen teruggelezen wordt, vindt Supabase de tokens via `localStorage` → login en sessie-refresh werken betrouwbaar.
-- **Cross-subdomein SSO**: blijft werken via de cookie. Eerste bezoek aan een nieuw subdomein leest de cookie en spiegelt 'm naar `localStorage`.
-- **Preview/localhost**: werkt automatisch via `localStorage` + host-only cookie.
-- **Geen wijzigingen** aan `Auth.tsx`, OAuth-flow, `redirect_uri` of Supabase-config nodig.
+if (result.redirected) {
+  return;
+}
 
-## Verificatie
+navTo("/spelen", { replace: true });
+```
 
-1. Op `lingo.najra.app` (normale browser, ook Safari): uitloggen, cookies wissen, opnieuw inloggen met Google → moet ingelogd blijven na refresh.
-2. Op `schoolplein.najra.app` ingelogd → naar `lingo.najra.app` → automatisch herkend (SSO via cookie, daarna gespiegeld naar localStorage).
-3. In preview: Google-login moet ook werken (sessie via localStorage).
-4. DevTools → Application controleren: zowel `localStorage` `sb-*-auth-token` als cookie aanwezig op productie.
+Waarom:
+- `window.location.origin` werkt op custom domains én preview.
+- De OAuth-broker handelt de callback af via de juiste infrastructuur.
+- Als `redirected === true`, moet de app niets meer doen; de browser gaat naar Google/Apple.
+- Als tokens direct terugkomen, navigeren we naar `/spelen`.
+
+### 2. Cookie/localStorage-fix behouden, niet verder uitbreiden
+
+De hybride storage in `src/integrations/supabase/client.ts` blijft staan. Die is nog steeds nuttig voor sessie-persistentie na succesvolle login, maar lost niet het klikken/starten van OAuth op. Ik ga hier niet opnieuw aan sleutelen om geen extra risico te introduceren.
+
+### 3. Foutmelding verbeteren zonder extra flow-wijzigingen
+
+Als OAuth direct een error teruggeeft, toon ik een duidelijke tekst in plaats van `String(error)`, zodat je bij testen ziet of het bijvoorbeeld om provider-configuratie, domein of popup/redirect gaat.
+
+Bijvoorbeeld:
+
+```ts
+description: error.message ?? "OAuth kon niet worden gestart."
+```
+
+### 4. Niet doen
+
+Ik ga niet:
+- opnieuw aan backend-auth of providerconfiguratie draaien;
+- `supabase.auth.signInWithOAuth()` gebruiken;
+- CORS/fetch-workarounds toevoegen;
+- meer opslaglogica toevoegen;
+- extra credits verbranden aan brede debugging.
+
+## Verwacht resultaat
+
+Na deze aanpassing moet een klik op **Doorgaan met Google** of **Doorgaan met Apple** de browser direct naar de OAuth-flow sturen op:
+
+- `https://lingo.najra.app`
+- de Lovable preview
+- gewone browservensters in Safari en Firefox
+
+Als de klik daarna wél doorstuurt maar terugkomt zonder sessie, dan zit het vervolgprobleem bij provider/domeinconfiguratie. Maar op basis van jouw omschrijving is de eerste concrete fix de `redirect_uri` in `Auth.tsx`.

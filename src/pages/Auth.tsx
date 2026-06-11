@@ -146,11 +146,32 @@ const Auth = () => {
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth(provider, {
-      redirect_uri: `${window.location.origin}/auth`,
-    });
-    if (error) {
-      toast({ title: "Fout", description: String(error), variant: "destructive" });
+    try {
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
+      });
+
+      if (result.error) {
+        toast({
+          title: "Inloggen mislukt",
+          description: (result.error as any)?.message ?? "OAuth kon niet worden gestart.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (result.redirected) {
+        return;
+      }
+
+      navTo("/spelen", { replace: true });
+    } catch (err: any) {
+      toast({
+        title: "Inloggen mislukt",
+        description: err?.message ?? "OAuth kon niet worden gestart.",
+        variant: "destructive",
+      });
       setLoading(false);
     }
   };
