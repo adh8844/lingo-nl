@@ -146,12 +146,7 @@ const Auth = () => {
 
   const handleOAuth = async (provider: "google" | "apple") => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth`,
-      },
-    });
+    const { error } = await supabase.auth.signInWithOAuth({ provider });
     if (error) {
       toast({ title: "Fout", description: String(error?.message ?? error), variant: "destructive" });
       setLoading(false);
